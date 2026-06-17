@@ -51,6 +51,21 @@
         </div>
       </div>
 
+      <!-- Daily Goal Progress -->
+      <div class="glass-card sidepanel__daily-goal animate-fade-in-up">
+        <div class="daily-goal__header">
+          <span>🎯 Daily Goal</span>
+          <span class="daily-goal__counter" id="daily-goal-text">0 / 25</span>
+        </div>
+        <div class="daily-goal__bar">
+          <div class="daily-goal__fill" id="daily-goal-fill" style="width: 0%"></div>
+        </div>
+        <div class="daily-goal__edit">
+          <input type="number" class="input input-sm" id="daily-goal-input" min="0" max="500" placeholder="25" value="25">
+          <button class="btn btn-sm btn-ghost" id="daily-goal-save">Set</button>
+        </div>
+      </div>
+
       <!-- Bot Status Card -->
       <div class="glass-card sidepanel__bot-status animate-fade-in-up">
         <div class="sidepanel__status-row">

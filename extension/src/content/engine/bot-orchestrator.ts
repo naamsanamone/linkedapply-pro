@@ -72,9 +72,18 @@ export async function startAutomation(): Promise<void> {
     const maxPerTerm = 100; // Safety limit
 
     while (processedOnTerm < maxPerTerm && !shouldStop) {
-      // Check daily limit
+      // Check daily limit (LinkedIn's built-in)
       if (isDailyLimitReached()) {
         log.warn('Daily Easy Apply limit reached!');
+        sendStatusUpdate('stopped');
+        isRunning = false;
+        return;
+      }
+
+      // Check user's daily goal
+      const currentSession = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY);
+      if (currentSession && currentSession.dailyGoal > 0 && currentSession.easyApplied >= currentSession.dailyGoal) {
+        log.info(`🎯 Daily goal reached! (${currentSession.easyApplied}/${currentSession.dailyGoal})`);
         sendStatusUpdate('stopped');
         isRunning = false;
         return;

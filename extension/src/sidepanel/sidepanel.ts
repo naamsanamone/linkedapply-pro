@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initJobSearch();
   initExport();
   initModalControls();
+  initDailyGoal();
   loadDashboardData();
 });
 
@@ -84,7 +85,10 @@ async function loadDashboardData(): Promise<void> {
 
   allJobs = jobs || [];
 
-  if (session) updateOverviewStats(session);
+  if (session) {
+    updateOverviewStats(session);
+    updateDailyGoal(session);
+  }
   if (status) updateBotStatus(status, session);
   if (allJobs.length > 0) {
     renderRecentJobs(allJobs.slice(-8).reverse());
@@ -675,4 +679,48 @@ function debounce(fn: Function, delay: number): (...args: any[]) => void {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   };
+}
+
+// ================================================
+//  DAILY GOAL
+// ================================================
+function initDailyGoal(): void {
+  const saveBtn = document.getElementById('daily-goal-save');
+  const input = document.getElementById('daily-goal-input') as HTMLInputElement;
+
+  saveBtn?.addEventListener('click', async () => {
+    const goal = parseInt(input?.value || '25', 10);
+    if (isNaN(goal) || goal < 0) return;
+
+    const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY);
+    if (session) {
+      session.dailyGoal = goal;
+      await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
+      updateDailyGoal(session);
+      log.info(`Daily goal set to ${goal}`);
+    }
+  });
+}
+
+function updateDailyGoal(session: SessionSummary): void {
+  const goal = session.dailyGoal || 25;
+  const applied = session.easyApplied || 0;
+  const pct = goal > 0 ? Math.min(100, Math.round((applied / goal) * 100)) : 0;
+
+  setText('daily-goal-text', `${applied} / ${goal}`);
+
+  const fill = document.getElementById('daily-goal-fill');
+  if (fill) {
+    fill.style.width = `${pct}%`;
+    if (pct >= 100) {
+      fill.classList.add('daily-goal__fill--complete');
+    } else {
+      fill.classList.remove('daily-goal__fill--complete');
+    }
+  }
+
+  const input = document.getElementById('daily-goal-input') as HTMLInputElement;
+  if (input && !input.matches(':focus')) {
+    input.value = String(goal);
+  }
 }

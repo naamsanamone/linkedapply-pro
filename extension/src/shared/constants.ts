@@ -144,4 +144,5 @@ export const DEFAULT_SESSION = {
   startTime: '',
   endTime: '',
   estimatedTimeSaved: 0,
+  dailyGoal: 25,
 };

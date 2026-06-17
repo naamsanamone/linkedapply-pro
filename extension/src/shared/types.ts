@@ -157,6 +157,7 @@ export interface SessionSummary {
   startTime: string;
   endTime: string;
   estimatedTimeSaved: number; // seconds
+  dailyGoal: number;          // user's daily target (0 = no limit)
 }
 
 // ---- Message Passing ----
