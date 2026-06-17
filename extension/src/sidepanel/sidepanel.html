@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedApply Pro — Dashboard</title>
+  <link rel="stylesheet" href="../styles/design-tokens.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/animations.css">
+  <link rel="stylesheet" href="sidepanel.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="sidepanel" id="sidepanel-root">
+    <!-- Header -->
+    <header class="sidepanel__header">
+      <h1 class="sidepanel__title">⚡ Dashboard</h1>
+      <div class="sidepanel__actions">
+        <button class="btn btn-ghost btn-icon" id="export-btn" title="Export Data">📥</button>
+        <button class="btn btn-ghost btn-icon" id="theme-toggle" title="Toggle theme">🌙</button>
+        <button class="btn btn-ghost btn-icon" id="settings-link" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="sidepanel__tabs" role="tablist">
+      <button class="sidepanel__tab sidepanel__tab--active" data-tab="overview" role="tab">Overview</button>
+      <button class="sidepanel__tab" data-tab="jobs" role="tab">Jobs</button>
+      <button class="sidepanel__tab" data-tab="analytics" role="tab">Analytics</button>
+    </nav>
+
+    <!-- ============ TAB: OVERVIEW ============ -->
+    <div class="sidepanel__content" id="tab-overview">
+      <!-- Quick Stats -->
+      <div class="sidepanel__stats stagger-children">
+        <div class="stat-card stat-card--primary">
+          <span class="stat-card__value" id="sp-total-applied">0</span>
+          <span class="stat-card__label">Applied</span>
+        </div>
+        <div class="stat-card stat-card--success">
+          <span class="stat-card__value" id="sp-today-applied">0</span>
+          <span class="stat-card__label">Today</span>
+        </div>
+        <div class="stat-card stat-card--accent">
+          <span class="stat-card__value" id="sp-match-avg">—</span>
+          <span class="stat-card__label">Avg Match</span>
+        </div>
+        <div class="stat-card stat-card--warning">
+          <span class="stat-card__value" id="sp-time-saved">0m</span>
+          <span class="stat-card__label">Time Saved</span>
+        </div>
+      </div>
+
+      <!-- Bot Status Card -->
+      <div class="glass-card sidepanel__bot-status animate-fade-in-up">
+        <div class="sidepanel__status-row">
+          <div class="sidepanel__status-indicator">
+            <span class="status-dot status-dot--idle" id="sp-status-dot"></span>
+            <span id="sp-status-text">Idle — Ready to start</span>
+          </div>
+          <div class="sidepanel__status-actions">
+            <button class="btn btn-primary btn-sm" id="sp-start-btn">▶ Start</button>
+            <button class="btn btn-ghost btn-sm" id="sp-pause-btn" style="display:none;">⏸ Pause</button>
+          </div>
+        </div>
+        <!-- Progress bar for current session -->
+        <div class="progress-bar" id="sp-progress" style="display:none;">
+          <div class="progress-bar__fill" id="sp-progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="sidepanel__session-stats" id="sp-session-stats" style="display:none;">
+          <span>✅ <b id="sp-sess-applied">0</b> applied</span>
+          <span>⏭ <b id="sp-sess-skipped">0</b> skipped</span>
+          <span>❌ <b id="sp-sess-failed">0</b> failed</span>
+        </div>
+      </div>
+
+      <!-- Mini Activity Sparkline -->
+      <div class="glass-card animate-fade-in-up">
+        <h3 class="sidepanel__section-title">7-Day Activity</h3>
+        <div class="sparkline-container" id="sp-sparkline"></div>
+      </div>
+
+      <!-- Recent Applications -->
+      <div class="glass-card sidepanel__recent animate-fade-in-up">
+        <div class="sidepanel__section-header">
+          <h3 class="sidepanel__section-title">Recent Applications</h3>
+          <button class="btn btn-ghost btn-xs" id="sp-view-all-btn">View All →</button>
+        </div>
+        <div class="sidepanel__job-list" id="sp-recent-jobs">
+          <p class="sidepanel__empty-state">No applications yet. Start the bot to begin!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TAB: JOBS (Kanban) ============ -->
+    <div class="sidepanel__content" id="tab-jobs" style="display: none;">
+      <!-- Search & Filter Bar -->
+      <div class="sidepanel__filter-bar">
+        <input type="text" class="input input-sm" id="job-search-input" placeholder="🔍 Search jobs..." />
+        <select class="input input-sm" id="job-filter-select">
+          <option value="all">All Statuses</option>
+          <option value="bookmarked">📌 Bookmarked</option>
+          <option value="applied">✅ Applied</option>
+          <option value="external">🔗 External</option>
+          <option value="interview">🎯 Interview</option>
+          <option value="offer">🎉 Offer</option>
+          <option value="rejected">❌ Rejected</option>
+        </select>
+      </div>
+
+      <div class="kanban" id="kanban-board">
+        <div class="kanban__column" data-status="bookmarked">
+          <h4 class="kanban__column-title">📌 Bookmarked <span class="kanban__count badge badge-primary">0</span></h4>
+          <div class="kanban__cards" data-status="bookmarked"></div>
+        </div>
+        <div class="kanban__column" data-status="applied">
+          <h4 class="kanban__column-title">✅ Applied <span class="kanban__count badge badge-success">0</span></h4>
+          <div class="kanban__cards" data-status="applied"></div>
+        </div>
+        <div class="kanban__column" data-status="interview">
+          <h4 class="kanban__column-title">🎯 Interview <span class="kanban__count badge badge-warning">0</span></h4>
+          <div class="kanban__cards" data-status="interview"></div>
+        </div>
+        <div class="kanban__column" data-status="offer">
+          <h4 class="kanban__column-title">🎉 Offer <span class="kanban__count badge badge-success">0</span></h4>
+          <div class="kanban__cards" data-status="offer"></div>
+        </div>
+        <div class="kanban__column" data-status="rejected">
+          <h4 class="kanban__column-title">❌ Rejected <span class="kanban__count badge badge-error">0</span></h4>
+          <div class="kanban__cards" data-status="rejected"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TAB: ANALYTICS ============ -->
+    <div class="sidepanel__content" id="tab-analytics" style="display: none;">
+      <!-- Summary Stats -->
+      <div class="sidepanel__stats stagger-children">
+        <div class="stat-card stat-card--primary">
+          <span class="stat-card__value" id="an-total">0</span>
+          <span class="stat-card__label">Total Applied</span>
+        </div>
+        <div class="stat-card stat-card--success">
+          <span class="stat-card__value" id="an-interviews">0</span>
+          <span class="stat-card__label">Interviews</span>
+        </div>
+        <div class="stat-card stat-card--accent">
+          <span class="stat-card__value" id="an-response-rate">0%</span>
+          <span class="stat-card__label">Response Rate</span>
+        </div>
+        <div class="stat-card stat-card--warning">
+          <span class="stat-card__value" id="an-total-time">0h</span>
+          <span class="stat-card__label">Time Saved</span>
+        </div>
+      </div>
+
+      <!-- Applications Over Time Chart -->
+      <div class="glass-card sidepanel__chart-card animate-fade-in-up">
+        <h3 class="sidepanel__section-title">Applications Over Time</h3>
+        <div class="chart-container" id="activity-chart"></div>
+      </div>
+
+      <!-- Top Companies Chart -->
+      <div class="glass-card sidepanel__chart-card animate-fade-in-up">
+        <h3 class="sidepanel__section-title">Top Companies</h3>
+        <div class="bar-chart" id="companies-chart"></div>
+      </div>
+
+      <!-- Work Style Breakdown -->
+      <div class="glass-card sidepanel__chart-card animate-fade-in-up">
+        <h3 class="sidepanel__section-title">Work Style Distribution</h3>
+        <div class="donut-chart-container" id="workstyle-chart"></div>
+      </div>
+
+      <!-- Status Pipeline -->
+      <div class="glass-card sidepanel__chart-card animate-fade-in-up">
+        <h3 class="sidepanel__section-title">Application Pipeline</h3>
+        <div class="pipeline" id="pipeline-chart"></div>
+      </div>
+
+      <!-- Top Locations -->
+      <div class="glass-card sidepanel__chart-card animate-fade-in-up">
+        <h3 class="sidepanel__section-title">Top Locations</h3>
+        <div class="bar-chart" id="locations-chart"></div>
+      </div>
+    </div>
+
+    <!-- ============ JOB DETAIL MODAL ============ -->
+    <div class="modal-overlay" id="job-modal" style="display:none;">
+      <div class="modal glass-card animate-scale-in">
+        <div class="modal__header">
+          <h2 class="modal__title" id="modal-title">Job Title</h2>
+          <button class="btn btn-ghost btn-icon modal__close" id="modal-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <div class="modal__meta">
+            <span class="modal__company" id="modal-company">Company</span>
+            <span class="modal__location" id="modal-location">Location</span>
+            <span class="badge" id="modal-status">applied</span>
+          </div>
+          <div class="modal__row">
+            <span class="modal__label">Work Style</span>
+            <span id="modal-workstyle">—</span>
+          </div>
+          <div class="modal__row">
+            <span class="modal__label">Experience Required</span>
+            <span id="modal-experience">—</span>
+          </div>
+          <div class="modal__row">
+            <span class="modal__label">Date Applied</span>
+            <span id="modal-date-applied">—</span>
+          </div>
+          <div class="modal__row">
+            <span class="modal__label">Date Listed</span>
+            <span id="modal-date-listed">—</span>
+          </div>
+          <div class="modal__row">
+            <span class="modal__label">Hiring Manager</span>
+            <a id="modal-hr-link" href="#" target="_blank">—</a>
+          </div>
+          <div class="modal__row" id="modal-match-row" style="display:none;">
+            <span class="modal__label">AI Match Score</span>
+            <span class="badge badge-primary" id="modal-match-score">—</span>
+          </div>
+
+          <!-- Status Changer -->
+          <div class="modal__section">
+            <label class="modal__label">Change Status</label>
+            <div class="modal__status-btns" id="modal-status-btns">
+              <button class="btn btn-xs" data-status="bookmarked">📌 Bookmarked</button>
+              <button class="btn btn-xs" data-status="applied">✅ Applied</button>
+              <button class="btn btn-xs" data-status="interview">🎯 Interview</button>
+              <button class="btn btn-xs" data-status="offer">🎉 Offer</button>
+              <button class="btn btn-xs" data-status="rejected">❌ Rejected</button>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="modal__section">
+            <label class="modal__label">Notes</label>
+            <textarea class="input" id="modal-notes" rows="3" placeholder="Add notes..."></textarea>
+          </div>
+
+          <!-- Questions Answered -->
+          <details class="modal__details" id="modal-questions-section">
+            <summary>Questions Answered (<span id="modal-q-count">0</span>)</summary>
+            <div class="modal__questions-list" id="modal-questions"></div>
+          </details>
+        </div>
+        <div class="modal__footer">
+          <a class="btn btn-primary btn-sm" id="modal-job-link" href="#" target="_blank">View on LinkedIn</a>
+          <button class="btn btn-sm" id="modal-save-btn">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ EXPORT MODAL ============ -->
+    <div class="modal-overlay" id="export-modal" style="display:none;">
+      <div class="modal modal--sm glass-card animate-scale-in">
+        <div class="modal__header">
+          <h2 class="modal__title">Export Data</h2>
+          <button class="btn btn-ghost btn-icon modal__close" id="export-modal-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <p style="margin-bottom: 12px; color: var(--color-text-secondary);">Choose a format to export your job application data.</p>
+          <div class="export-options">
+            <button class="btn btn-primary" id="export-csv-btn">📄 Export CSV</button>
+            <button class="btn btn-primary" id="export-json-btn">📋 Export JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.ts"></script>
+</body>
+</html>

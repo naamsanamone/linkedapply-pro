@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedApply Pro</title>
+  <link rel="stylesheet" href="../styles/design-tokens.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/animations.css">
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="popup" id="popup-root">
+    <!-- Header -->
+    <header class="popup__header">
+      <div class="popup__brand">
+        <span class="popup__logo">⚡</span>
+        <h1 class="popup__title">LinkedApply Pro</h1>
+      </div>
+      <div class="popup__plan" id="plan-badge">
+        <span class="badge badge-primary">Free Trial</span>
+      </div>
+    </header>
+
+    <!-- Status Card -->
+    <div class="glass-card popup__status animate-fade-in-up" id="status-card">
+      <div class="popup__status-row">
+        <div class="popup__status-indicator">
+          <span class="status-dot status-dot--idle" id="status-dot"></span>
+          <span class="popup__status-text" id="status-text">Idle</span>
+        </div>
+        <button class="btn btn-primary btn-sm" id="start-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          Start
+        </button>
+      </div>
+
+      <!-- Progress Bar (visible during operation) -->
+      <div class="progress-bar" id="progress-bar" style="display: none;">
+        <div class="progress-bar__fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="popup__stats stagger-children">
+      <div class="stat-card">
+        <span class="stat-card__value" id="stat-applied">0</span>
+        <span class="stat-card__label">Applied Today</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value" id="stat-external">0</span>
+        <span class="stat-card__label">External</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value" id="stat-skipped">0</span>
+        <span class="stat-card__label">Skipped</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value" id="stat-time">0m</span>
+        <span class="stat-card__label">Time Saved</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="popup__actions">
+      <button class="btn btn-secondary btn-block" id="dashboard-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        Open Dashboard
+      </button>
+      <button class="btn btn-ghost btn-block" id="settings-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        Settings
+      </button>
+    </div>
+
+    <!-- Upgrade CTA (free users only) -->
+    <div class="popup__upgrade animate-fade-in" id="upgrade-cta">
+      <p class="popup__upgrade-text">
+        <strong>5 apps remaining today</strong> — Upgrade for unlimited
+      </p>
+      <button class="btn btn-primary btn-sm" id="upgrade-btn">Upgrade</button>
+    </div>
+  </div>
+
+  <script type="module" src="popup.ts"></script>
+</body>
+</html>

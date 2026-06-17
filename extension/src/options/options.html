@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedApply Pro — Settings</title>
+  <link rel="stylesheet" href="../styles/design-tokens.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/animations.css">
+  <link rel="stylesheet" href="options.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="options" id="options-root">
+    <!-- Sidebar Navigation -->
+    <aside class="options__sidebar">
+      <div class="options__brand">
+        <span class="options__logo">⚡</span>
+        <h1 class="options__title">LinkedApply Pro</h1>
+      </div>
+
+      <nav class="options__nav">
+        <button class="options__nav-item options__nav-item--active" data-page="profile">
+          <span>👤</span> Profile
+        </button>
+        <button class="options__nav-item" data-page="questions">
+          <span>❓</span> Questions
+        </button>
+        <button class="options__nav-item" data-page="search">
+          <span>🔍</span> Search Preferences
+        </button>
+        <button class="options__nav-item" data-page="ai">
+          <span>🤖</span> AI Settings
+        </button>
+        <button class="options__nav-item" data-page="bot">
+          <span>⚙️</span> Bot Settings
+        </button>
+        <button class="options__nav-item" data-page="billing">
+          <span>💳</span> Billing
+        </button>
+        <button class="options__nav-item" data-page="account">
+          <span>🔐</span> Account
+        </button>
+      </nav>
+
+      <div class="options__sidebar-footer">
+        <div class="badge badge-pro" id="opt-plan-badge">Free Trial</div>
+        <span class="options__version">v1.0.0</span>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="options__main">
+      <!-- Profile Page -->
+      <section class="options__page" id="page-profile">
+        <h2 class="options__page-title">Profile Information</h2>
+        <p class="options__page-desc">Your personal details used to fill out job application forms.</p>
+
+        <div class="options__form glass-card">
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="firstName">First Name *</label>
+              <input class="input" type="text" id="firstName" placeholder="John">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="middleName">Middle Name</label>
+              <input class="input" type="text" id="middleName" placeholder="">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="lastName">Last Name *</label>
+              <input class="input" type="text" id="lastName" placeholder="Doe">
+            </div>
+          </div>
+
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="email">Email *</label>
+              <input class="input" type="email" id="email" placeholder="john@example.com">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="phoneNumber">Phone *</label>
+              <input class="input" type="tel" id="phoneNumber" placeholder="9488115583">
+            </div>
+          </div>
+
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="phoneCountryCode">Phone Country Code</label>
+              <input class="input" type="text" id="phoneCountryCode" placeholder="India (+91)">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="highestEducation">Highest Education</label>
+              <select class="input" id="highestEducation">
+                <option value="">Select</option>
+                <option value="High School">High School</option>
+                <option value="Diploma">Diploma</option>
+                <option value="Associate's Degree">Associate's Degree</option>
+                <option value="Bachelor's Degree">Bachelor's Degree</option>
+                <option value="Master's Degree">Master's Degree</option>
+                <option value="Doctorate">Doctorate / PhD</option>
+              </select>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="currentCity">City</label>
+              <input class="input" type="text" id="currentCity" placeholder="San Francisco">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="state">State</label>
+              <input class="input" type="text" id="state" placeholder="California">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="country">Country</label>
+              <input class="input" type="text" id="country" placeholder="United States">
+            </div>
+          </div>
+
+          <hr class="divider">
+          <h3 class="options__section-label">EEO Questions (Optional)</h3>
+
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="gender">Gender</label>
+              <select class="input" id="gender">
+                <option value="">Prefer not to say</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Decline">Decline</option>
+              </select>
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="ethnicity">Ethnicity</label>
+              <select class="input" id="ethnicity">
+                <option value="Decline">Decline</option>
+                <option value="Hispanic/Latino">Hispanic/Latino</option>
+                <option value="Asian">Asian</option>
+                <option value="White">White</option>
+                <option value="Black or African American">Black or African American</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="veteranStatus">Veteran Status</label>
+              <select class="input" id="veteranStatus">
+                <option value="Decline">Decline</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="disabilityStatus">Disability Status</label>
+              <select class="input" id="disabilityStatus">
+                <option value="Decline">Decline</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="options__form-actions">
+            <button class="btn btn-primary" id="save-profile">Save Profile</button>
+            <span class="options__save-status" id="profile-status"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Questions Page -->
+      <section class="options__page" id="page-questions" style="display:none;">
+        <h2 class="options__page-title">Default Question Answers</h2>
+        <p class="options__page-desc">Pre-filled answers for common application form questions.</p>
+        <div class="options__form glass-card">
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="q-yearsExperience">Years of Experience</label>
+              <input class="input" type="number" id="q-yearsExperience" placeholder="3" min="0">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="q-desiredSalary">Desired Salary ($)</label>
+              <input class="input" type="number" id="q-desiredSalary" placeholder="120000">
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="q-requireVisa">Require Visa Sponsorship?</label>
+              <select class="input" id="q-requireVisa">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="q-usCitizenship">US Citizenship / Eligibility</label>
+              <select class="input" id="q-usCitizenship">
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="q-noticePeriod">Notice Period (days)</label>
+              <input class="input" type="number" id="q-noticePeriod" placeholder="0" min="0">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="q-currentCtc">Current CTC ($)</label>
+              <input class="input" type="number" id="q-currentCtc" placeholder="100000">
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="q-linkedin">LinkedIn Profile URL</label>
+              <input class="input" type="url" id="q-linkedin" placeholder="https://linkedin.com/in/...">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="q-website">Website / Portfolio</label>
+              <input class="input" type="url" id="q-website" placeholder="https://...">
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="q-recentEmployer">Most Recent Employer</label>
+              <input class="input" type="text" id="q-recentEmployer" placeholder="Google">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="q-confidenceLevel">Confidence Level (1-10)</label>
+              <input class="input" type="number" id="q-confidenceLevel" placeholder="8" min="1" max="10">
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field" style="flex:1">
+              <label class="options__label" for="q-linkedinHeadline">LinkedIn Headline</label>
+              <input class="input" type="text" id="q-linkedinHeadline" placeholder="Senior Software Engineer | React | Node.js">
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field" style="flex:1">
+              <label class="options__label" for="q-coverLetter">Default Cover Letter</label>
+              <textarea class="input" id="q-coverLetter" rows="4" placeholder="Dear Hiring Manager..."></textarea>
+            </div>
+          </div>
+          <hr class="divider">
+          <h3 class="options__section-label">Behavior</h3>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="q-overwrite"> Overwrite previous answers
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="q-pauseBeforeSubmit"> Pause before submit
+              </label>
+            </div>
+          </div>
+          <div class="options__form-actions">
+            <button class="btn btn-primary" id="save-questions">Save Question Defaults</button>
+            <span class="options__save-status" id="questions-status"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Search Preferences Page -->
+      <section class="options__page" id="page-search" style="display:none;">
+        <h2 class="options__page-title">Search Preferences</h2>
+        <p class="options__page-desc">Job search terms, filters, and blacklisting rules.</p>
+        <div class="options__form glass-card">
+          <div class="options__field">
+            <label class="options__label" for="s-searchTerms">Search Terms (one per line)</label>
+            <textarea class="input" id="s-searchTerms" rows="4" placeholder="Software Engineer&#10;Frontend Developer&#10;React Developer"></textarea>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="s-searchLocation">Search Location</label>
+              <input class="input" type="text" id="s-searchLocation" placeholder="United States">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="s-sortBy">Sort By</label>
+              <select class="input" id="s-sortBy">
+                <option value="">Default</option>
+                <option value="Most recent">Most Recent</option>
+                <option value="Most relevant">Most Relevant</option>
+              </select>
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="s-datePosted">Date Posted</label>
+              <select class="input" id="s-datePosted">
+                <option value="">Any Time</option>
+                <option value="Past 24 hours">Past 24 Hours</option>
+                <option value="Past week">Past Week</option>
+                <option value="Past month">Past Month</option>
+              </select>
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="s-currentExperience">Your Experience (years)</label>
+              <input class="input" type="number" id="s-currentExperience" placeholder="3" min="0">
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="s-easyApplyOnly" checked> Easy Apply Only
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="s-securityClearance"> Security Clearance OK
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="s-didMasters"> Did Masters (+2 exp yrs)
+              </label>
+            </div>
+          </div>
+          <hr class="divider">
+          <h3 class="options__section-label">Blacklists & Filters</h3>
+          <div class="options__field">
+            <label class="options__label" for="s-badWords">Bad Words in Job Description (comma-separated)</label>
+            <textarea class="input" id="s-badWords" rows="2" placeholder="unpaid, intern, fellowship"></textarea>
+          </div>
+          <div class="options__field">
+            <label class="options__label" for="s-companies">Blacklisted Companies (comma-separated)</label>
+            <textarea class="input" id="s-companies" rows="2" placeholder="Revature, WITCH companies"></textarea>
+          </div>
+          <div class="options__form-actions">
+            <button class="btn btn-primary" id="save-search">Save Search Preferences</button>
+            <span class="options__save-status" id="search-status"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Settings Page -->
+      <section class="options__page" id="page-ai" style="display:none;">
+        <h2 class="options__page-title">AI Settings</h2>
+        <p class="options__page-desc">Configure your AI provider for smart question answering, resume tailoring, and more.</p>
+        <div class="options__form glass-card">
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="ai-provider">AI Provider</label>
+              <select class="input" id="ai-provider">
+                <option value="openai">OpenAI (GPT-4o, GPT-4, etc.)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+              </select>
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="ai-model">Model</label>
+              <input class="input" type="text" id="ai-model" placeholder="gpt-4o-mini">
+            </div>
+          </div>
+          <div class="options__field">
+            <label class="options__label" for="ai-apiUrl">API URL</label>
+            <input class="input" type="url" id="ai-apiUrl" placeholder="https://api.openai.com/v1">
+          </div>
+          <div class="options__field">
+            <label class="options__label" for="ai-apiKey">API Key</label>
+            <input class="input" type="password" id="ai-apiKey" placeholder="sk-...">
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="ai-streaming"> Enable Streaming
+              </label>
+            </div>
+          </div>
+          <div class="options__form-actions">
+            <button class="btn btn-primary" id="save-ai">Save AI Settings</button>
+            <button class="btn btn-ghost" id="test-ai">🧪 Test Connection</button>
+            <span class="options__save-status" id="ai-status"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bot Settings Page -->
+      <section class="options__page" id="page-bot" style="display:none;">
+        <h2 class="options__page-title">Bot Settings</h2>
+        <p class="options__page-desc">Control bot behavior, speed, and automation preferences.</p>
+        <div class="options__form glass-card">
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="options__label" for="b-speedMode">Speed Mode</label>
+              <select class="input" id="b-speedMode">
+                <option value="normal">Normal (2-5s delay)</option>
+                <option value="turbo">Turbo (0.5-1.5s delay)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="b-clickGap">Click Gap (ms)</label>
+              <input class="input" type="number" id="b-clickGap" placeholder="2000" min="500">
+            </div>
+          </div>
+          <div class="options__form-row" id="custom-delay-row" style="display:none;">
+            <div class="options__field">
+              <label class="options__label" for="b-customMin">Custom Min Delay (ms)</label>
+              <input class="input" type="number" id="b-customMin" placeholder="1000" min="500">
+            </div>
+            <div class="options__field">
+              <label class="options__label" for="b-customMax">Custom Max Delay (ms)</label>
+              <input class="input" type="number" id="b-customMax" placeholder="3000" min="500">
+            </div>
+          </div>
+          <hr class="divider">
+          <h3 class="options__section-label">Behavior</h3>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-followCompanies"> Follow companies
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-closeTabs" checked> Close external tabs
+              </label>
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-runNonStop"> Run non-stop
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-smoothScroll" checked> Smooth scroll
+              </label>
+            </div>
+          </div>
+          <div class="options__form-actions">
+            <button class="btn btn-primary" id="save-bot">Save Bot Settings</button>
+            <span class="options__save-status" id="bot-status"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="options__page" id="page-billing" style="display:none;">
+        <h2 class="options__page-title">Billing & Plans</h2>
+        <p class="options__page-desc">Manage your subscription and view usage.</p>
+        <div class="glass-card" style="padding: var(--space-8); text-align: center; color: var(--color-text-tertiary);">
+          Billing management — Coming in Phase 6
+        </div>
+      </section>
+
+      <section class="options__page" id="page-account" style="display:none;">
+        <h2 class="options__page-title">Account</h2>
+        <p class="options__page-desc">Login, data export, and account management.</p>
+        <div class="glass-card" style="padding: var(--space-8); text-align: center; color: var(--color-text-tertiary);">
+          Account management — Coming in Phase 5
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="options.ts"></script>
+</body>
+</html>
