@@ -43,6 +43,15 @@ export interface Job {
 
 export type JobStatus = 'bookmarked' | 'applied' | 'external' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';
 
+export interface FailedJob {
+  jobId: string;
+  title: string;
+  company: string;
+  jobLink: string;
+  error: string;
+  timestamp: string;
+}
+
 // ---- Question Answering ----
 export interface QuestionAnswer {
   question: string;

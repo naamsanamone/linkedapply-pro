@@ -715,3 +715,66 @@
   font-size: 12px;
   padding: 4px 8px;
 }
+
+/* ---- Failed Applications Log ---- */
+.sidepanel__failed-log { padding: 0; overflow: hidden; }
+
+.failed-log__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition: background 0.2s;
+}
+
+.failed-log__header:hover {
+  background: var(--color-bg-secondary);
+}
+
+.failed-log__list {
+  max-height: 300px;
+  overflow-y: auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.failed-log__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+
+.failed-log__item:last-child { border-bottom: none; }
+
+.failed-log__job-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.failed-log__company {
+  color: var(--color-text-secondary);
+}
+
+.failed-log__error {
+  color: var(--color-error);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.failed-log__time {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+}
+
+.failed-log__empty {
+  text-align: center;
+  padding: 16px;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}

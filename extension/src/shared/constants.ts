@@ -70,6 +70,7 @@ export const STORAGE_KEYS = {
   AI_CONFIG: 'ai_config',
   SESSION_SUMMARY: 'session_summary',
   APPLIED_JOBS: 'applied_jobs',
+  FAILED_JOBS: 'failed_jobs',
   BOT_STATUS: 'bot_status',
   SUBSCRIPTION: 'subscription',
   AUTH_TOKEN: 'auth_token',

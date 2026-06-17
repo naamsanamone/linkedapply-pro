@@ -7,7 +7,7 @@
 import { createLogger } from '../shared/logger';
 import { getStorage, setStorage } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/constants';
-import type { Job, JobStatus, SessionSummary, BotStatus, ExtensionMessage } from '../shared/types';
+import type { Job, JobStatus, SessionSummary, BotStatus, FailedJob, ExtensionMessage } from '../shared/types';
 
 const log = createLogger('SidePanel');
 
@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initExport();
   initModalControls();
   initDailyGoal();
+  initFailedLogToggle();
   loadDashboardData();
 });
 
@@ -77,10 +78,11 @@ document.getElementById('settings-link')?.addEventListener('click', () => {
 //  DATA LOADING
 // ================================================
 async function loadDashboardData(): Promise<void> {
-  const [jobs, session, status] = await Promise.all([
+  const [jobs, session, status, failedJobs] = await Promise.all([
     getStorage<Job[]>(STORAGE_KEYS.APPLIED_JOBS),
     getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY),
     getStorage<BotStatus>(STORAGE_KEYS.BOT_STATUS),
+    getStorage<FailedJob[]>(STORAGE_KEYS.FAILED_JOBS),
   ]);
 
   allJobs = jobs || [];
@@ -96,6 +98,7 @@ async function loadDashboardData(): Promise<void> {
     renderSparkline(allJobs);
     renderAnalytics(allJobs, session);
   }
+  renderFailedJobs(failedJobs || []);
 }
 
 // ================================================
@@ -723,4 +726,41 @@ function updateDailyGoal(session: SessionSummary): void {
   if (input && !input.matches(':focus')) {
     input.value = String(goal);
   }
+}
+
+// ================================================
+//  FAILED JOBS LOG
+// ================================================
+function initFailedLogToggle(): void {
+  const toggle = document.getElementById('failed-log-toggle');
+  const list = document.getElementById('failed-log-list');
+
+  toggle?.addEventListener('click', () => {
+    if (list) {
+      list.style.display = list.style.display === 'none' ? '' : 'none';
+    }
+  });
+}
+
+function renderFailedJobs(failed: FailedJob[]): void {
+  const countEl = document.getElementById('failed-count');
+  const listEl = document.getElementById('failed-log-list');
+  if (!listEl) return;
+
+  if (countEl) countEl.textContent = String(failed.length);
+
+  if (failed.length === 0) {
+    listEl.innerHTML = '<div class="failed-log__empty">No failed applications yet 🎉</div>';
+    return;
+  }
+
+  const items = failed.slice(-50).reverse();
+  listEl.innerHTML = items.map((f) => `
+    <div class="failed-log__item">
+      <span class="failed-log__job-title">${esc(f.title)}</span>
+      <span class="failed-log__company">${esc(f.company)}</span>
+      <span class="failed-log__error">⚠ ${esc(f.error)}</span>
+      <span class="failed-log__time">${formatDate(f.timestamp)}</span>
+    </div>
+  `).join('');
 }

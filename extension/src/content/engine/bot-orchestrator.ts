@@ -13,6 +13,7 @@ import type {
   BotSettings,
   SessionSummary,
   Job,
+  FailedJob,
   ExtensionMessage,
 } from '../../shared/types';
 
@@ -223,7 +224,9 @@ async function processJob(
       log.info(`✅ Successfully applied to "${details.title}" at ${details.company}`);
     } else {
       log.error(`❌ Failed to apply: ${result.error}`);
+      await saveFailedJob(details, jobLink, result.error || 'Unknown error');
       await incrementSession('failed');
+      sendJobFailed(details.title, details.company, result.error || 'Unknown error');
     }
   } else {
     // External Apply
@@ -345,4 +348,31 @@ function sendJobApplied(job: Job): void {
     payload: { job },
     timestamp: Date.now(),
   } as ExtensionMessage).catch(() => {});
+}
+
+function sendJobFailed(title: string, company: string, error: string): void {
+  chrome.runtime.sendMessage({
+    type: 'JOB_FAILED',
+    payload: { title, company, error },
+    timestamp: Date.now(),
+  } as ExtensionMessage).catch(() => {});
+}
+
+async function saveFailedJob(
+  details: Awaited<ReturnType<typeof getJobMainDetails>>,
+  jobLink: string,
+  error: string
+): Promise<void> {
+  const failed = await getStorage<FailedJob[]>(STORAGE_KEYS.FAILED_JOBS) || [];
+  failed.push({
+    jobId: details.jobId,
+    title: details.title,
+    company: details.company,
+    jobLink,
+    error,
+    timestamp: new Date().toISOString(),
+  });
+  // Keep only last 100 failures
+  if (failed.length > 100) failed.splice(0, failed.length - 100);
+  await setStorage(STORAGE_KEYS.FAILED_JOBS, failed);
 }
