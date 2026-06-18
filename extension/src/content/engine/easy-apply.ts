@@ -272,17 +272,17 @@ export async function discardApplication(): Promise<void> {
 
 // ---- Post-Apply Modal Dismissal ----
 
+const DISMISS_TEXTS = ['not now', 'skip', 'no thanks', 'done', 'dismiss', 'got it', 'close'];
+
 async function dismissPostApplyModal(): Promise<void> {
   log.info('Dismissing post-apply confirmation modal...');
 
-  // Retry up to 5 times (total ~10 seconds) to give the modal time to render
   for (let attempt = 0; attempt < 5; attempt++) {
-    // Strategy 1: Click "Not now" button by scanning ALL buttons for exact text
-    // LinkedIn often puts "Not now" directly in <button> without a <span> wrapper
+    // Strategy 1: Scan ALL buttons for dismiss-like text
     const allButtons = Array.from(document.querySelectorAll('button'));
     for (const btn of allButtons) {
       const text = btn.textContent?.trim().toLowerCase() || '';
-      if (text === 'not now' || text === 'done' || text === 'dismiss') {
+      if (DISMISS_TEXTS.some(t => text === t || text.startsWith(t))) {
         btn.click();
         log.info(`Closed post-apply modal via "${btn.textContent?.trim()}" button`);
         await humanDelay(500, 1000);
@@ -290,18 +290,24 @@ async function dismissPostApplyModal(): Promise<void> {
       }
     }
 
-    // Strategy 2: Click "Not now" or "Done" via span (for older LinkedIn UI)
-    const spanMatch = findSpanByText('Not now', document) || findSpanByText('Done', document);
-    if (spanMatch) {
-      (spanMatch as HTMLElement).click();
-      log.info('Closed post-apply modal via span text match');
-      await humanDelay(500, 1000);
-      return;
+    // Strategy 2: Find dismiss text via span (older LinkedIn UI)
+    for (const dismissText of ['Not now', 'Skip', 'Done', 'No thanks', 'Got it']) {
+      const spanMatch = findSpanByText(dismissText, document);
+      if (spanMatch) {
+        (spanMatch as HTMLElement).click();
+        log.info(`Closed post-apply modal via span "${dismissText}"`);
+        await humanDelay(500, 1000);
+        return;
+      }
     }
 
-    // Strategy 3: Click the X (dismiss) button on the modal
+    // Strategy 3: Click X (dismiss) button on any artdeco modal
     const dismissBtn = document.querySelector<HTMLElement>(
-      'button.artdeco-modal__dismiss, button[data-test-modal-close-btn], .artdeco-modal button[aria-label="Dismiss"]'
+      'button.artdeco-modal__dismiss, ' +
+      'button[data-test-modal-close-btn], ' +
+      '.artdeco-modal button[aria-label="Dismiss"], ' +
+      '.artdeco-modal button[aria-label="Close"], ' +
+      '.artdeco-modal__dismiss'
     );
     if (dismissBtn) {
       dismissBtn.click();
@@ -310,22 +316,88 @@ async function dismissPostApplyModal(): Promise<void> {
       return;
     }
 
-    // Wait before retrying — modal may still be rendering
+    // Strategy 4: Detect "Update your profile" heading and click skip
+    const headings = Array.from(document.querySelectorAll('h2, h3, [class*="modal"] h2'));
+    for (const h of headings) {
+      const text = h.textContent?.trim().toLowerCase() || '';
+      if (text.includes('update') && text.includes('profile')) {
+        log.info('Detected "Update your profile" overlay — looking for dismiss button');
+        // Find the closest modal/section and click any dismiss-like button in it
+        const container = h.closest('.artdeco-modal, [role="dialog"], section, div[class*="modal"]') || document;
+        const containerButtons = Array.from(container.querySelectorAll('button'));
+        for (const btn of containerButtons) {
+          const btnText = btn.textContent?.trim().toLowerCase() || '';
+          if (DISMISS_TEXTS.some(t => btnText === t || btnText.startsWith(t))) {
+            btn.click();
+            log.info(`Dismissed profile update via "${btn.textContent?.trim()}"`);
+            await humanDelay(500, 1000);
+            return;
+          }
+        }
+        // If no text match, click the X button inside the container
+        const xBtn = container.querySelector<HTMLElement>('button[aria-label="Dismiss"], button[aria-label="Close"], button.artdeco-modal__dismiss');
+        if (xBtn) {
+          xBtn.click();
+          log.info('Dismissed profile update via X button');
+          await humanDelay(500, 1000);
+          return;
+        }
+      }
+    }
+
     log.debug(`Post-apply modal not found yet, retrying (${attempt + 1}/5)...`);
     await humanDelay(1500, 2000);
   }
 
-  // Strategy 5: Press Escape as absolute last resort
+  // Last resort: Escape key
   log.warn('Could not find any dismiss button after 5 attempts, pressing Escape');
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   await humanDelay(500, 1000);
 
-  // Check if an overlay is still blocking and force-remove it
-  const overlay = document.querySelector('.artdeco-modal-overlay');
-  if (overlay) {
+  // Force-remove lingering overlays
+  const overlays = document.querySelectorAll('.artdeco-modal-overlay, .artdeco-modal-overlay--is-top-layer');
+  overlays.forEach(overlay => {
     overlay.remove();
     log.warn('Force-removed lingering modal overlay from DOM');
+  });
+}
+
+/**
+ * Dismiss any lingering overlay/modal before processing the next job.
+ * Called by the orchestrator at the start of each processJob cycle.
+ */
+export async function dismissAnyOverlay(): Promise<void> {
+  // Check for any visible artdeco modals
+  const modal = document.querySelector<HTMLElement>('.artdeco-modal:not([style*="display: none"])');
+  if (!modal) return;
+
+  log.info('Found lingering overlay — attempting to dismiss...');
+
+  // Try dismiss buttons inside the modal
+  const allButtons = Array.from(modal.querySelectorAll('button'));
+  for (const btn of allButtons) {
+    const text = btn.textContent?.trim().toLowerCase() || '';
+    if (DISMISS_TEXTS.some(t => text === t || text.startsWith(t))) {
+      btn.click();
+      log.info(`Dismissed lingering overlay via "${btn.textContent?.trim()}"`);
+      await humanDelay(500, 1000);
+      return;
+    }
   }
+
+  // Try X button
+  const xBtn = modal.querySelector<HTMLElement>('button[aria-label="Dismiss"], button[aria-label="Close"], button.artdeco-modal__dismiss');
+  if (xBtn) {
+    xBtn.click();
+    log.info('Dismissed lingering overlay via X button');
+    await humanDelay(500, 1000);
+    return;
+  }
+
+  // Escape as fallback
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await humanDelay(500, 1000);
+  log.warn('Pressed Escape to dismiss lingering overlay');
 }
 
 // ---- Stuck Detection & Pause Helpers ----

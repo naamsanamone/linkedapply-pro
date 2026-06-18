@@ -19,7 +19,7 @@ import type {
 
 import { navigateToSearch, applyFilters, getPageInfo, goToNextPage, getJobListings, isDailyLimitReached } from './job-search';
 import { getJobMainDetails, checkCompanyBlacklist, getJobDescription, getHiringManagerInfo, getDateListed, isEasyApplyJob, getExternalApplyButton } from './job-details';
-import { executeEasyApply, handleExternalApply, discardApplication } from './easy-apply';
+import { executeEasyApply, handleExternalApply, discardApplication, dismissAnyOverlay } from './easy-apply';
 import { humanDelay, waitForElement } from './dom-utils';
 
 const log = createLogger('Orchestrator');
@@ -154,6 +154,9 @@ async function processJob(
   prefs: SearchPreferences,
   settings: BotSettings
 ): Promise<void> {
+  // Step 0: Dismiss any lingering overlay from previous job (e.g. "Update your profile")
+  await dismissAnyOverlay();
+
   // Step 1: Extract main details + skip checks
   const details = await getJobMainDetails(
     jobElement,
