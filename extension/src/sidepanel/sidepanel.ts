@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initExport();
   initModalControls();
   initDailyGoal();
+  initPauseControls();
   initFailedLogToggle();
   loadDashboardData();
 });
@@ -615,6 +616,9 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
   if (['JOB_APPLIED', 'JOB_FAILED', 'JOB_SKIPPED', 'STATUS_UPDATE'].includes(message.type)) {
     loadDashboardData();
   }
+  if (message.type === 'PAUSE_BEFORE_SUBMIT') {
+    showPauseBanner(message.payload?.message);
+  }
 });
 
 // ================================================
@@ -763,4 +767,40 @@ function renderFailedJobs(failed: FailedJob[]): void {
       <span class="failed-log__time">${formatDate(f.timestamp)}</span>
     </div>
   `).join('');
+}
+
+// ================================================
+//  PAUSE BEFORE SUBMIT
+// ================================================
+function initPauseControls(): void {
+  const confirmBtn = document.getElementById('pause-confirm');
+  const rejectBtn = document.getElementById('pause-reject');
+
+  confirmBtn?.addEventListener('click', async () => {
+    await chrome.storage.local.set({ submit_confirmed: true });
+    hidePauseBanner();
+    log.info('User confirmed submission');
+  });
+
+  rejectBtn?.addEventListener('click', async () => {
+    await chrome.storage.local.set({ submit_confirmed: false });
+    hidePauseBanner();
+    log.info('User rejected submission');
+  });
+}
+
+function showPauseBanner(message?: string): void {
+  const banner = document.getElementById('pause-banner');
+  if (banner) {
+    banner.style.display = '';
+    const textEl = document.getElementById('pause-banner-text');
+    if (textEl && message) {
+      textEl.textContent = message;
+    }
+  }
+}
+
+function hidePauseBanner(): void {
+  const banner = document.getElementById('pause-banner');
+  if (banner) banner.style.display = 'none';
 }

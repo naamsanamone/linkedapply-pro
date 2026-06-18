@@ -716,6 +716,44 @@
   padding: 4px 8px;
 }
 
+/* ---- Pause Before Submit Banner ---- */
+.sidepanel__pause-banner {
+  padding: 14px 16px;
+  border: 2px solid var(--color-warning);
+  background: var(--color-bg-secondary);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.pause-banner__content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pause-banner__icon { font-size: 20px; }
+
+.pause-banner__text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.pause-banner__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pause-banner__actions .btn {
+  flex: 1;
+  font-weight: 600;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.3); }
+  50% { box-shadow: 0 0 12px 4px rgba(234, 179, 8, 0.2); }
+}
+
 /* ---- Failed Applications Log ---- */
 .sidepanel__failed-log { padding: 0; overflow: hidden; }
 

@@ -66,6 +66,18 @@
         </div>
       </div>
 
+      <!-- Pause Before Submit Banner (hidden by default) -->
+      <div class="glass-card sidepanel__pause-banner" id="pause-banner" style="display:none">
+        <div class="pause-banner__content">
+          <span class="pause-banner__icon">⏸️</span>
+          <span class="pause-banner__text" id="pause-banner-text">Application ready to submit</span>
+        </div>
+        <div class="pause-banner__actions">
+          <button class="btn btn-sm btn-success" id="pause-confirm">✅ Submit</button>
+          <button class="btn btn-sm btn-error" id="pause-reject">❌ Discard</button>
+        </div>
+      </div>
+
       <!-- Bot Status Card -->
       <div class="glass-card sidepanel__bot-status animate-fade-in-up">
         <div class="sidepanel__status-row">
