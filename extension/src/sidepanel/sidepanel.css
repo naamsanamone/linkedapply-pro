@@ -716,6 +716,22 @@
   padding: 4px 8px;
 }
 
+.btn-reset {
+  color: var(--color-text-tertiary);
+  font-size: 11px !important;
+  margin-left: auto;
+}
+
+.btn-reset:hover {
+  color: var(--color-error);
+}
+
+.failed-log__header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ---- Pause Before Submit Banner ---- */
 .sidepanel__pause-banner {
   padding: 14px 16px;

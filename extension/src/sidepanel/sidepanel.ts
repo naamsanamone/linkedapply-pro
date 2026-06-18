@@ -693,6 +693,7 @@ function debounce(fn: Function, delay: number): (...args: any[]) => void {
 // ================================================
 function initDailyGoal(): void {
   const saveBtn = document.getElementById('daily-goal-save');
+  const resetBtn = document.getElementById('daily-goal-reset');
   const input = document.getElementById('daily-goal-input') as HTMLInputElement;
 
   saveBtn?.addEventListener('click', async () => {
@@ -705,6 +706,24 @@ function initDailyGoal(): void {
       await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
       updateDailyGoal(session);
       log.info(`Daily goal set to ${goal}`);
+    }
+  });
+
+  resetBtn?.addEventListener('click', async () => {
+    const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY);
+    if (session) {
+      session.easyApplied = 0;
+      session.externalCollected = 0;
+      session.failed = 0;
+      session.skipped = 0;
+      session.randomAnswers = 0;
+      session.estimatedTimeSaved = 0;
+      session.startTime = '';
+      session.endTime = '';
+      session.totalRuns = 0;
+      await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
+      log.info('Session counters reset');
+      loadDashboardData();
     }
   });
 }
@@ -738,11 +757,21 @@ function updateDailyGoal(session: SessionSummary): void {
 function initFailedLogToggle(): void {
   const toggle = document.getElementById('failed-log-toggle');
   const list = document.getElementById('failed-log-list');
+  const clearBtn = document.getElementById('failed-log-clear');
 
-  toggle?.addEventListener('click', () => {
+  toggle?.addEventListener('click', (e) => {
+    // Don't toggle if clicking the Clear button
+    if ((e.target as HTMLElement).id === 'failed-log-clear') return;
     if (list) {
       list.style.display = list.style.display === 'none' ? '' : 'none';
     }
+  });
+
+  clearBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await setStorage(STORAGE_KEYS.FAILED_JOBS, []);
+    renderFailedJobs([]);
+    log.info('Failed jobs log cleared');
   });
 }
 

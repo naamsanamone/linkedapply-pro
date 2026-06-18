@@ -63,6 +63,7 @@
         <div class="daily-goal__edit">
           <input type="number" class="input input-sm" id="daily-goal-input" min="0" max="500" placeholder="25" value="25">
           <button class="btn btn-sm btn-ghost" id="daily-goal-save">Set</button>
+          <button class="btn btn-sm btn-ghost btn-reset" id="daily-goal-reset" title="Reset session counters for a new day">🔄 Reset</button>
         </div>
       </div>
 
@@ -111,7 +112,10 @@
       <div class="glass-card sidepanel__failed-log animate-fade-in-up">
         <div class="failed-log__header" id="failed-log-toggle">
           <span>❌ Failed Applications</span>
-          <span class="badge badge-error" id="failed-count">0</span>
+          <div class="failed-log__header-right">
+            <button class="btn btn-xs btn-ghost" id="failed-log-clear" title="Clear all failed entries">Clear</button>
+            <span class="badge badge-error" id="failed-count">0</span>
+          </div>
         </div>
         <div class="failed-log__list" id="failed-log-list" style="display:none"></div>
       </div>
