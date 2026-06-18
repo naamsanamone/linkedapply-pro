@@ -328,8 +328,20 @@
             <textarea class="input" id="s-badWords" rows="2" placeholder="unpaid, intern, fellowship"></textarea>
           </div>
           <div class="options__field">
+            <label class="options__label" for="s-goodWords">Good Words in Job Description (comma-separated) — jobs with these words are always applied to</label>
+            <textarea class="input" id="s-goodWords" rows="2" placeholder="remote, senior, lead"></textarea>
+          </div>
+          <div class="options__field">
             <label class="options__label" for="s-companies">Blacklisted Companies (comma-separated)</label>
             <textarea class="input" id="s-companies" rows="2" placeholder="Revature, WITCH companies"></textarea>
+          </div>
+          <div class="options__field">
+            <label class="options__label" for="s-aboutBadWords">Bad Words in About Company (comma-separated)</label>
+            <textarea class="input" id="s-aboutBadWords" rows="2" placeholder="staffing, outsourcing, recruitment"></textarea>
+          </div>
+          <div class="options__field">
+            <label class="options__label" for="s-aboutGoodWords">Good Words in About Company (comma-separated) — overrides bad words</label>
+            <textarea class="input" id="s-aboutGoodWords" rows="2" placeholder="product, startup, FAANG"></textarea>
           </div>
           <div class="options__form-actions">
             <button class="btn btn-primary" id="save-search">Save Search Preferences</button>

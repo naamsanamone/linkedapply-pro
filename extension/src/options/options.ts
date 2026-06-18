@@ -143,7 +143,10 @@ async function loadSearch(): Promise<void> {
   setChecked('s-securityClearance', prefs.securityClearance);
   setChecked('s-didMasters', prefs.didMasters);
   setVal('s-badWords', (prefs.badWords || []).join(', '));
+  setVal('s-goodWords', (prefs.goodWords || []).join(', '));
   setVal('s-companies', (prefs.companies || []).join(', '));
+  setVal('s-aboutBadWords', (prefs.aboutCompanyBadWords || []).join(', '));
+  setVal('s-aboutGoodWords', (prefs.aboutCompanyGoodWords || []).join(', '));
 
   log.info('Search preferences loaded');
 }
@@ -162,9 +165,9 @@ async function saveSearch(): Promise<void> {
     companies: csvToArray(getVal('s-companies')),
     industry: [],
     badWords: csvToArray(getVal('s-badWords')),
-    goodWords: [],
-    aboutCompanyBadWords: [],
-    aboutCompanyGoodWords: [],
+    goodWords: csvToArray(getVal('s-goodWords')),
+    aboutCompanyBadWords: csvToArray(getVal('s-aboutBadWords')),
+    aboutCompanyGoodWords: csvToArray(getVal('s-aboutGoodWords')),
     securityClearance: getChecked('s-securityClearance'),
     didMasters: getChecked('s-didMasters'),
     currentExperience: parseInt(getVal('s-currentExperience')) || 0,
