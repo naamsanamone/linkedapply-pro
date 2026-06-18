@@ -108,6 +108,7 @@ async function handleStartBot(tabId?: number): Promise<void> {
   session.startTime = new Date().toISOString();
   session.totalRuns += 1;
   await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
+  updateBadge(session.easyApplied, 'running');
 
   // Send to the currently active tab
   const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -153,6 +154,7 @@ async function handleStopBot(tabId?: number): Promise<void> {
   });
 
   broadcastUpdate();
+  updateBadge(0, 'stopped');
 }
 
 // ---- Event Handlers ----
@@ -187,6 +189,7 @@ async function handleJobApplied(payload: any): Promise<void> {
   await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
 
   log.info(`Job applied! Total: ${session.easyApplied}`);
+  updateBadge(session.easyApplied, 'running');
 
   // Notify every 5 applications
   if (session.easyApplied % 5 === 0) {
@@ -354,3 +357,28 @@ function showNotification(id: string, title: string, message: string): void {
     // notifications may be disabled
   }
 }
+
+// ---- Badge Helper ----
+function updateBadge(count: number, state: 'running' | 'stopped' | 'error'): void {
+  try {
+    if (state === 'stopped') {
+      chrome.action.setBadgeText({ text: '' });
+    } else {
+      chrome.action.setBadgeText({ text: count > 0 ? String(count) : '' });
+      chrome.action.setBadgeBackgroundColor({
+        color: state === 'error' ? '#ef4444' : '#22c55e',
+      });
+    }
+  } catch {
+    // badge API may not be available
+  }
+}
+
+// Initialize badge from stored session on startup
+(async () => {
+  const status = await getStorage<string>(STORAGE_KEYS.BOT_STATUS);
+  if (status === 'searching' || status === 'applying') {
+    const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY);
+    updateBadge(session?.easyApplied || 0, 'running');
+  }
+})();
