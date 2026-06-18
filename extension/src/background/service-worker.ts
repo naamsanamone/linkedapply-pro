@@ -159,6 +159,23 @@ async function handleStopBot(tabId?: number): Promise<void> {
 async function handleStatusUpdate(payload: any): Promise<void> {
   if (payload?.status) {
     await setStorage(STORAGE_KEYS.BOT_STATUS, payload.status);
+
+    // Notify on stop or error
+    if (payload.status === 'stopped') {
+      const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY);
+      const applied = session?.easyApplied || 0;
+      showNotification(
+        'stopped',
+        '⏹️ Bot Stopped',
+        applied > 0 ? `Session complete — ${applied} applications sent.` : 'Automation has been stopped.'
+      );
+    } else if (payload.status === 'error') {
+      showNotification(
+        'error',
+        '⚠️ Bot Error',
+        'The bot encountered an error and stopped. Check the dashboard for details.'
+      );
+    }
   }
   broadcastUpdate();
 }
@@ -170,6 +187,25 @@ async function handleJobApplied(payload: any): Promise<void> {
   await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
 
   log.info(`Job applied! Total: ${session.easyApplied}`);
+
+  // Notify every 5 applications
+  if (session.easyApplied % 5 === 0) {
+    showNotification(
+      'progress',
+      `🚀 ${session.easyApplied} Applications Sent!`,
+      `You've applied to ${session.easyApplied} jobs this session. Keep going!`
+    );
+  }
+
+  // Notify when daily goal is reached
+  if (session.dailyGoal > 0 && session.easyApplied === session.dailyGoal) {
+    showNotification(
+      'goal',
+      '🎯 Daily Goal Reached!',
+      `You hit your target of ${session.dailyGoal} applications. Great work!`
+    );
+  }
+
   broadcastUpdate();
 }
 
@@ -303,3 +339,18 @@ chrome.alarms.create('cloud_sync', { periodInMinutes: 30 });
 chrome.alarms.create('reminder_cleanup', { periodInMinutes: 1440 }); // Once daily
 
 log.info('Service worker initialized');
+
+// ---- Notification Helper ----
+function showNotification(id: string, title: string, message: string): void {
+  try {
+    chrome.notifications.create(`linkedapply_${id}_${Date.now()}`, {
+      type: 'basic',
+      iconUrl: 'icons/icon-128.png',
+      title,
+      message,
+      priority: 1,
+    });
+  } catch {
+    // notifications may be disabled
+  }
+}
