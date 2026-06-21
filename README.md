@@ -11,6 +11,22 @@
 
 ---
 
+## 🚀 Current Project Status
+
+**Completed Features:**
+- ✅ **Fix "Update Profile" Overlay**: Robust checks to dismiss LinkedIn's profile update prompts.
+- ✅ **Browser Notifications**: Background alerts for goal reached, bot stop, and error states.
+- ✅ **Auto-retry Failed Jobs**: Retry failed applications directly from the side panel log.
+- ✅ **Job Blacklist/Whitelist**: Filter by good/bad words, blocked companies, etc.
+- ✅ **Session Management**: Live badge counters, daily goals, session resets.
+
+**Up Next:**
+- ⏳ **Smarter Question Answering**: Enhancing AI logic to stop hallucinating (e.g., phone country code fixes, CTC parsing).
+- ⏳ **Application Statistics Report**: Weekly summary exports of job search data.
+- ⏳ **Razorpay Integration**: Migrating from Stripe to Razorpay for payments.
+
+---
+
 ## 🎯 What It Does
 
 LinkedApply Pro automates your LinkedIn job search by:
