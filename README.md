@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3FCF8E?logo=supabase)](https://supabase.com/)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe)](https://stripe.com/)
+[![Razorpay](https://img.shields.io/badge/Razorpay-Payments-02042B?logo=razorpay)](https://razorpay.com/)
 
 ---
 
@@ -23,7 +23,7 @@
 **Up Next:**
 - ⏳ **Smarter Question Answering**: Enhancing AI logic to stop hallucinating (e.g., phone country code fixes, CTC parsing).
 - ⏳ **Application Statistics Report**: Weekly summary exports of job search data.
-- ⏳ **Razorpay Integration**: Migrating from Stripe to Razorpay for payments.
+- ⏳ **Razorpay Integration**: Implement Razorpay for payments.
 
 ---
 
@@ -71,9 +71,9 @@ linkedapply-pro/
     │   │   ├── ai-proxy/
     │   │   ├── checkout/
     │   │   └── notifications/
-    │   ├── stripe/               # Checkout sessions
-    │   └── webhook/stripe/       # Stripe webhook handler
-    ├── libs/                     # Stripe, Mailgun, helpers
+    │   ├── razorpay/             # Checkout sessions
+    │   └── webhook/razorpay/     # Razorpay webhook handler
+    ├── libs/                     # Razorpay, Mailgun, helpers
     └── supabase/schema.sql       # Database schema
 ```
 
@@ -147,8 +147,8 @@ npm run dev                   # http://localhost:3000
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
 OPENAI_API_KEY=sk-...         # For AI proxy
 GEMINI_API_KEY=...            # For AI proxy
 MAILGUN_API_KEY=...           # For email notifications
@@ -187,7 +187,7 @@ npm run test -- --coverage  # With coverage report
 | UI | Vanilla CSS (glassmorphism design system) |
 | Backend | Next.js 14, TypeScript |
 | Database | Supabase (PostgreSQL + Auth) |
-| Payments | Stripe (6 tiers) |
+| Payments | Razorpay (6 tiers) |
 | AI | OpenAI / Gemini / DeepSeek (native fetch) |
 | Email | Mailgun |
 | Testing | Jest + ts-jest |
