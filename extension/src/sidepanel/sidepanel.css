@@ -811,6 +811,12 @@
   color: var(--color-text-primary);
 }
 
+.failed-log__item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .failed-log__company {
   color: var(--color-text-secondary);
 }

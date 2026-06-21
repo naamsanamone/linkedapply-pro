@@ -21,6 +21,7 @@ export interface Subscription {
 // ---- Job Models ----
 export interface Job {
   id: string;
+  jobId: string;
   title: string;
   company: string;
   location: string;
@@ -184,7 +185,9 @@ export type MessageType =
   | 'OPEN_SIDEPANEL'
   | 'PAUSE_BEFORE_SUBMIT'
   | 'CHECK_SUBSCRIPTION'
-  | 'SUBSCRIPTION_RESPONSE';
+  | 'SUBSCRIPTION_RESPONSE'
+  | 'RETRY_JOB'
+  | 'RETRY_APPLY';
 
 export interface ExtensionMessage {
   type: MessageType;

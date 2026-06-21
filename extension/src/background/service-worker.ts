@@ -86,6 +86,11 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ success: true });
         break;
 
+      case 'RETRY_JOB':
+        handleRetryJob(message.payload?.jobLink);
+        sendResponse({ success: true });
+        break;
+
       case 'GET_STATUS':
         getStatus().then(sendResponse);
         return true; // async
@@ -232,6 +237,42 @@ async function getStatus(): Promise<{ status: BotStatus; session: SessionSummary
   const status = await getStorage<BotStatus>(STORAGE_KEYS.BOT_STATUS) || 'idle';
   const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY) || DEFAULT_SESSION;
   return { status, session };
+}
+
+async function handleRetryJob(jobLink?: string): Promise<void> {
+  if (!jobLink) {
+    log.warn('No job link provided for retry');
+    return;
+  }
+
+  log.info(`Retrying job: ${jobLink}`);
+
+  // Open job page in a new tab
+  const tab = await chrome.tabs.create({ url: jobLink, active: true });
+
+  // Wait for the tab to finish loading, then send RETRY_APPLY
+  const listener = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
+    if (tabId === tab.id && changeInfo.status === 'complete') {
+      chrome.tabs.onUpdated.removeListener(listener);
+      // Give content script time to initialize
+      setTimeout(() => {
+        if (tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'RETRY_APPLY',
+            timestamp: Date.now(),
+          } as ExtensionMessage).catch((err) => {
+            log.error('Failed to send RETRY_APPLY', err);
+          });
+        }
+      }, 2000);
+    }
+  };
+  chrome.tabs.onUpdated.addListener(listener);
+
+  // Safety timeout: remove listener after 30s
+  setTimeout(() => {
+    chrome.tabs.onUpdated.removeListener(listener);
+  }, 30000);
 }
 
 function broadcastUpdate(): void {

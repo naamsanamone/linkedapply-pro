@@ -790,12 +790,31 @@ function renderFailedJobs(failed: FailedJob[]): void {
   const items = failed.slice(-50).reverse();
   listEl.innerHTML = items.map((f) => `
     <div class="failed-log__item">
-      <span class="failed-log__job-title">${esc(f.title)}</span>
+      <div class="failed-log__item-header">
+        <span class="failed-log__job-title">${esc(f.title)}</span>
+        <button class="btn btn-xs btn-outline btn-retry" data-url="${esc(f.jobLink || '')}">Retry</button>
+      </div>
       <span class="failed-log__company">${esc(f.company)}</span>
       <span class="failed-log__error">⚠ ${esc(f.error)}</span>
       <span class="failed-log__time">${formatDate(f.timestamp)}</span>
     </div>
   `).join('');
+
+  // Attach event listeners for Retry buttons
+  listEl.querySelectorAll('.btn-retry').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = (e.currentTarget as HTMLElement).getAttribute('data-url');
+      if (url) {
+        log.info('Requesting retry for:', url);
+        chrome.runtime.sendMessage({
+          type: 'RETRY_JOB',
+          payload: { jobLink: url },
+          timestamp: Date.now()
+        } as ExtensionMessage);
+      }
+    });
+  });
 }
 
 // ================================================

@@ -12,6 +12,7 @@ import {
   pauseAutomation,
   resumeAutomation,
   getAutomationState,
+  retryJob,
 } from './engine/bot-orchestrator';
 
 const log = createLogger('Content');
@@ -65,6 +66,12 @@ chrome.runtime.onMessage.addListener(
           : state.isRunning ? 'applying'
           : 'idle';
         sendResponse({ status });
+        break;
+
+      case 'RETRY_APPLY':
+        log.info('Retrying job application on this page...');
+        retryJob();
+        sendResponse({ success: true });
         break;
 
       default:

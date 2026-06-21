@@ -278,6 +278,80 @@ export function getAutomationState(): { isRunning: boolean; isPaused: boolean } 
   return { isRunning, isPaused };
 }
 
+/**
+ * Retry applying to the job on the current page.
+ * Called when user clicks Retry on a failed job and is navigated to the job page.
+ */
+export async function retryJob(): Promise<void> {
+  log.info('🔄 Retrying job application on current page...');
+  sendStatusUpdate('applying');
+
+  try {
+    const settings = await getStorage<BotSettings>(STORAGE_KEYS.BOT_SETTINGS) || DEFAULT_BOT_SETTINGS;
+
+    // Wait for page to fully load
+    await humanDelay(2000, 3000);
+
+    // Dismiss any overlays
+    await dismissAnyOverlay();
+
+    // Find Easy Apply button
+    const easyApplyBtn = isEasyApplyJob();
+    if (!easyApplyBtn) {
+      log.warn('No Easy Apply button found on this page');
+      sendStatusUpdate('idle');
+      return;
+    }
+
+    const result = await executeEasyApply(
+      easyApplyBtn,
+      '',
+      null,
+      settings
+    );
+
+    if (result.success) {
+      log.info('✅ Retry successful!');
+      await incrementSession('easyApplied');
+
+      // Build a minimal job record
+      const jobLink = window.location.href;
+      const title = document.querySelector<HTMLElement>('.t-24.t-bold.inline, h1.t-24')?.textContent?.trim() || 'Unknown';
+      const company = document.querySelector<HTMLElement>('.jobs-unified-top-card__company-name a, .t-14.t-normal a')?.textContent?.trim() || 'Unknown';
+      const job: Job = {
+        id: `retry_${Date.now()}`,
+        jobId: jobLink.match(/\/view\/(\d+)/)?.[1] || '',
+        title,
+        company,
+        location: '',
+        workStyle: '',
+        description: '',
+        experienceRequired: 'Unknown',
+        jobLink,
+        externalLink: 'Easy Applied',
+        status: 'applied',
+        dateApplied: new Date().toISOString(),
+        dateListed: '',
+        matchScore: null,
+        hrName: '',
+        hrLink: '',
+        resumeUsed: result.resume || '',
+        questionsAnswered: result.questionsAnswered || [],
+        skillsExtracted: null,
+        notes: '',
+      };
+      await saveAppliedJob(job);
+      sendJobApplied(job);
+    } else {
+      log.error(`❌ Retry failed: ${result.error}`);
+    }
+  } catch (error) {
+    log.error('Retry failed', error);
+  } finally {
+    sendStatusUpdate('idle');
+  }
+}
+
 // ---- Helpers ----
 
 function buildJobRecord(
@@ -292,6 +366,7 @@ function buildJobRecord(
 ): Job {
   return {
     id: details.jobId,
+    jobId: details.jobId,
     title: details.title,
     company: details.company,
     location: details.workLocation,
