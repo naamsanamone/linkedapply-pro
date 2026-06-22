@@ -99,6 +99,11 @@ async function loadQuestions(): Promise<void> {
   setChecked('q-overwrite', defaults.overwritePreviousAnswers);
   setChecked('q-pauseBeforeSubmit', defaults.pauseBeforeSubmit);
 
+  // Load skills map
+  const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
+  const skillsText = Object.entries(skillsMap).map(([k, v]) => `${k}=${v}`).join('\n');
+  setVal('q-skillsMap', skillsText);
+
   log.info('Question defaults loaded');
 }
 
@@ -124,6 +129,18 @@ async function saveQuestions(): Promise<void> {
   };
 
   await setStorage(STORAGE_KEYS.QUESTION_DEFAULTS, defaults);
+
+  // Save skills map
+  const skillsText = getVal('q-skillsMap');
+  const skillsMap: Record<string, number> = {};
+  for (const line of skillsText.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || !trimmed.includes('=')) continue;
+    const [skill, years] = trimmed.split('=');
+    skillsMap[skill.trim().toLowerCase()] = parseInt(years.trim()) || 0;
+  }
+  await setStorage(STORAGE_KEYS.USER_SKILLS_MAP, skillsMap);
+
   showStatus('questions-status', '✓ Question defaults saved!');
   log.info('Question defaults saved');
 }

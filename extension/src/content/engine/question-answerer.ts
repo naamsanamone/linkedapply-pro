@@ -11,6 +11,7 @@ import type { UserProfile, QuestionDefaults, QuestionAnswer, QuestionType } from
 import { scrollToView, humanDelay } from './dom-utils';
 import { createAIProviderFromStorage, type AIProviderClient } from '../../services/ai/ai-provider';
 import { aiAnswerQuestion } from '../../services/ai/ai-question-answerer';
+import { findAnswer, saveAnswer } from '../../shared/answer-memory';
 
 const log = createLogger('QuestionAnswerer');
 
@@ -134,7 +135,16 @@ async function handleSelectQuestion(
 
   // Phone country code — special dropdown
   if (labelLower.includes('country code') || (labelLower.includes('phone') && labelLower.includes('code'))) {
-    answer = ctx.profile.phoneCountryCode || 'India (+91)';
+    const cc = ctx.profile.phoneCountryCode || 'India (+91)';
+    // Try fuzzy matching: search for country name or dial code in options
+    for (const opt of selectEl.options) {
+      const optText = opt.text.toLowerCase();
+      if (optText.includes(cc.toLowerCase()) || cc.toLowerCase().includes(optText)) {
+        answer = opt.text;
+        break;
+      }
+    }
+    if (!answer) answer = cc;
   }
   // Gender
   else if (labelLower.includes('gender') || labelLower.includes('sex')) {
@@ -206,9 +216,11 @@ async function handleSelectQuestion(
   else if (hasAny(labelLower, ['experience', 'years'])) {
     answer = ctx.defaults.yearsOfExperience;
   }
-  // Default: "Yes" for generic yes/no dropdowns
+  // Default: only "Yes" if dropdown actually has Yes/No options
   else {
-    answer = 'Yes';
+    const optTexts = Array.from(selectEl.options).map(o => o.text.toLowerCase());
+    const hasYesNo = optTexts.some(t => t === 'yes') && optTexts.some(t => t === 'no');
+    answer = hasYesNo ? 'Yes' : '';
   }
 
   // Try selecting the answer
@@ -409,8 +421,25 @@ async function handleTextQuestion(
     .filter(Boolean).join(' ');
 
   if (!prevValue || ctx.defaults.overwritePreviousAnswers) {
-    // Experience / years
-    if (hasAny(labelLower, ['experience', 'years'])) {
+    // Tech-specific experience: "How many years with [TECH]?"
+    if (hasAny(labelLower, ['experience', 'years']) && hasAny(labelLower, ['with', 'in', 'using', 'on'])) {
+      const techName = extractTechFromLabel(label);
+      if (techName) {
+        const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
+        const found = skillsMap[techName.toLowerCase()];
+        if (found !== undefined) {
+          answer = String(found);
+          log.info(`Skills map: "${techName}" → ${found} years`);
+        } else {
+          answer = '0';
+          log.info(`Skills map: "${techName}" not found → defaulting to 0`);
+        }
+      } else {
+        answer = ctx.defaults.yearsOfExperience;
+      }
+    }
+    // Generic experience / total years
+    else if (hasAny(labelLower, ['experience', 'years'])) {
       answer = ctx.defaults.yearsOfExperience;
     }
     // Phone
@@ -446,18 +475,42 @@ async function handleTextQuestion(
       else answer = String(period);
     }
     // Salary / compensation / CTC
-    else if (hasAny(labelLower, ['salary', 'compensation', 'ctc', 'pay', 'stipend'])) {
+    else if (hasAny(labelLower, ['salary', 'compensation', 'ctc', 'pay', 'stipend', 'package'])) {
       const base = hasAny(labelLower, ['current', 'present', 'received', 'previous'])
         ? ctx.defaults.currentCtc
         : ctx.defaults.desiredSalary;
-      // Handle unit variants
+      // Smart formatting based on field constraints
+      const maxLen = input.maxLength > 0 ? input.maxLength : 999;
       if (hasAny(labelLower, ['monthly', 'month', 'per month'])) {
         answer = String(Math.round(base / 12));
       } else if (hasAny(labelLower, ['lakh', 'lac', 'lpa'])) {
         answer = String(Math.round(base / 100000));
+      } else if (maxLen <= 20 && base >= 100000) {
+        // Short field — use compact "X LPA" format
+        answer = `${(base / 100000).toFixed(base % 100000 === 0 ? 0 : 1)} LPA`;
       } else {
         answer = String(base);
       }
+    }
+    // Career breaks / gaps
+    else if (hasAny(labelLower, ['career break', 'career gap', 'gap in employment', 'reason for'])) {
+      answer = 'N/A';
+    }
+    // Current company / employer
+    else if (hasAny(labelLower, ['current company', 'current employer', 'current organization'])) {
+      answer = ctx.defaults.recentEmployer;
+    }
+    // Top skills / list skills
+    else if (hasAny(labelLower, ['top skills', 'list your skills', 'key skills', 'top three', 'top 3'])) {
+      const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
+      const sorted = Object.entries(skillsMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      if (sorted.length > 0) {
+        answer = sorted.map(([s, y]) => `${s} - ${y} years`).join(', ');
+      }
+    }
+    // Referral
+    else if (hasAny(labelLower, ['referral', 'referred by', 'how did you hear', 'come across'])) {
+      answer = 'LinkedIn';
     }
     // LinkedIn profile
     else if (labelLower.includes('linkedin')) {
@@ -496,28 +549,53 @@ async function handleTextQuestion(
       answer = ctx.defaults.requireVisa;
     }
 
-    // Fallback: try AI, then use years of experience
+    // Fallback chain: Answer Memory → AI → smart default
     if (!answer) {
-      const aiClient = await getAIClient();
-      if (aiClient) {
-        const userInfo = `Name: ${fullName}, City: ${ctx.profile.currentCity}, Experience: ${ctx.defaults.yearsOfExperience} years`;
-        const aiAnswer = await aiAnswerQuestion(aiClient, label, {
-          questionType: 'text',
-          jobDescription: ctx.jobDescription || undefined,
-          userInfo,
-        });
-        if (aiAnswer) {
-          answer = aiAnswer;
-          answeredBy = 'ai';
-          log.info(`AI answered text: "${label}" → "${answer}"`);
+      // Tier 2: Check answer memory
+      const memorized = await findAnswer(label);
+      if (memorized) {
+        answer = memorized.answer;
+        answeredBy = memorized.answeredBy === 'user' ? 'pattern' : memorized.answeredBy;
+        log.info(`Answer memory: "${label}" → "${answer}" (used ${memorized.usedCount}x)`);
+      }
+
+      // Tier 3: AI fallback
+      if (!answer) {
+        const aiClient = await getAIClient();
+        if (aiClient) {
+          const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
+          const skillsStr = Object.entries(skillsMap).map(([s, y]) => `${s}: ${y}y`).join(', ');
+          const userInfo = `Name: ${fullName}, City: ${ctx.profile.currentCity}, Experience: ${ctx.defaults.yearsOfExperience} years, Current CTC: ${ctx.defaults.currentCtc}, Expected: ${ctx.defaults.desiredSalary}, Notice: ${ctx.defaults.noticePeriod} days, Employer: ${ctx.defaults.recentEmployer}, Skills: ${skillsStr}`;
+          const aiAnswer = await aiAnswerQuestion(aiClient, label, {
+            questionType: 'text',
+            jobDescription: ctx.jobDescription || undefined,
+            userInfo,
+          });
+          if (aiAnswer) {
+            answer = aiAnswer;
+            answeredBy = 'ai';
+            log.info(`AI answered text: "${label}" → "${answer}"`);
+            // Save to answer memory for future reuse
+            await saveAnswer(label, answer, 'ai');
+          }
         }
       }
-      // Final fallback if AI not available or failed
+
+      // Final fallback: context-aware default instead of yearsOfExperience
       if (!answer) {
-        answer = ctx.defaults.yearsOfExperience;
-        answeredBy = 'random';
-        log.warn(`No pattern match for text: "${label}" → defaulting to "${answer}"`);
+        if (input.type === 'number') {
+          answer = '0';
+        } else if (input.type === 'tel') {
+          answer = ctx.profile.phoneNumber;
+        } else {
+          answer = '';
+        }
+        if (answer) answeredBy = 'random';
+        log.warn(`No match for text: "${label}" → smart default: "${answer || '(empty)'}"`);
       }
+    } else {
+      // Save pattern-matched answers to memory too
+      await saveAnswer(label, answer, 'pattern');
     }
 
     // Write the answer
@@ -738,4 +816,35 @@ function matchClosestOption(select: HTMLSelectElement, value: number, _type: str
     log.debug(`Matched closest range option: "${bestOption}" for value ${value}`);
   }
   return bestOption || String(value);
+}
+
+/**
+ * Extract a technology/skill name from a question label.
+ * Examples:
+ *   "How many years of work experience do you have with Core Java?" → "core java"
+ *   "How many years of experience do you have in Spring Boot?" → "spring boot"
+ *   "Years of experience with kafka-tools?" → "kafka-tools"
+ */
+function extractTechFromLabel(label: string): string | null {
+  const lower = label.toLowerCase();
+
+  // Pattern: "... with/in/using/on [TECH]?"
+  const patterns = [
+    /(?:with|in|using|on)\s+(.+?)(?:\?|$)/i,
+    /experience\s+(?:do you have\s+)?(?:with|in|using|on)\s+(.+?)(?:\?|$)/i,
+  ];
+
+  for (const regex of patterns) {
+    const match = lower.match(regex);
+    if (match && match[1]) {
+      let tech = match[1].trim().replace(/[?*.:!]+$/g, '').trim();
+      // Remove trailing "do you have" if regex captured too much
+      tech = tech.replace(/\s*do you have\s*$/i, '').trim();
+      if (tech.length > 0 && tech.length < 50) {
+        return tech;
+      }
+    }
+  }
+
+  return null;
 }

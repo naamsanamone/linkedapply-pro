@@ -79,6 +79,8 @@ export const STORAGE_KEYS = {
   FOLLOW_UP_REMINDERS: 'follow_up_reminders',
   REMINDER_SETTINGS: 'reminder_settings',
   LAST_SYNC_TIMESTAMP: 'last_sync_timestamp',
+  USER_SKILLS_MAP: 'user_skills_map',
+  ANSWER_MEMORY: 'answer_memory',
 } as const;
 
 // ---- Default Values ----

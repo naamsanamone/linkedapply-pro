@@ -53,6 +53,15 @@ export interface FailedJob {
   timestamp: string;
 }
 
+export interface AnswerMemoryEntry {
+  question: string;
+  questionKey: string;
+  answer: string;
+  answeredBy: 'pattern' | 'ai' | 'user';
+  usedCount: number;
+  lastUsed: string;
+}
+
 // ---- Question Answering ----
 export interface QuestionAnswer {
   question: string;
