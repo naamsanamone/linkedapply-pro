@@ -106,8 +106,13 @@ async function loadDashboardData(): Promise<void> {
 //  OVERVIEW TAB
 // ================================================
 function updateOverviewStats(session: SessionSummary): void {
+  // Total applied from session
   setText('sp-total-applied', String(session.easyApplied + session.externalCollected));
-  setText('sp-today-applied', String(session.easyApplied));
+
+  // Today count: derive from actual job records (more accurate than session counter)
+  const today = new Date().toISOString().slice(0, 10); // "2026-06-23"
+  const todayJobs = allJobs.filter((j) => j.dateApplied && j.dateApplied.startsWith(today));
+  setText('sp-today-applied', String(todayJobs.length));
 
   // Time saved display
   const mins = Math.round(session.estimatedTimeSaved / 60);

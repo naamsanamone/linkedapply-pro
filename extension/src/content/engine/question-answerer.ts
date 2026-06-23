@@ -567,8 +567,12 @@ async function handleTextQuestion(
     else if (hasAny(labelLower, ['state', 'province'])) {
       answer = ctx.profile.state;
     }
-    // Zip / postal code
-    else if (hasAny(labelLower, ['zip', 'postal', 'code'])) {
+    // Zip / postal / pin code
+    else if (hasAny(labelLower, ['zip', 'postal', 'pincode', 'pin code'])) {
+      answer = ctx.profile.zipcode;
+    }
+    else if (labelLower.includes('code') && !labelLower.includes('country') && !labelLower.includes('phone') && !labelLower.includes('dial')) {
+      // Generic 'code' fallback — likely zip/postal if not country/phone code
       answer = ctx.profile.zipcode;
     }
     // Country
