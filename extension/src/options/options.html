@@ -181,6 +181,16 @@
         <h2 class="options__page-title">Default Question Answers</h2>
         <p class="options__page-desc">Pre-filled answers for common application form questions.</p>
         <div class="options__form glass-card">
+          <h3 class="options__section-label">📄 Resume</h3>
+          <div class="options__form-row">
+            <div class="options__field" style="flex: 2;">
+              <label class="options__label" for="q-resumeUpload">Upload Resume (PDF)</label>
+              <input type="file" class="input" id="q-resumeUpload" accept=".pdf" style="padding: 8px;">
+              <small id="q-resumeStatus" style="color: var(--color-text-tertiary); margin-top: 4px; display: block;">No resume uploaded. Upload to enable JD match scoring.</small>
+            </div>
+          </div>
+          <hr class="divider">
+          <h3 class="options__section-label">Default Answers</h3>
           <div class="options__form-row">
             <div class="options__field">
               <label class="options__label" for="q-yearsExperience">Years of Experience</label>
@@ -432,6 +442,40 @@
             <div class="options__field">
               <label class="options__label" for="b-customMax">Custom Max Delay (ms)</label>
               <input class="input" type="number" id="b-customMax" placeholder="3000" min="500">
+            </div>
+          </div>
+          <hr class="divider">
+          <h3 class="options__section-label">🎯 JD Match Filter</h3>
+          <p style="color: var(--color-text-tertiary); font-size: 0.85rem; margin-bottom: 12px;">Only auto-apply to jobs matching these levels. Requires AI configured + resume uploaded.</p>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-matchEnabled"> Enable JD Match Scoring
+              </label>
+            </div>
+          </div>
+          <div class="options__form-row" id="match-filter-options">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-matchTop" checked> 🟢 Top Match (80%+)
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-matchHigh" checked> 🔵 High Match (60-79%)
+              </label>
+            </div>
+          </div>
+          <div class="options__form-row">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-matchMedium"> 🟡 Medium Match (40-59%)
+              </label>
+            </div>
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="b-matchLow"> 🔴 Low Match (0-39%)
+              </label>
             </div>
           </div>
           <hr class="divider">

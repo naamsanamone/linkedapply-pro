@@ -81,6 +81,8 @@ export const STORAGE_KEYS = {
   LAST_SYNC_TIMESTAMP: 'last_sync_timestamp',
   USER_SKILLS_MAP: 'user_skills_map',
   ANSWER_MEMORY: 'answer_memory',
+  RESUME_TEXT: 'resume_text',
+  MATCH_FILTER: 'match_filter',
 } as const;
 
 // ---- Default Values ----

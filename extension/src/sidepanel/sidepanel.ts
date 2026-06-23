@@ -215,7 +215,7 @@ function renderRecentJobs(jobs: Job[]): void {
       <div class="job-card__company">${esc(job.company)}</div>
       <div class="job-card__meta">
         <span class="badge ${statusBadge(job.status)}">${job.status}</span>
-        ${job.matchScore !== null ? `<span class="badge badge-primary">${job.matchScore}%</span>` : ''}
+        ${job.matchScore !== null ? `<span class="badge ${matchBadge(job.matchScore)}">${job.matchScore}%</span>` : ''}
         <span class="job-card__date">${formatDate(job.dateApplied)}</span>
       </div>
     </div>
@@ -269,7 +269,7 @@ function renderKanban(jobs: Job[], searchTerm = '', filterStatus = 'all'): void 
         <div class="job-card__title">${esc(job.title)}</div>
         <div class="job-card__company">${esc(job.company)}</div>
         <div class="job-card__meta">
-          ${job.matchScore !== null ? `<span class="badge badge-primary">${job.matchScore}%</span>` : ''}
+          ${job.matchScore !== null ? `<span class="badge ${matchBadge(job.matchScore)}">${job.matchScore}%</span>` : ''}
           <span class="job-card__date">${formatDate(job.dateApplied)}</span>
         </div>
       </div>
@@ -647,6 +647,13 @@ function statusBadge(status: string): string {
     skipped: 'badge-error', failed: 'badge-error',
   };
   return map[status] || 'badge-primary';
+}
+
+function matchBadge(score: number): string {
+  if (score >= 80) return 'badge-success';   // 🟢 Top
+  if (score >= 60) return 'badge-primary';   // 🔵 High
+  if (score >= 40) return 'badge-warning';   // 🟡 Medium
+  return 'badge-error';                       // 🔴 Low
 }
 
 function formatDate(dateStr: string): string {

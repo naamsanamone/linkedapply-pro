@@ -19,6 +19,7 @@ import type {
   AIConfig,
   BotSettings,
 } from '../shared/types';
+import { extractTextFromPDF } from '../services/resume-parser';
 
 const log = createLogger('Options');
 
@@ -300,6 +301,16 @@ async function loadBot(): Promise<void> {
   // Show/hide custom delay row
   updateCustomDelayVisibility(settings.speedMode);
 
+  // Load match filter
+  const matchFilter = await getStorage<{ enabled: boolean; top: boolean; high: boolean; medium: boolean; low: boolean }>(STORAGE_KEYS.MATCH_FILTER);
+  if (matchFilter) {
+    (document.getElementById('b-matchEnabled') as HTMLInputElement).checked = matchFilter.enabled;
+    (document.getElementById('b-matchTop') as HTMLInputElement).checked = matchFilter.top;
+    (document.getElementById('b-matchHigh') as HTMLInputElement).checked = matchFilter.high;
+    (document.getElementById('b-matchMedium') as HTMLInputElement).checked = matchFilter.medium;
+    (document.getElementById('b-matchLow') as HTMLInputElement).checked = matchFilter.low;
+  }
+
   log.info('Bot settings loaded');
 }
 
@@ -316,6 +327,16 @@ async function saveBot(): Promise<void> {
     alternateSortby: false,
     cycleDatePosted: false,
   };
+
+  // Save match filter
+  const matchFilterData = {
+    enabled: (document.getElementById('b-matchEnabled') as HTMLInputElement)?.checked || false,
+    top: (document.getElementById('b-matchTop') as HTMLInputElement)?.checked || false,
+    high: (document.getElementById('b-matchHigh') as HTMLInputElement)?.checked || false,
+    medium: (document.getElementById('b-matchMedium') as HTMLInputElement)?.checked || false,
+    low: (document.getElementById('b-matchLow') as HTMLInputElement)?.checked || false,
+  };
+  await setStorage(STORAGE_KEYS.MATCH_FILTER, matchFilterData);
 
   await setStorage(STORAGE_KEYS.BOT_SETTINGS, settings);
   showStatus('bot-status', '✓ Bot settings saved!');
@@ -387,6 +408,45 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Questions
   document.getElementById('save-questions')?.addEventListener('click', saveQuestions);
   await loadQuestions();
+
+  // Resume upload handler
+  const resumeUploadEl = document.getElementById('q-resumeUpload') as HTMLInputElement;
+  resumeUploadEl?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('q-resumeStatus');
+    if (statusEl) statusEl.textContent = 'Parsing resume...';
+
+    try {
+      const text = await extractTextFromPDF(file);
+      await setStorage(STORAGE_KEYS.RESUME_TEXT, text);
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      if (statusEl) {
+        statusEl.textContent = `✓ Resume parsed: ${wordCount} words. JD matching enabled.`;
+        statusEl.style.color = 'var(--color-success, #22c55e)';
+      }
+      log.info(`Resume uploaded and parsed: ${wordCount} words`);
+    } catch (error) {
+      if (statusEl) {
+        statusEl.textContent = `✗ Failed to parse PDF. Ensure it has selectable text.`;
+        statusEl.style.color = 'var(--color-error, #ef4444)';
+      }
+      log.error('Resume upload failed', error);
+    }
+  });
+
+  // Check if resume already uploaded on load
+  getStorage<string>(STORAGE_KEYS.RESUME_TEXT).then((text) => {
+    if (text) {
+      const statusEl = document.getElementById('q-resumeStatus');
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      if (statusEl) {
+        statusEl.textContent = `✓ Resume loaded: ${wordCount} words. Upload new to replace.`;
+        statusEl.style.color = 'var(--color-success, #22c55e)';
+      }
+    }
+  });
 
   // Search
   document.getElementById('save-search')?.addEventListener('click', saveSearch);

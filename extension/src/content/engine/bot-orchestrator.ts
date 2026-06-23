@@ -7,6 +7,9 @@
 import { createLogger } from '../../shared/logger';
 import { getStorage, setStorage, updateStorage } from '../../shared/storage';
 import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS } from '../../shared/constants';
+import { createAIProviderFromStorage } from '../../services/ai/ai-provider';
+import { aiMatchJob } from '../../services/ai/job-matcher';
+import type { UserProfile } from '../../shared/types';
 import type {
   BotStatus,
   SearchPreferences,
@@ -204,7 +207,41 @@ async function processJob(
     return;
   }
 
-  // Step 6: Check if Easy Apply or External
+  // Step 6: JD Match Scoring (if enabled)
+  let computedMatchScore: number | null = null;
+  const matchFilter = await getStorage<{ enabled: boolean; top: boolean; high: boolean; medium: boolean; low: boolean }>(STORAGE_KEYS.MATCH_FILTER);
+  
+  if (matchFilter?.enabled && jd.description !== 'Unknown') {
+    try {
+      const aiClient = await createAIProviderFromStorage();
+      const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
+      
+      if (aiClient && profile) {
+        const matchResult = await aiMatchJob(aiClient, profile, jd.description);
+        
+        if (matchResult) {
+          computedMatchScore = matchResult.score;
+          const category: 'top' | 'high' | 'medium' | 'low' = 
+            matchResult.score >= 80 ? 'top' :
+            matchResult.score >= 60 ? 'high' :
+            matchResult.score >= 40 ? 'medium' : 'low';
+          
+          log.info(`📊 Match: ${matchResult.score}% (${category}) for "${details.title}" — ${matchResult.recommendation}`);
+          
+          // Check if this category is allowed
+          if (!matchFilter[category]) {
+            log.info(`⏭ Skipping "${details.title}" — ${category} match (${matchResult.score}%) below filter threshold`);
+            await incrementSession('skipped');
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      log.warn('JD match scoring failed, continuing without score', error);
+    }
+  }
+
+  // Step 7: Check if Easy Apply or External
   const easyApplyBtn = isEasyApplyJob();
 
   if (easyApplyBtn) {
@@ -219,6 +256,7 @@ async function processJob(
     if (result.success) {
       // Save applied job
       const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, 'Easy Applied', result.questionsAnswered);
+      job.matchScore = computedMatchScore;
       job.status = 'applied';
       await saveAppliedJob(job);
       appliedJobIds.add(details.jobId);
@@ -239,6 +277,7 @@ async function processJob(
       if (extResult.success) {
         const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, extResult.applicationLink, []);
         job.status = 'external';
+        job.matchScore = computedMatchScore;
         await saveAppliedJob(job);
         appliedJobIds.add(details.jobId);
         await incrementSession('externalCollected');
