@@ -253,18 +253,52 @@ export async function handleExternalApply(
 }
 
 /**
- * Discard the current job application (press Escape → click Discard)
+ * Discard the current job application (press Escape → click Discard).
+ * Made robust: searches both buttons and spans, retries if dialog persists.
  */
 export async function discardApplication(): Promise<void> {
   try {
+    // Press Escape to trigger the "Save this application?" dialog
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    await humanDelay(500, 1000);
-    const discardBtn = findSpanByText('Discard');
-    if (discardBtn) {
-      await clickElement(discardBtn as HTMLElement);
-      await humanDelay(300, 600);
+    await humanDelay(200, 400);
+
+    // Retry loop — dialog may take a moment to appear
+    for (let attempt = 0; attempt < 3; attempt++) {
+      // Strategy 1: Find Discard button by text in <button> elements
+      const allButtons = Array.from(document.querySelectorAll('button'));
+      for (const btn of allButtons) {
+        const text = btn.textContent?.trim().toLowerCase() || '';
+        if (text === 'discard' || text.includes('discard')) {
+          btn.click();
+          await humanDelay(150, 300);
+          log.info('Application discarded (via button)');
+          return;
+        }
+      }
+
+      // Strategy 2: Find Discard via span (LinkedIn sometimes wraps text in spans)
+      const discardSpan = findSpanByText('Discard');
+      if (discardSpan) {
+        await clickElement(discardSpan as HTMLElement);
+        await humanDelay(150, 300);
+        log.info('Application discarded (via span)');
+        return;
+      }
+
+      // Strategy 3: Try clicking the X close button on the modal
+      const closeBtn = document.querySelector('button[aria-label="Dismiss"], button[data-test-modal-close-btn]') as HTMLElement;
+      if (closeBtn) {
+        closeBtn.click();
+        await humanDelay(150, 300);
+        log.info('Application discarded (via close button)');
+        return;
+      }
+
+      // Wait briefly before retrying
+      await humanDelay(200, 400);
     }
-    log.info('Application discarded');
+
+    log.warn('Discard button not found after retries');
   } catch (error) {
     log.warn('Failed to discard application', error);
   }

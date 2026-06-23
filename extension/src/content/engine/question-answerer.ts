@@ -146,6 +146,27 @@ async function handleSelectQuestion(
     }
     if (!answer) answer = cc;
   }
+  // Email address — dropdown with user's email(s)
+  else if (labelLower.includes('email')) {
+    const email = ctx.profile.email;
+    if (email) {
+      for (const opt of selectEl.options) {
+        if (opt.text.toLowerCase().includes(email.toLowerCase())) {
+          answer = opt.text;
+          break;
+        }
+      }
+    }
+    // If user's email not found, pick first non-placeholder option
+    if (!answer) {
+      for (const opt of selectEl.options) {
+        if (opt.text !== 'Select an option' && opt.text.includes('@')) {
+          answer = opt.text;
+          break;
+        }
+      }
+    }
+  }
   // Gender
   else if (labelLower.includes('gender') || labelLower.includes('sex')) {
     answer = ctx.profile.gender || 'Decline';
@@ -220,7 +241,17 @@ async function handleSelectQuestion(
   else {
     const optTexts = Array.from(selectEl.options).map(o => o.text.toLowerCase());
     const hasYesNo = optTexts.some(t => t === 'yes') && optTexts.some(t => t === 'no');
-    answer = hasYesNo ? 'Yes' : '';
+    if (hasYesNo) {
+      answer = 'Yes';
+    } else {
+      // Pick first non-placeholder option as a safe fallback
+      for (const opt of selectEl.options) {
+        if (opt.text !== 'Select an option' && opt.text.trim() !== '') {
+          answer = opt.text;
+          break;
+        }
+      }
+    }
   }
 
   // Try selecting the answer
