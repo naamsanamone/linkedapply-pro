@@ -1,5 +1,5 @@
 /* ============================================================
-   LinkedApply Pro — [PREMIUM] Job Matcher
+   LinkedApply Pro — Job Matcher
    AI-powered job-to-candidate fit scoring (0-100)
    ============================================================ */
 
@@ -20,20 +20,22 @@ export interface JobMatchResult {
 
 /**
  * Score how well a user matches a job description (0-100).
- * Premium feature — requires Monthly plan or above.
+ * Uses resume text + skills map for accurate matching.
  */
 export async function aiMatchJob(
   client: AIProviderClient,
   profile: UserProfile,
-  jobDescription: string
+  jobDescription: string,
+  resumeText?: string,
+  skillsMap?: Record<string, number>
 ): Promise<JobMatchResult | null> {
   try {
     log.info('Calculating job match score...');
 
-    const userProfileStr = formatProfileForAI(profile);
+    const userProfileStr = formatProfileForAI(profile, resumeText, skillsMap);
     const prompt = fillPrompt(JOB_MATCH_PROMPT, {
       userProfile: userProfileStr,
-      jobDescription,
+      jobDescription: jobDescription.substring(0, 3000), // Limit JD length for token efficiency
     });
 
     const result = await client.completeJSON<JobMatchResult>(prompt, {
@@ -51,10 +53,28 @@ export async function aiMatchJob(
   }
 }
 
-function formatProfileForAI(profile: UserProfile): string {
-  return [
+function formatProfileForAI(
+  profile: UserProfile,
+  resumeText?: string,
+  skillsMap?: Record<string, number>
+): string {
+  const parts: string[] = [
     `Name: ${profile.firstName} ${profile.lastName}`,
     `Location: ${profile.currentCity}, ${profile.state}, ${profile.country}`,
-    `Email: ${profile.email}`,
-  ].filter(Boolean).join('\n');
+  ];
+
+  // Add skills with years of experience
+  if (skillsMap && Object.keys(skillsMap).length > 0) {
+    const skillsList = Object.entries(skillsMap)
+      .map(([skill, years]) => `${skill} (${years} years)`)
+      .join(', ');
+    parts.push(`Skills: ${skillsList}`);
+  }
+
+  // Add resume text (truncated to fit token limits)
+  if (resumeText) {
+    parts.push(`\nRESUME:\n${resumeText.substring(0, 2500)}`);
+  }
+
+  return parts.filter(Boolean).join('\n');
 }

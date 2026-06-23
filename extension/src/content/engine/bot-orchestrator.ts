@@ -215,9 +215,11 @@ async function processJob(
     try {
       const aiClient = await createAIProviderFromStorage();
       const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
+      const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
+      const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
       
       if (aiClient && profile) {
-        const matchResult = await aiMatchJob(aiClient, profile, jd.description);
+        const matchResult = await aiMatchJob(aiClient, profile, jd.description, resumeText || undefined, skillsMap || undefined);
         
         if (matchResult) {
           computedMatchScore = matchResult.score;
