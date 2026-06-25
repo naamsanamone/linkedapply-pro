@@ -1,5 +1,5 @@
 /* ============================================================
-   LinkedApply Pro — [PREMIUM] Resume Tailor
+   LinkedApply Pro — Resume Tailor
    AI-powered resume optimization per job description
    ============================================================ */
 
@@ -27,25 +27,27 @@ export interface TailoredExperience {
 
 /**
  * Tailor user's resume to match a specific job description.
- * Premium feature — requires Weekly plan or above.
+ * Uses resume text + skills for accurate tailoring.
  */
 export async function aiTailorResume(
   client: AIProviderClient,
   profile: UserProfile,
   jobDescription: string,
-  skills: ExtractedSkills | null
+  skills: ExtractedSkills | null,
+  resumeText?: string,
+  skillsMap?: Record<string, number>
 ): Promise<TailoredResume | null> {
   try {
     log.info('Tailoring resume for job...');
 
-    const userProfileStr = formatProfileForResume(profile);
+    const userProfileStr = formatProfileForResume(profile, resumeText, skillsMap);
     const requiredSkillsStr = skills
       ? [...skills.requiredSkills, ...skills.techStack].join(', ')
       : 'Not extracted';
 
     const prompt = fillPrompt(RESUME_TAILOR_PROMPT, {
       userProfile: userProfileStr,
-      jobDescription,
+      jobDescription: jobDescription.substring(0, 3000),
       requiredSkills: requiredSkillsStr,
     });
 
@@ -65,11 +67,29 @@ export async function aiTailorResume(
   }
 }
 
-function formatProfileForResume(profile: UserProfile): string {
-  return [
+function formatProfileForResume(
+  profile: UserProfile,
+  resumeText?: string,
+  skillsMap?: Record<string, number>
+): string {
+  const parts: string[] = [
     `Name: ${profile.firstName} ${profile.middleName || ''} ${profile.lastName}`.trim(),
     `Email: ${profile.email}`,
     `Phone: ${profile.phoneNumber}`,
     `Location: ${profile.currentCity}, ${profile.state}, ${profile.country}`,
-  ].filter(Boolean).join('\n');
+  ];
+
+  if (skillsMap && Object.keys(skillsMap).length > 0) {
+    const skillsList = Object.entries(skillsMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([skill, years]) => `${skill} (${years} years)`)
+      .join(', ');
+    parts.push(`Skills: ${skillsList}`);
+  }
+
+  if (resumeText) {
+    parts.push(`\nRESUME CONTENT:\n${resumeText.substring(0, 2500)}`);
+  }
+
+  return parts.filter(Boolean).join('\n');
 }

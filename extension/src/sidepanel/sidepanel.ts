@@ -514,6 +514,64 @@ function openJobModal(jobId: string): void {
     `).join('');
   }
 
+  // Tailored Resume
+  const tailoredSection = document.getElementById('modal-tailored-section');
+  if (tailoredSection) {
+    const tr = job.tailoredResume;
+    if (tr) {
+      tailoredSection.style.display = 'block';
+      setText('modal-ats-score', String(tr.atsScore));
+
+      // Summary
+      const summaryEl = document.getElementById('modal-tailored-summary');
+      if (summaryEl) summaryEl.textContent = tr.summary;
+
+      // Skills badges
+      const skillsEl = document.getElementById('modal-tailored-skills');
+      if (skillsEl) {
+        skillsEl.innerHTML = tr.skills.map(s =>
+          `<span class="badge badge-primary" style="font-size:0.75rem;">${esc(s)}</span>`
+        ).join('');
+      }
+
+      // Experience
+      const expEl = document.getElementById('modal-tailored-experience');
+      if (expEl) {
+        expEl.innerHTML = tr.experience.map(exp => `
+          <div style="margin-bottom: 10px;">
+            <div style="font-weight: 600; color: var(--color-text-primary);">${esc(exp.title)} — ${esc(exp.company)}</div>
+            <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-bottom: 4px;">${esc(exp.duration)}</div>
+            <ul style="margin: 0; padding-left: 16px;">
+              ${exp.bullets.map(b => `<li style="margin-bottom: 2px; line-height: 1.4;">${esc(b)}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('');
+      }
+
+      // Keywords added
+      const kwEl = document.getElementById('modal-tailored-keywords');
+      if (kwEl) {
+        kwEl.innerHTML = tr.keywordsAdded.map(kw =>
+          `<span class="badge badge-success" style="font-size:0.75rem;">+ ${esc(kw)}</span>`
+        ).join('');
+      }
+
+      // Copy button
+      const copyBtn = document.getElementById('modal-copy-tailored');
+      if (copyBtn) {
+        copyBtn.onclick = () => {
+          const text = formatTailoredResumeText(tr);
+          navigator.clipboard.writeText(text).then(() => {
+            copyBtn.textContent = '✓ Copied!';
+            setTimeout(() => { copyBtn.textContent = '📋 Copy Tailored Resume'; }, 2000);
+          });
+        };
+      }
+    } else {
+      tailoredSection.style.display = 'none';
+    }
+  }
+
   // Job link
   const jobLink = document.getElementById('modal-job-link') as HTMLAnchorElement;
   if (jobLink) jobLink.href = job.jobLink || '#';
@@ -612,6 +670,28 @@ function downloadFile(content: string, filename: string, mime: string): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function formatTailoredResumeText(tr: { summary: string; skills: string[]; experience: { title: string; company: string; duration: string; bullets: string[] }[]; keywordsAdded: string[] }): string {
+  const lines: string[] = [
+    'PROFESSIONAL SUMMARY',
+    tr.summary,
+    '',
+    'KEY SKILLS',
+    tr.skills.join(', '),
+    '',
+    'EXPERIENCE',
+  ];
+  for (const exp of tr.experience) {
+    lines.push(`${exp.title} — ${exp.company} (${exp.duration})`);
+    for (const bullet of exp.bullets) {
+      lines.push(`  • ${bullet}`);
+    }
+    lines.push('');
+  }
+  lines.push('KEYWORDS OPTIMIZED');
+  lines.push(tr.keywordsAdded.join(', '));
+  return lines.join('\n');
 }
 
 // ================================================

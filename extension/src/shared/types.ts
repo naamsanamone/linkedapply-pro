@@ -39,7 +39,16 @@ export interface Job {
   hrLink: string;
   questionsAnswered: QuestionAnswer[];
   skillsExtracted: ExtractedSkills | null;
+  tailoredResume?: TailoredResumeData | null;
   notes: string;
+}
+
+export interface TailoredResumeData {
+  summary: string;
+  skills: string[];
+  experience: { title: string; company: string; duration: string; bullets: string[] }[];
+  atsScore: number;
+  keywordsAdded: string[];
 }
 
 export type JobStatus = 'bookmarked' | 'applied' | 'external' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';

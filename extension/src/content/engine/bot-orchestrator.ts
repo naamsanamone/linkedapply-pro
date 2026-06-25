@@ -9,6 +9,7 @@ import { getStorage, setStorage, updateStorage } from '../../shared/storage';
 import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS } from '../../shared/constants';
 import { createAIProviderFromStorage } from '../../services/ai/ai-provider';
 import { aiMatchJob } from '../../services/ai/job-matcher';
+import { aiTailorResume, type TailoredResume } from '../../services/ai/resume-tailor';
 import type {
   UserProfile,
   BotStatus,
@@ -255,6 +256,29 @@ async function processJob(
     log.debug('JD Match filter not configured');
   }
 
+  // Step 6b: Resume Tailoring (if match scoring ran successfully)
+  let tailoredResult: TailoredResume | null = null;
+  if (computedMatchScore !== null && jd.description !== 'Unknown') {
+    try {
+      const aiClient = await createAIProviderFromStorage();
+      const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
+      const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
+      const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
+
+      if (aiClient && profile) {
+        tailoredResult = await aiTailorResume(
+          aiClient, profile, jd.description, null,
+          resumeText || undefined, skillsMap || undefined
+        );
+        if (tailoredResult) {
+          log.info(`📝 Resume tailored — ATS: ${tailoredResult.atsScore}%, keywords: ${tailoredResult.keywordsAdded.join(', ')}`);
+        }
+      }
+    } catch (error) {
+      log.warn('Resume tailoring failed, continuing without', error);
+    }
+  }
+
   // Step 7: Check if Easy Apply or External
   const easyApplyBtn = isEasyApplyJob();
 
@@ -271,6 +295,7 @@ async function processJob(
       // Save applied job
       const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, 'Easy Applied', result.questionsAnswered);
       job.matchScore = computedMatchScore;
+      if (tailoredResult) job.tailoredResume = tailoredResult;
       job.status = 'applied';
       await saveAppliedJob(job);
       appliedJobIds.add(details.jobId);
@@ -292,6 +317,7 @@ async function processJob(
         const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, extResult.applicationLink, []);
         job.status = 'external';
         job.matchScore = computedMatchScore;
+        if (tailoredResult) job.tailoredResume = tailoredResult;
         await saveAppliedJob(job);
         appliedJobIds.add(details.jobId);
         await incrementSession('externalCollected');

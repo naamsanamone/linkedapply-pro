@@ -286,6 +286,30 @@
             <summary>Questions Answered (<span id="modal-q-count">0</span>)</summary>
             <div class="modal__questions-list" id="modal-questions"></div>
           </details>
+
+          <!-- Tailored Resume -->
+          <details class="modal__details" id="modal-tailored-section" style="display:none;">
+            <summary>📝 Tailored Resume (ATS: <span id="modal-ats-score">—</span>%)</summary>
+            <div id="modal-tailored-content" style="padding: 8px 0;">
+              <div style="margin-bottom: 12px;">
+                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">PROFESSIONAL SUMMARY</strong>
+                <p id="modal-tailored-summary" style="margin: 4px 0; font-size: 0.85rem; line-height: 1.5; color: var(--color-text-primary);"></p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">KEY SKILLS</strong>
+                <div id="modal-tailored-skills" style="margin: 4px 0; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">EXPERIENCE</strong>
+                <div id="modal-tailored-experience" style="margin: 4px 0; font-size: 0.85rem;"></div>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">KEYWORDS ADDED</strong>
+                <div id="modal-tailored-keywords" style="margin: 4px 0; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+              </div>
+              <button class="btn btn-sm btn-primary" id="modal-copy-tailored" style="margin-top: 8px;">📋 Copy Tailored Resume</button>
+            </div>
+          </details>
         </div>
         <div class="modal__footer">
           <a class="btn btn-primary btn-sm" id="modal-job-link" href="#" target="_blank">View on LinkedIn</a>
