@@ -205,7 +205,9 @@ export type MessageType =
   | 'CHECK_SUBSCRIPTION'
   | 'SUBSCRIPTION_RESPONSE'
   | 'RETRY_JOB'
-  | 'RETRY_APPLY';
+  | 'RETRY_APPLY'
+  | 'AI_MATCH_JOB'
+  | 'AI_TAILOR_RESUME';
 
 export interface ExtensionMessage {
   type: MessageType;

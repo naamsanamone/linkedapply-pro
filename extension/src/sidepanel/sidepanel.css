@@ -217,20 +217,30 @@
 
 /* ---- Job Cards ---- */
 .job-card {
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .job-card:hover {
   border-color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.18);
 }
+
+.job-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.job-card__info { flex: 1; min-width: 0; }
 
 .job-card__title {
   font-size: 13px;
@@ -245,7 +255,12 @@
 .job-card__company {
   font-size: 12px;
   color: var(--color-text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.job-card__location {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
 }
 
 .job-card__meta {
@@ -258,6 +273,67 @@
 .job-card__date {
   font-size: 10px;
   color: var(--color-text-tertiary);
+  margin-left: auto;
+}
+
+/* ---- Match Ring (Circular Score) ---- */
+.match-ring {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.match-ring--sm { width: 32px; height: 32px; }
+
+.match-ring__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.match-ring__bg {
+  fill: none;
+  stroke: var(--color-bg-tertiary, #2d2d3a);
+  stroke-width: 3;
+}
+
+.match-ring__fill {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s ease;
+}
+
+.match-ring--top .match-ring__fill { stroke: #22c55e; }
+.match-ring--high .match-ring__fill { stroke: #6366f1; }
+.match-ring--medium .match-ring__fill { stroke: #f59e0b; }
+.match-ring--low .match-ring__fill { stroke: #ef4444; }
+
+.match-ring__value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.match-ring--sm .match-ring__value { font-size: 8px; }
+
+/* ---- Badge Variants ---- */
+.badge-accent {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
+.badge-ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-tertiary);
+  font-size: 10px;
 }
 
 /* ---- Filter Bar ---- */

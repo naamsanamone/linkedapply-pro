@@ -211,11 +211,26 @@ function renderRecentJobs(jobs: Job[]): void {
 
   container.innerHTML = jobs.map((job) => `
     <div class="job-card" data-job-id="${job.id}">
-      <div class="job-card__title">${esc(job.title)}</div>
-      <div class="job-card__company">${esc(job.company)}</div>
+      <div class="job-card__header">
+        <div class="job-card__info">
+          <div class="job-card__title">${esc(job.title)}</div>
+          <div class="job-card__company">${esc(job.company)}</div>
+          ${job.location ? `<div class="job-card__location">📍 ${esc(job.location)}</div>` : ''}
+        </div>
+        ${job.matchScore !== null ? `
+          <div class="match-ring match-ring--${matchCategory(job.matchScore)}" title="JD Match: ${job.matchScore}%">
+            <svg viewBox="0 0 36 36" class="match-ring__svg">
+              <circle cx="18" cy="18" r="15.91" class="match-ring__bg"></circle>
+              <circle cx="18" cy="18" r="15.91" class="match-ring__fill" style="stroke-dasharray: ${job.matchScore}, 100;"></circle>
+            </svg>
+            <span class="match-ring__value">${job.matchScore}%</span>
+          </div>
+        ` : ''}
+      </div>
       <div class="job-card__meta">
-        <span class="badge ${statusBadge(job.status)}">${job.status}</span>
-        ${job.matchScore !== null ? `<span class="badge ${matchBadge(job.matchScore)}">${job.matchScore}%</span>` : ''}
+        <span class="badge ${statusBadge(job.status)}">${statusLabel(job.status)}</span>
+        ${job.workStyle ? `<span class="badge badge-ghost">${workStyleIcon(job.workStyle)} ${job.workStyle}</span>` : ''}
+        ${job.tailoredResume ? '<span class="badge badge-accent" title="AI-tailored resume available">📝 Tailored</span>' : ''}
         <span class="job-card__date">${formatDate(job.dateApplied)}</span>
       </div>
     </div>
@@ -266,10 +281,23 @@ function renderKanban(jobs: Job[], searchTerm = '', filterStatus = 'all'): void 
 
     column.innerHTML = statusJobs.slice(0, 30).map((job) => `
       <div class="job-card" data-job-id="${job.id}">
-        <div class="job-card__title">${esc(job.title)}</div>
-        <div class="job-card__company">${esc(job.company)}</div>
+        <div class="job-card__header">
+          <div class="job-card__info">
+            <div class="job-card__title">${esc(job.title)}</div>
+            <div class="job-card__company">${esc(job.company)}</div>
+          </div>
+          ${job.matchScore !== null ? `
+            <div class="match-ring match-ring--sm match-ring--${matchCategory(job.matchScore)}" title="${job.matchScore}%">
+              <svg viewBox="0 0 36 36" class="match-ring__svg">
+                <circle cx="18" cy="18" r="15.91" class="match-ring__bg"></circle>
+                <circle cx="18" cy="18" r="15.91" class="match-ring__fill" style="stroke-dasharray: ${job.matchScore}, 100;"></circle>
+              </svg>
+              <span class="match-ring__value">${job.matchScore}%</span>
+            </div>
+          ` : ''}
+        </div>
         <div class="job-card__meta">
-          ${job.matchScore !== null ? `<span class="badge ${matchBadge(job.matchScore)}">${job.matchScore}%</span>` : ''}
+          ${job.tailoredResume ? '<span class="badge badge-accent">📝</span>' : ''}
           <span class="job-card__date">${formatDate(job.dateApplied)}</span>
         </div>
       </div>
@@ -734,6 +762,27 @@ function matchBadge(score: number): string {
   if (score >= 60) return 'badge-primary';   // 🔵 High
   if (score >= 40) return 'badge-warning';   // 🟡 Medium
   return 'badge-error';                       // 🔴 Low
+}
+
+function matchCategory(score: number): string {
+  if (score >= 80) return 'top';
+  if (score >= 60) return 'high';
+  if (score >= 40) return 'medium';
+  return 'low';
+}
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    applied: '✅ Applied', external: '🔗 External', interview: '🎯 Interview',
+    offer: '🎉 Offer', rejected: '❌ Rejected', bookmarked: '📌 Saved',
+    skipped: '⏭ Skipped', failed: '❌ Failed',
+  };
+  return labels[status] || status;
+}
+
+function workStyleIcon(style: string): string {
+  const icons: Record<string, string> = { Remote: '🏠', Hybrid: '🏢', 'On-site': '🏛️' };
+  return icons[style] || '';
 }
 
 function formatDate(dateStr: string): string {

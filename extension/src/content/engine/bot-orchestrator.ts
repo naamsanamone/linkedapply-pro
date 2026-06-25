@@ -7,11 +7,8 @@
 import { createLogger } from '../../shared/logger';
 import { getStorage, setStorage, updateStorage } from '../../shared/storage';
 import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS } from '../../shared/constants';
-import { createAIProviderFromStorage } from '../../services/ai/ai-provider';
-import { aiMatchJob } from '../../services/ai/job-matcher';
-import { aiTailorResume, type TailoredResume } from '../../services/ai/resume-tailor';
+import type { TailoredResume } from '../../services/ai/resume-tailor';
 import type {
-  UserProfile,
   BotStatus,
   SearchPreferences,
   BotSettings,
@@ -208,71 +205,56 @@ async function processJob(
     return;
   }
 
-  // Step 6: JD Match Scoring (if enabled)
+  // Step 6: JD Match Scoring (if enabled) — routed through background worker
   let computedMatchScore: number | null = null;
   const matchFilter = await getStorage<{ enabled: boolean; top: boolean; high: boolean; medium: boolean; low: boolean }>(STORAGE_KEYS.MATCH_FILTER);
   
   if (matchFilter?.enabled && jd.description !== 'Unknown') {
     try {
-      const aiClient = await createAIProviderFromStorage();
-      const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
-      const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
-      const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
-      
-      if (!aiClient) {
-        log.warn('⚠ JD Match: No AI provider configured — skipping match scoring. Configure in Options → AI Settings.');
-      } else if (!profile) {
-        log.warn('⚠ JD Match: No user profile found — skipping match scoring.');
-      } else {
-        if (!resumeText) log.info('JD Match: No resume uploaded — scoring with profile + skills only');
+      const matchResponse = await chrome.runtime.sendMessage({
+        type: 'AI_MATCH_JOB',
+        payload: { jobDescription: jd.description },
+        timestamp: Date.now(),
+      });
+
+      if (matchResponse?.error) {
+        log.warn(`⚠ JD Match: ${matchResponse.error}`);
+      } else if (matchResponse?.result) {
+        const matchResult = matchResponse.result;
+        computedMatchScore = Math.max(0, Math.min(100, matchResult.score));
+        const category: 'top' | 'high' | 'medium' | 'low' = 
+          computedMatchScore >= 80 ? 'top' :
+          computedMatchScore >= 60 ? 'high' :
+          computedMatchScore >= 40 ? 'medium' : 'low';
         
-        const matchResult = await aiMatchJob(aiClient, profile, jd.description, resumeText || undefined, skillsMap || undefined);
+        log.info(`📊 Match: ${computedMatchScore}% (${category}) for "${details.title}" — ${matchResult.recommendation}`);
         
-        if (matchResult) {
-          computedMatchScore = matchResult.score;
-          const category: 'top' | 'high' | 'medium' | 'low' = 
-            matchResult.score >= 80 ? 'top' :
-            matchResult.score >= 60 ? 'high' :
-            matchResult.score >= 40 ? 'medium' : 'low';
-          
-          log.info(`📊 Match: ${matchResult.score}% (${category}) for "${details.title}" — ${matchResult.recommendation}`);
-          
-          // Check if this category is allowed
-          if (!matchFilter[category]) {
-            log.info(`⏭ Skipping "${details.title}" — ${category} match (${matchResult.score}%) below filter threshold`);
-            await incrementSession('skipped');
-            return;
-          }
-        } else {
-          log.warn('⚠ JD Match: AI returned null — API call may have failed');
+        if (!matchFilter[category]) {
+          log.info(`⏭ Skipping "${details.title}" — ${category} match (${computedMatchScore}%) below filter threshold`);
+          await incrementSession('skipped');
+          return;
         }
       }
     } catch (error) {
       log.warn('JD match scoring failed, continuing without score', error);
     }
-  } else if (matchFilter && !matchFilter.enabled) {
-    log.debug('JD Match scoring is disabled');
-  } else if (!matchFilter) {
-    log.debug('JD Match filter not configured');
   }
 
-  // Step 6b: Resume Tailoring (if match scoring ran successfully)
+  // Step 6b: Resume Tailoring (if match scoring ran successfully) — routed through background worker
   let tailoredResult: TailoredResume | null = null;
   if (computedMatchScore !== null && jd.description !== 'Unknown') {
     try {
-      const aiClient = await createAIProviderFromStorage();
-      const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
-      const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
-      const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
+      const tailorResponse = await chrome.runtime.sendMessage({
+        type: 'AI_TAILOR_RESUME',
+        payload: { jobDescription: jd.description },
+        timestamp: Date.now(),
+      });
 
-      if (aiClient && profile) {
-        tailoredResult = await aiTailorResume(
-          aiClient, profile, jd.description, null,
-          resumeText || undefined, skillsMap || undefined
-        );
-        if (tailoredResult) {
-          log.info(`📝 Resume tailored — ATS: ${tailoredResult.atsScore}%, keywords: ${tailoredResult.keywordsAdded.join(', ')}`);
-        }
+      if (tailorResponse?.result) {
+        tailoredResult = tailorResponse.result;
+        log.info(`📝 Resume tailored — ATS: ${tailoredResult!.atsScore}%, keywords: ${tailoredResult!.keywordsAdded.join(', ')}`);
+      } else if (tailorResponse?.error) {
+        log.warn(`Resume tailoring: ${tailorResponse.error}`);
       }
     } catch (error) {
       log.warn('Resume tailoring failed, continuing without', error);

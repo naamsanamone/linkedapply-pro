@@ -6,7 +6,10 @@
 import { createLogger } from '../shared/logger';
 import { getStorage, setStorage } from '../shared/storage';
 import { STORAGE_KEYS, DEFAULT_SESSION } from '../shared/constants';
-import type { BotStatus, SessionSummary, ExtensionMessage } from '../shared/types';
+import type { BotStatus, SessionSummary, ExtensionMessage, UserProfile } from '../shared/types';
+import { createAIProviderFromStorage } from '../services/ai/ai-provider';
+import { aiMatchJob } from '../services/ai/job-matcher';
+import { aiTailorResume } from '../services/ai/resume-tailor';
 
 const log = createLogger('ServiceWorker');
 
@@ -93,6 +96,14 @@ chrome.runtime.onMessage.addListener(
 
       case 'GET_STATUS':
         getStatus().then(sendResponse);
+        return true; // async
+
+      case 'AI_MATCH_JOB':
+        handleAIMatchJob(message.payload).then(sendResponse);
+        return true; // async
+
+      case 'AI_TAILOR_RESUME':
+        handleAITailorResume(message.payload).then(sendResponse);
         return true; // async
 
       default:
@@ -423,3 +434,53 @@ function updateBadge(count: number, state: 'running' | 'stopped' | 'error'): voi
     updateBadge(session?.easyApplied || 0, 'running');
   }
 })();
+
+// ---- AI Proxy Handlers ----
+// Content scripts can't reliably make cross-origin fetch calls.
+// These handlers run in the service worker which has full host_permissions.
+
+async function handleAIMatchJob(payload: any): Promise<any> {
+  try {
+    const aiClient = await createAIProviderFromStorage();
+    if (!aiClient) return { error: 'No AI provider configured' };
+
+    const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
+    if (!profile) return { error: 'No user profile found' };
+
+    const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
+    const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
+
+    const result = await aiMatchJob(
+      aiClient, profile, payload.jobDescription,
+      resumeText || undefined, skillsMap || undefined
+    );
+
+    return { success: true, result };
+  } catch (error: any) {
+    log.error('AI match job failed in service worker', error);
+    return { error: error.message || 'AI match failed' };
+  }
+}
+
+async function handleAITailorResume(payload: any): Promise<any> {
+  try {
+    const aiClient = await createAIProviderFromStorage();
+    if (!aiClient) return { error: 'No AI provider configured' };
+
+    const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
+    if (!profile) return { error: 'No user profile found' };
+
+    const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
+    const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
+
+    const result = await aiTailorResume(
+      aiClient, profile, payload.jobDescription, null,
+      resumeText || undefined, skillsMap || undefined
+    );
+
+    return { success: true, result };
+  } catch (error: any) {
+    log.error('AI tailor resume failed in service worker', error);
+    return { error: error.message || 'AI tailor failed' };
+  }
+}
