@@ -9,8 +9,8 @@ import { getStorage, setStorage, updateStorage } from '../../shared/storage';
 import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS } from '../../shared/constants';
 import { createAIProviderFromStorage } from '../../services/ai/ai-provider';
 import { aiMatchJob } from '../../services/ai/job-matcher';
-import type { UserProfile } from '../../shared/types';
 import type {
+  UserProfile,
   BotStatus,
   SearchPreferences,
   BotSettings,
@@ -218,7 +218,13 @@ async function processJob(
       const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
       const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
       
-      if (aiClient && profile) {
+      if (!aiClient) {
+        log.warn('⚠ JD Match: No AI provider configured — skipping match scoring. Configure in Options → AI Settings.');
+      } else if (!profile) {
+        log.warn('⚠ JD Match: No user profile found — skipping match scoring.');
+      } else {
+        if (!resumeText) log.info('JD Match: No resume uploaded — scoring with profile + skills only');
+        
         const matchResult = await aiMatchJob(aiClient, profile, jd.description, resumeText || undefined, skillsMap || undefined);
         
         if (matchResult) {
@@ -236,11 +242,17 @@ async function processJob(
             await incrementSession('skipped');
             return;
           }
+        } else {
+          log.warn('⚠ JD Match: AI returned null — API call may have failed');
         }
       }
     } catch (error) {
       log.warn('JD match scoring failed, continuing without score', error);
     }
+  } else if (matchFilter && !matchFilter.enabled) {
+    log.debug('JD Match scoring is disabled');
+  } else if (!matchFilter) {
+    log.debug('JD Match filter not configured');
   }
 
   // Step 7: Check if Easy Apply or External

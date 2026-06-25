@@ -30,6 +30,7 @@ interface AnswerContext {
   defaults: QuestionDefaults;
   workLocation: string;
   jobDescription: string | null;
+  skillsMap?: Record<string, number>;
 }
 
 /**
@@ -321,8 +322,20 @@ async function handleRadioQuestion(
   }
 
   if (ctx.defaults.overwritePreviousAnswers || selectedOption === null) {
+    // "Do you have experience with [SKILL]?" — check skills map
+    if (hasAny(labelLower, ['do you have', 'hands-on', 'experience with', 'experience in', 'proficient', 'familiar with', 'knowledge of', 'worked with'])
+        && !hasAny(labelLower, ['sponsorship', 'visa', 'authorized', 'citizenship', 'veteran', 'disability'])) {
+      // Check if the user has this skill in their skills map
+      const skillsMap = ctx.skillsMap || {};
+      const hasSkill = Object.keys(skillsMap).some(skill => {
+        const s = skill.toLowerCase();
+        return labelLower.includes(s) && skillsMap[skill] > 0;
+      });
+      answer = hasSkill ? 'Yes' : 'No';
+      log.debug(`Experience radio: "${label}" → skills map check → ${answer}`);
+    }
     // Citizenship / employment eligibility
-    if (hasAny(labelLower, ['citizenship', 'employment eligibility'])) {
+    else if (hasAny(labelLower, ['citizenship', 'employment eligibility'])) {
       answer = ctx.defaults.usCitizenship;
     }
     // Veteran status
@@ -353,7 +366,7 @@ async function handleRadioQuestion(
     else if (hasAny(labelLower, ['previously', 'worked with', 'employed by', 'in the past', 'worked at'])) {
       answer = 'No';
     }
-    // PhD / doctorate — default NO (only say yes if user configured didMasters)
+    // PhD / doctorate — default NO
     else if (hasAny(labelLower, ['phd', 'doctorate', 'ph.d'])) {
       answer = 'No';
     }
@@ -361,7 +374,7 @@ async function handleRadioQuestion(
     else if (hasAny(labelLower, ['authorized', 'legally', 'eligible to work'])) {
       answer = 'Yes';
     }
-    // Relocation / availability / comfortable / start
+    // Relocation / availability / comfortable / willing / start
     else if (hasAny(labelLower, ['relocat', 'willing', 'available', 'comfortable', 'can you start', 'able to', 'do you agree', 'consent'])) {
       answer = 'Yes';
     }
@@ -456,8 +469,16 @@ async function handleTextQuestion(
     if (hasAny(labelLower, ['experience', 'years']) && hasAny(labelLower, ['with', 'in', 'using', 'on'])) {
       const techName = extractTechFromLabel(label);
       if (techName) {
-        const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
-        const found = skillsMap[techName.toLowerCase()];
+        const skillsMap = ctx.skillsMap || await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
+        // Case-insensitive lookup: try exact, then lowercase, then partial match
+        const techLower = techName.toLowerCase();
+        let found: number | undefined = undefined;
+        for (const [key, val] of Object.entries(skillsMap)) {
+          if (key.toLowerCase() === techLower || techLower.includes(key.toLowerCase()) || key.toLowerCase().includes(techLower)) {
+            found = val;
+            break;
+          }
+        }
         if (found !== undefined) {
           answer = String(found);
           log.info(`Skills map: "${techName}" → ${found} years`);
@@ -507,20 +528,22 @@ async function handleTextQuestion(
     }
     // Salary / compensation / CTC
     else if (hasAny(labelLower, ['salary', 'compensation', 'ctc', 'pay', 'stipend', 'package'])) {
-      const base = hasAny(labelLower, ['current', 'present', 'received', 'previous'])
+      let base = hasAny(labelLower, ['current', 'present', 'received', 'previous'])
         ? ctx.defaults.currentCtc
         : ctx.defaults.desiredSalary;
-      // Smart formatting based on field constraints
-      const maxLen = input.maxLength > 0 ? input.maxLength : 999;
+      
+      // Detect if value is stored in LPA (small number like 8, 12)
+      // vs raw amount (like 800000, 1200000)
+      const isAlreadyLPA = base > 0 && base < 200;
+      
       if (hasAny(labelLower, ['monthly', 'month', 'per month'])) {
-        answer = String(Math.round(base / 12));
+        const annual = isAlreadyLPA ? base * 100000 : base;
+        answer = String(Math.round(annual / 12));
       } else if (hasAny(labelLower, ['lakh', 'lac', 'lpa'])) {
-        answer = String(Math.round(base / 100000));
-      } else if (maxLen <= 20 && base >= 100000) {
-        // Short field — use compact "X LPA" format
-        answer = `${(base / 100000).toFixed(base % 100000 === 0 ? 0 : 1)} LPA`;
+        answer = isAlreadyLPA ? String(base) : String(Math.round(base / 100000));
       } else {
-        answer = String(base);
+        // Raw number — if stored as LPA, convert to full amount
+        answer = isAlreadyLPA ? String(base * 100000) : String(base);
       }
     }
     // Career breaks / gaps
@@ -582,6 +605,10 @@ async function handleTextQuestion(
     // Sponsorship
     else if (hasAny(labelLower, ['sponsorship', 'visa'])) {
       answer = ctx.defaults.requireVisa;
+    }
+    // Willing / available / relocate / comfortable
+    else if (hasAny(labelLower, ['willing', 'available', 'relocat', 'comfortable', 'able to', 'ready to', 'open to'])) {
+      answer = 'Yes';
     }
 
     // Fallback chain: Answer Memory → AI → smart default

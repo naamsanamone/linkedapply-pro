@@ -49,9 +49,10 @@ export async function executeEasyApply(
 
   try {
     // Load user profile and question defaults
-    const [profile, defaults] = await Promise.all([
+    const [profile, defaults, skillsMap] = await Promise.all([
       getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE),
       getStorage<QuestionDefaults>(STORAGE_KEYS.QUESTION_DEFAULTS),
+      getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP),
     ]);
 
     if (!profile) {
@@ -98,6 +99,7 @@ export async function executeEasyApply(
         defaults: questionDefaults,
         workLocation,
         jobDescription,
+        skillsMap: skillsMap || undefined,
       };
       const pageAnswers = await answerQuestions(modal, context);
       allQuestions.push(...pageAnswers);
