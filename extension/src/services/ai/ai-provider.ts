@@ -227,7 +227,7 @@ class GeminiProvider implements AIProviderClient {
   }
 
   async completeJSON<T = any>(prompt: string, options?: CompletionOptions): Promise<T> {
-    const enrichedPrompt = prompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no explanations.';
+    const enrichedPrompt = prompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no explanations. Ensure JSON is complete and properly closed.';
     const raw = await this.complete(enrichedPrompt, options);
 
     // Clean markdown code blocks
@@ -235,11 +235,55 @@ class GeminiProvider implements AIProviderClient {
     if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
     else if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
     if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
+    cleaned = cleaned.trim();
 
     try {
-      return JSON.parse(cleaned.trim()) as T;
+      return JSON.parse(cleaned) as T;
     } catch {
+      // Attempt to repair truncated JSON
+      const repaired = this.repairJSON(cleaned);
+      if (repaired) {
+        try {
+          return JSON.parse(repaired) as T;
+        } catch { /* fall through */ }
+      }
       throw new Error(`Failed to parse JSON from Gemini response: ${cleaned.substring(0, 200)}`);
+    }
+  }
+
+  /** Try to repair truncated JSON by closing open brackets/braces */
+  private repairJSON(json: string): string | null {
+    try {
+      // Count open vs close brackets
+      let braces = 0, brackets = 0, inString = false, escape = false;
+      for (const ch of json) {
+        if (escape) { escape = false; continue; }
+        if (ch === '\\') { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') braces++;
+        else if (ch === '}') braces--;
+        else if (ch === '[') brackets++;
+        else if (ch === ']') brackets--;
+      }
+
+      if (braces === 0 && brackets === 0) return null; // not a truncation issue
+
+      // Close the string if we're inside one
+      let repaired = json;
+      if (inString) repaired += '"';
+
+      // Remove trailing comma or colon
+      repaired = repaired.replace(/[,:]\s*$/, '');
+
+      // Close open brackets/braces
+      for (let i = 0; i < brackets; i++) repaired += ']';
+      for (let i = 0; i < braces; i++) repaired += '}';
+
+      log.warn(`Repaired truncated JSON (closed ${braces} braces, ${brackets} brackets)`);
+      return repaired;
+    } catch {
+      return null;
     }
   }
 }

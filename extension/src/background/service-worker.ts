@@ -519,7 +519,7 @@ async function handleAIMatchJob(payload: any): Promise<any> {
     clearRateLimit();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
     }
@@ -551,7 +551,7 @@ async function handleAITailorResume(payload: any): Promise<any> {
     clearRateLimit();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
     }

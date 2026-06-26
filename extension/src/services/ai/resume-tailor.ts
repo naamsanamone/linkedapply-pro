@@ -53,7 +53,7 @@ export async function aiTailorResume(
 
     const result = await client.completeJSON<TailoredResume>(prompt, {
       temperature: 0.3,
-      maxTokens: 2000,
+      maxTokens: 4000,
     });
 
     // Validate score
