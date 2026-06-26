@@ -233,31 +233,68 @@
           <button class="btn btn-ghost btn-icon modal__close" id="modal-close">✕</button>
         </div>
         <div class="modal__body">
+          <!-- Company & Status Row -->
           <div class="modal__meta">
             <span class="modal__company" id="modal-company">Company</span>
             <span class="modal__location" id="modal-location">Location</span>
             <span class="badge" id="modal-status">applied</span>
           </div>
-          <div class="modal__row">
-            <span class="modal__label">Work Style</span>
-            <span id="modal-workstyle">—</span>
+
+          <!-- Match Score Hero -->
+          <div class="modal__match-hero" id="modal-match-hero" style="display:none;">
+            <div class="match-hero__ring" id="modal-match-ring">
+              <svg viewBox="0 0 36 36" class="match-hero__svg">
+                <circle cx="18" cy="18" r="15.91" class="match-hero__bg"></circle>
+                <circle cx="18" cy="18" r="15.91" class="match-hero__fill" id="modal-match-fill"></circle>
+              </svg>
+              <div class="match-hero__center">
+                <span class="match-hero__value" id="modal-match-value">—</span>
+                <span class="match-hero__label">JD MATCH</span>
+              </div>
+            </div>
+            <div class="match-hero__details">
+              <div class="match-hero__category" id="modal-match-category">—</div>
+              <div class="match-hero__recommendation" id="modal-match-recommendation">AI analysis available</div>
+            </div>
           </div>
-          <div class="modal__row">
-            <span class="modal__label">Experience Required</span>
-            <span id="modal-experience">—</span>
+
+          <!-- Info Grid -->
+          <div class="modal__info-grid">
+            <div class="modal__info-item">
+              <span class="modal__info-icon">💼</span>
+              <div>
+                <span class="modal__info-label">Work Style</span>
+                <span class="modal__info-value" id="modal-workstyle">—</span>
+              </div>
+            </div>
+            <div class="modal__info-item">
+              <span class="modal__info-icon">📊</span>
+              <div>
+                <span class="modal__info-label">Experience</span>
+                <span class="modal__info-value" id="modal-experience">—</span>
+              </div>
+            </div>
+            <div class="modal__info-item">
+              <span class="modal__info-icon">📅</span>
+              <div>
+                <span class="modal__info-label">Applied</span>
+                <span class="modal__info-value" id="modal-date-applied">—</span>
+              </div>
+            </div>
+            <div class="modal__info-item">
+              <span class="modal__info-icon">📌</span>
+              <div>
+                <span class="modal__info-label">Listed</span>
+                <span class="modal__info-value" id="modal-date-listed">—</span>
+              </div>
+            </div>
           </div>
+
           <div class="modal__row">
-            <span class="modal__label">Date Applied</span>
-            <span id="modal-date-applied">—</span>
-          </div>
-          <div class="modal__row">
-            <span class="modal__label">Date Listed</span>
-            <span id="modal-date-listed">—</span>
-          </div>
-          <div class="modal__row">
-            <span class="modal__label">Hiring Manager</span>
+            <span class="modal__label">👤 Hiring Manager</span>
             <a id="modal-hr-link" href="#" target="_blank">—</a>
           </div>
+          <!-- hidden compat row -->
           <div class="modal__row" id="modal-match-row" style="display:none;">
             <span class="modal__label">AI Match Score</span>
             <span class="badge badge-primary" id="modal-match-score">—</span>
@@ -281,34 +318,39 @@
             <textarea class="input" id="modal-notes" rows="3" placeholder="Add notes..."></textarea>
           </div>
 
+          <!-- Tailored Resume Section -->
+          <div class="modal__tailored-card" id="modal-tailored-section" style="display:none;">
+            <div class="tailored-card__header">
+              <div class="tailored-card__title">
+                <span>📝 AI-Tailored Resume</span>
+                <span class="badge badge-success tailored-card__ats">ATS <span id="modal-ats-score">—</span>%</span>
+              </div>
+              <button class="btn btn-sm btn-primary" id="modal-copy-tailored">📋 Copy</button>
+            </div>
+            <div class="tailored-card__body">
+              <div class="tailored-card__section">
+                <div class="tailored-card__section-title">Professional Summary</div>
+                <p class="tailored-card__text" id="modal-tailored-summary"></p>
+              </div>
+              <div class="tailored-card__section">
+                <div class="tailored-card__section-title">Key Skills</div>
+                <div class="tailored-card__badges" id="modal-tailored-skills"></div>
+              </div>
+              <div class="tailored-card__section">
+                <div class="tailored-card__section-title">Experience</div>
+                <div id="modal-tailored-experience"></div>
+              </div>
+              <div class="tailored-card__section">
+                <div class="tailored-card__section-title">Keywords Added</div>
+                <div class="tailored-card__badges" id="modal-tailored-keywords"></div>
+              </div>
+            </div>
+          </div>
+
           <!-- Questions Answered -->
           <details class="modal__details" id="modal-questions-section">
             <summary>Questions Answered (<span id="modal-q-count">0</span>)</summary>
             <div class="modal__questions-list" id="modal-questions"></div>
-          </details>
-
-          <!-- Tailored Resume -->
-          <details class="modal__details" id="modal-tailored-section" style="display:none;">
-            <summary>📝 Tailored Resume (ATS: <span id="modal-ats-score">—</span>%)</summary>
-            <div id="modal-tailored-content" style="padding: 8px 0;">
-              <div style="margin-bottom: 12px;">
-                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">PROFESSIONAL SUMMARY</strong>
-                <p id="modal-tailored-summary" style="margin: 4px 0; font-size: 0.85rem; line-height: 1.5; color: var(--color-text-primary);"></p>
-              </div>
-              <div style="margin-bottom: 12px;">
-                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">KEY SKILLS</strong>
-                <div id="modal-tailored-skills" style="margin: 4px 0; display: flex; flex-wrap: wrap; gap: 4px;"></div>
-              </div>
-              <div style="margin-bottom: 12px;">
-                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">EXPERIENCE</strong>
-                <div id="modal-tailored-experience" style="margin: 4px 0; font-size: 0.85rem;"></div>
-              </div>
-              <div style="margin-bottom: 12px;">
-                <strong style="color: var(--color-text-secondary); font-size: 0.8rem;">KEYWORDS ADDED</strong>
-                <div id="modal-tailored-keywords" style="margin: 4px 0; display: flex; flex-wrap: wrap; gap: 4px;"></div>
-              </div>
-              <button class="btn btn-sm btn-primary" id="modal-copy-tailored" style="margin-top: 8px;">📋 Copy Tailored Resume</button>
-            </div>
           </details>
         </div>
         <div class="modal__footer">

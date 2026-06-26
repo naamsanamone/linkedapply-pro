@@ -623,6 +623,122 @@
   color: var(--color-text-tertiary);
 }
 
+/* ---- Match Score Hero ---- */
+.modal__match-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.match-hero__ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.match-hero__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.match-hero__bg {
+  fill: none;
+  stroke: var(--color-bg-tertiary, #2d2d3a);
+  stroke-width: 2.5;
+}
+
+.match-hero__fill {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0, 100;
+  transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.match-hero__ring--top .match-hero__fill { stroke: #22c55e; }
+.match-hero__ring--high .match-hero__fill { stroke: #6366f1; }
+.match-hero__ring--medium .match-hero__fill { stroke: #f59e0b; }
+.match-hero__ring--low .match-hero__fill { stroke: #ef4444; }
+
+.match-hero__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.match-hero__value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.match-hero__label {
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.match-hero__details { flex: 1; }
+
+.match-hero__category {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.match-hero__recommendation {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+/* ---- Info Grid ---- */
+.modal__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.modal__info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.modal__info-icon { font-size: 16px; flex-shrink: 0; }
+
+.modal__info-label {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  display: block;
+}
+
+.modal__info-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: block;
+}
+
+/* ---- Modal Rows / Labels ---- */
 .modal__row {
   display: flex;
   justify-content: space-between;
@@ -657,6 +773,107 @@
   color: #fff;
 }
 
+/* ---- Tailored Resume Card ---- */
+.modal__tailored-card {
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(16, 185, 129, 0.06));
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  overflow: hidden;
+}
+
+.tailored-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.tailored-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.tailored-card__ats { font-size: 11px; }
+
+.tailored-card__body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tailored-card__section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 6px;
+}
+
+.tailored-card__text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.tailored-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tailored-card__badges .badge { font-size: 11px; }
+
+/* ---- Tailored Experience Items ---- */
+.tailored-exp {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tailored-exp:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.tailored-exp__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tailored-exp__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.tailored-exp__company {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.tailored-exp__duration {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.tailored-exp__bullets {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.tailored-exp__bullets li { margin-bottom: 2px; }
+
+/* ---- Questions & Details ---- */
 .modal__details {
   margin-top: 8px;
   font-size: 13px;

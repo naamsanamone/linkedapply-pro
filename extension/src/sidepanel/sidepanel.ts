@@ -504,10 +504,48 @@ function openJobModal(jobId: string): void {
     hrLink.href = job.hrLink || '#';
   }
 
-  // Match score
+  // Match Score Hero
+  const matchHero = document.getElementById('modal-match-hero');
+  if (matchHero) {
+    if (job.matchScore !== null) {
+      matchHero.style.display = 'flex';
+      const score = job.matchScore;
+      const cat = matchCategory(score);
+      const catLabels: Record<string, string> = {
+        top: '🟢 Top Match', high: '🔵 High Match',
+        medium: '🟡 Medium Match', low: '🔴 Low Match',
+      };
+      const recommendations: Record<string, string> = {
+        top: 'Excellent fit — strongly recommended to apply',
+        high: 'Good match — your skills align well',
+        medium: 'Partial match — some gaps in requirements',
+        low: 'Weak match — consider skipping this role',
+      };
+
+      setText('modal-match-value', `${score}%`);
+      setText('modal-match-category', catLabels[cat] || cat);
+      setText('modal-match-recommendation', recommendations[cat] || '');
+
+      // Update ring fill
+      const fillEl = document.getElementById('modal-match-fill');
+      if (fillEl) {
+        fillEl.style.strokeDasharray = `${score}, 100`;
+      }
+
+      // Set ring color class
+      const ringEl = document.getElementById('modal-match-ring');
+      if (ringEl) {
+        ringEl.className = `match-hero__ring match-hero__ring--${cat}`;
+      }
+    } else {
+      matchHero.style.display = 'none';
+    }
+  }
+
+  // Keep old hidden row for backward compat
   const matchRow = document.getElementById('modal-match-row');
   if (matchRow) {
-    matchRow.style.display = job.matchScore !== null ? 'flex' : 'none';
+    matchRow.style.display = 'none';
     setText('modal-match-score', job.matchScore !== null ? `${job.matchScore}%` : '—');
   }
 
@@ -558,7 +596,7 @@ function openJobModal(jobId: string): void {
       const skillsEl = document.getElementById('modal-tailored-skills');
       if (skillsEl) {
         skillsEl.innerHTML = tr.skills.map(s =>
-          `<span class="badge badge-primary" style="font-size:0.75rem;">${esc(s)}</span>`
+          `<span class="badge badge-primary">${esc(s)}</span>`
         ).join('');
       }
 
@@ -566,11 +604,14 @@ function openJobModal(jobId: string): void {
       const expEl = document.getElementById('modal-tailored-experience');
       if (expEl) {
         expEl.innerHTML = tr.experience.map(exp => `
-          <div style="margin-bottom: 10px;">
-            <div style="font-weight: 600; color: var(--color-text-primary);">${esc(exp.title)} — ${esc(exp.company)}</div>
-            <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-bottom: 4px;">${esc(exp.duration)}</div>
-            <ul style="margin: 0; padding-left: 16px;">
-              ${exp.bullets.map(b => `<li style="margin-bottom: 2px; line-height: 1.4;">${esc(b)}</li>`).join('')}
+          <div class="tailored-exp">
+            <div class="tailored-exp__header">
+              <span class="tailored-exp__title">${esc(exp.title)}</span>
+              <span class="tailored-exp__company">${esc(exp.company)}</span>
+            </div>
+            <div class="tailored-exp__duration">${esc(exp.duration)}</div>
+            <ul class="tailored-exp__bullets">
+              ${exp.bullets.map(b => `<li>${esc(b)}</li>`).join('')}
             </ul>
           </div>
         `).join('');
@@ -580,7 +621,7 @@ function openJobModal(jobId: string): void {
       const kwEl = document.getElementById('modal-tailored-keywords');
       if (kwEl) {
         kwEl.innerHTML = tr.keywordsAdded.map(kw =>
-          `<span class="badge badge-success" style="font-size:0.75rem;">+ ${esc(kw)}</span>`
+          `<span class="badge badge-success">+ ${esc(kw)}</span>`
         ).join('');
       }
 
@@ -591,7 +632,7 @@ function openJobModal(jobId: string): void {
           const text = formatTailoredResumeText(tr);
           navigator.clipboard.writeText(text).then(() => {
             copyBtn.textContent = '✓ Copied!';
-            setTimeout(() => { copyBtn.textContent = '📋 Copy Tailored Resume'; }, 2000);
+            setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 2000);
           });
         };
       }
