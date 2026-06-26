@@ -303,7 +303,9 @@ function forwardToContentScript(message: ExtensionMessage, excludeTabId?: number
   chrome.tabs.query({ url: 'https://www.linkedin.com/*' }, (tabs) => {
     tabs.forEach((tab) => {
       if (tab.id && tab.id !== excludeTabId) {
-        chrome.tabs.sendMessage(tab.id, message);
+        chrome.tabs.sendMessage(tab.id, message).catch(() => {
+          // Tab may have been closed or navigated away — ignore
+        });
       }
     });
   });
@@ -400,10 +402,13 @@ function showNotification(id: string, title: string, message: string): void {
   try {
     chrome.notifications.create(`linkedapply_${id}_${Date.now()}`, {
       type: 'basic',
-      iconUrl: 'icons/icon-128.png',
+      iconUrl: chrome.runtime.getURL('icons/icon-128.png'),
       title,
       message,
       priority: 1,
+    }, () => {
+      // Suppress any errors (e.g. icon not found)
+      if (chrome.runtime.lastError) { /* ignore */ }
     });
   } catch {
     // notifications may be disabled

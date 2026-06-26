@@ -149,9 +149,18 @@ class GeminiProvider implements AIProviderClient {
   private baseUrl: string;
 
   constructor(config: AIConfig) {
-    this.model = config.model;
+    // Auto-correct deprecated model names
+    const deprecatedModels: Record<string, string> = {
+      'gemini-1.5-flash': 'gemini-2.0-flash',
+      'gemini-1.5-pro': 'gemini-2.0-flash',
+      'gemini-pro': 'gemini-2.0-flash',
+    };
+    this.model = deprecatedModels[config.model] || config.model;
     this.apiKey = config.apiKey;
     this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}`;
+    if (deprecatedModels[config.model]) {
+      log.info(`Auto-corrected deprecated model "${config.model}" → "${this.model}"`);
+    }
   }
 
   async testConnection(): Promise<boolean> {
