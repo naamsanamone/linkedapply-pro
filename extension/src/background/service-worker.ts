@@ -444,9 +444,65 @@ function updateBadge(count: number, state: 'running' | 'stopped' | 'error'): voi
 // Content scripts can't reliably make cross-origin fetch calls.
 // These handlers run in the service worker which has full host_permissions.
 
+// AI client cache — avoid re-creating on every call
+import type { AIProviderClient } from '../services/ai/ai-provider';
+let _cachedAIClient: AIProviderClient | null = null;
+let _aiClientCreatedAt = 0;
+const AI_CLIENT_TTL = 5 * 60 * 1000; // re-read config every 5 min
+
+// Rate limit tracking — back off on 429
+let _rateLimitUntil = 0;      // timestamp when we can retry
+let _rateLimitBackoff = 0;    // current backoff in ms
+const RATE_LIMIT_MAX_BACKOFF = 120_000; // 2 minutes max
+
+async function getOrCreateAIClient(): Promise<AIProviderClient | null> {
+  const now = Date.now();
+  if (_cachedAIClient && (now - _aiClientCreatedAt) < AI_CLIENT_TTL) {
+    return _cachedAIClient;
+  }
+  _cachedAIClient = await createAIProviderFromStorage();
+  _aiClientCreatedAt = now;
+  return _cachedAIClient;
+}
+
+function checkRateLimit(): string | null {
+  const now = Date.now();
+  if (now < _rateLimitUntil) {
+    const waitSec = Math.ceil((_rateLimitUntil - now) / 1000);
+    return `Rate limited — retry in ${waitSec}s`;
+  }
+  return null;
+}
+
+function handleRateLimitError(error: any): void {
+  // Parse retry delay from Gemini 429 response
+  const retryMatch = error.message?.match(/retry in ([\d.]+)s/i);
+  let waitMs: number;
+
+  if (retryMatch) {
+    waitMs = Math.ceil(parseFloat(retryMatch[1]) * 1000);
+  } else {
+    // Exponential backoff: 15s, 30s, 60s, 120s
+    _rateLimitBackoff = _rateLimitBackoff ? Math.min(_rateLimitBackoff * 2, RATE_LIMIT_MAX_BACKOFF) : 15_000;
+    waitMs = _rateLimitBackoff;
+  }
+
+  _rateLimitUntil = Date.now() + waitMs;
+  log.warn(`⏳ AI rate limited — backing off for ${Math.ceil(waitMs / 1000)}s`);
+}
+
+function clearRateLimit(): void {
+  _rateLimitBackoff = 0;
+  // Don't clear _rateLimitUntil — let it expire naturally
+}
+
 async function handleAIMatchJob(payload: any): Promise<any> {
+  // Check rate limit first
+  const rateLimitMsg = checkRateLimit();
+  if (rateLimitMsg) return { error: rateLimitMsg };
+
   try {
-    const aiClient = await createAIProviderFromStorage();
+    const aiClient = await getOrCreateAIClient();
     if (!aiClient) return { error: 'No AI provider configured' };
 
     const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
@@ -460,16 +516,25 @@ async function handleAIMatchJob(payload: any): Promise<any> {
       resumeText || undefined, skillsMap || undefined
     );
 
+    clearRateLimit();
     return { success: true, result };
   } catch (error: any) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      handleRateLimitError(error);
+      return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
     log.error('AI match job failed in service worker', error);
     return { error: error.message || 'AI match failed' };
   }
 }
 
 async function handleAITailorResume(payload: any): Promise<any> {
+  // Check rate limit first
+  const rateLimitMsg = checkRateLimit();
+  if (rateLimitMsg) return { error: rateLimitMsg };
+
   try {
-    const aiClient = await createAIProviderFromStorage();
+    const aiClient = await getOrCreateAIClient();
     if (!aiClient) return { error: 'No AI provider configured' };
 
     const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
@@ -483,8 +548,13 @@ async function handleAITailorResume(payload: any): Promise<any> {
       resumeText || undefined, skillsMap || undefined
     );
 
+    clearRateLimit();
     return { success: true, result };
   } catch (error: any) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      handleRateLimitError(error);
+      return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
     log.error('AI tailor resume failed in service worker', error);
     return { error: error.message || 'AI tailor failed' };
   }

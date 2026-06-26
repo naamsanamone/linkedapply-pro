@@ -151,9 +151,10 @@ class GeminiProvider implements AIProviderClient {
   constructor(config: AIConfig) {
     // Auto-correct deprecated model names
     const deprecatedModels: Record<string, string> = {
-      'gemini-1.5-flash': 'gemini-2.0-flash',
-      'gemini-1.5-pro': 'gemini-2.0-flash',
-      'gemini-pro': 'gemini-2.0-flash',
+      'gemini-1.5-flash': 'gemini-2.5-flash',
+      'gemini-1.5-pro': 'gemini-2.5-flash',
+      'gemini-pro': 'gemini-2.5-flash',
+      'gemini-2.0-flash': 'gemini-2.5-flash',
     };
     this.model = deprecatedModels[config.model] || config.model;
     this.apiKey = config.apiKey;

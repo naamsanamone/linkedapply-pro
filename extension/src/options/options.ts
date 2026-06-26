@@ -207,7 +207,7 @@ const DEFAULT_API_URLS: Record<string, string> = {
 
 const DEFAULT_MODELS: Record<string, string> = {
   openai: 'gpt-4o-mini',
-  gemini: 'gemini-2.0-flash',
+  gemini: 'gemini-2.5-flash',
   deepseek: 'deepseek-chat',
 };
 
