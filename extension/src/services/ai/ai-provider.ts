@@ -216,6 +216,13 @@ class GeminiProvider implements AIProviderClient {
 
           // Auto-retry on 429/503 with parsed delay
           if ((response.status === 429 || response.status === 503) && attempt < maxRetries - 1) {
+            // Don't retry daily quota limits — they won't reset for hours
+            const isDailyQuota = errorText.includes('PerDay') || errorText.includes('FreeTier');
+            if (isDailyQuota) {
+              log.warn('🚫 Daily AI quota exhausted — skipping retry (resets in ~1 hour)');
+              throw new Error(`Gemini daily quota exhausted (20 req/day free tier). Bot will continue without AI scoring.`);
+            }
+
             const retryMatch = errorText.match(/retry in ([\d.]+)s/i) || errorText.match(/"retryDelay":\s*"(\d+)s"/);
             const waitSec = retryMatch ? Math.min(parseFloat(retryMatch[1]), 60) : (15 * (attempt + 1));
             log.warn(`⏳ Gemini ${response.status} — auto-retrying in ${Math.ceil(waitSec)}s (attempt ${attempt + 1}/${maxRetries})`);
