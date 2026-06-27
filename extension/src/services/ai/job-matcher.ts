@@ -43,7 +43,7 @@ export async function aiMatchJob(
 
     const result = await client.completeJSON<JobMatchResult>(prompt, {
       temperature: 0.1,
-      maxTokens: 2000,
+      maxTokens: 4000,
     });
 
     // Validate score range

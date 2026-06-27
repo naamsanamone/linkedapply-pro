@@ -269,12 +269,32 @@ class GeminiProvider implements AIProviderClient {
 
       if (braces === 0 && brackets === 0) return null; // not a truncation issue
 
-      // Close the string if we're inside one
       let repaired = json;
+
+      // Close the string if we're inside one
       if (inString) repaired += '"';
 
-      // Remove trailing comma or colon
+      // Remove trailing incomplete key-value (e.g. truncated mid-value)
+      // This handles cases like: ..."key": "truncated val
+      repaired = repaired.replace(/,\s*"[^"]*"\s*:\s*"[^"]*"?\s*$/, '');
+      // Remove trailing comma, colon, or dangling key
       repaired = repaired.replace(/[,:]\s*$/, '');
+      repaired = repaired.replace(/,\s*"[^"]*"\s*$/, '');
+
+      // Recount after cleanup
+      braces = 0; brackets = 0; inString = false; escape = false;
+      for (const ch of repaired) {
+        if (escape) { escape = false; continue; }
+        if (ch === '\\') { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') braces++;
+        else if (ch === '}') braces--;
+        else if (ch === '[') brackets++;
+        else if (ch === ']') brackets--;
+      }
+
+      if (inString) repaired += '"';
 
       // Close open brackets/braces
       for (let i = 0; i < brackets; i++) repaired += ']';
