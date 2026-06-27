@@ -63,39 +63,33 @@ Select exactly ONE option from the list above. Return only the exact option text
 // ======== JOB MATCHING (Premium) ========
 
 export const JOB_MATCH_PROMPT = `
-You are a career advisor AI. Evaluate how well this candidate matches the job description.
-Provide a detailed qualification breakdown like LinkedIn Premium.
+You are a career advisor. Evaluate candidate-job fit. You MUST extract and list all qualifications from the job description.
 
-CANDIDATE PROFILE:
+CANDIDATE:
 {userProfile}
 
-JOB DESCRIPTION:
+JOB:
 {jobDescription}
 
-Analyze every qualification mentioned in the job description. Classify each as required or preferred.
-For each qualification, determine if the candidate matches it based on their profile/resume.
+RULES:
+- Extract EVERY qualification from the JD. requiredQualifications and preferredQualifications arrays are MANDATORY and must NOT be empty.
+- Keep descriptions short (under 10 words each).
+- Omit the "note" field unless the match is partial.
 
-Score the overall match from 0 to 100. Return ONLY valid JSON:
+Return ONLY valid JSON:
 {
-  "score": <number 0-100>,
-  "headline": "<e.g. You'd be a top applicant OR Job match is low>",
-  "recommendation": "<2-3 sentence recommendation explaining the match>",
+  "score": <0-100>,
+  "headline": "<short: e.g. Top applicant OR Low match>",
+  "recommendation": "<1 sentence>",
   "shouldApply": <true/false>,
-  "strengths": ["<strength 1>", "<strength 2>"],
-  "gaps": ["<gap 1>", "<gap 2>"],
+  "strengths": ["<skill1>", "<skill2>"],
+  "gaps": ["<gap1>"],
   "requiredQualifications": [
-    {
-      "description": "<qualification text>",
-      "matched": <true/false>,
-      "note": "<optional: why partial/no match, e.g. User has 3 years, requires 5+>"
-    }
+    {"description": "<short qual>", "matched": true},
+    {"description": "<short qual>", "matched": false, "note": "<why>"}
   ],
   "preferredQualifications": [
-    {
-      "description": "<qualification text>",
-      "matched": <true/false>,
-      "note": "<optional>"
-    }
+    {"description": "<short qual>", "matched": true}
   ]
 }
 `;
@@ -103,38 +97,26 @@ Score the overall match from 0 to 100. Return ONLY valid JSON:
 // ======== RESUME TAILORING (Premium) ========
 
 export const RESUME_TAILOR_PROMPT = `
-You are an expert resume writer specializing in ATS-optimized resumes.
+You are an ATS resume optimizer. Rewrite the resume for this specific job.
 
-ORIGINAL RESUME/PROFILE:
+RESUME:
 {userProfile}
 
-TARGET JOB DESCRIPTION:
+JOB:
 {jobDescription}
 
-EXTRACTED REQUIRED SKILLS:
+REQUIRED SKILLS:
 {requiredSkills}
 
-Rewrite the resume to maximize ATS score for this specific job. Instructions:
-- Keep all facts truthful — do not fabricate experience
-- Reorder and reword bullet points to emphasize relevant skills
-- Incorporate keywords from the job description naturally
-- Use strong action verbs and quantifiable achievements
-- Keep professional summary under 3 sentences, targeted to this role
+RULES: Keep facts truthful. Incorporate JD keywords. Use action verbs. Summary under 3 sentences.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON (put atsScore and keywordsAdded FIRST):
 {
-  "summary": "<tailored professional summary>",
-  "skills": ["<skill 1>", "<skill 2>", ...],
-  "experience": [
-    {
-      "title": "<job title>",
-      "company": "<company>",
-      "duration": "<dates>",
-      "bullets": ["<bullet 1>", "<bullet 2>"]
-    }
-  ],
-  "atsScore": <estimated ATS match score 0-100>,
-  "keywordsAdded": ["<keyword 1>", "<keyword 2>"]
+  "atsScore": <0-100>,
+  "keywordsAdded": ["<keyword>"],
+  "summary": "<tailored summary>",
+  "skills": ["<skill>"],
+  "experience": [{"title": "<title>", "company": "<co>", "duration": "<dates>", "bullets": ["<bullet>"]}]
 }
 `;
 
