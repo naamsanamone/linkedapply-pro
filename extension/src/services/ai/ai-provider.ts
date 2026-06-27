@@ -182,48 +182,73 @@ class GeminiProvider implements AIProviderClient {
   }
 
   async complete(prompt: string, options?: CompletionOptions): Promise<string> {
-    const body: any = {
-      contents: [{ parts: [{ text: prompt }] }],
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-      ],
-    };
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-    if (options?.temperature !== undefined) {
-      body.generationConfig = { temperature: options.temperature };
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const body: any = {
+          contents: [{ parts: [{ text: prompt }] }],
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          ],
+        };
+
+        if (options?.temperature !== undefined) {
+          body.generationConfig = { temperature: options.temperature };
+        }
+        if (options?.maxTokens) {
+          body.generationConfig = { ...body.generationConfig, maxOutputTokens: options.maxTokens };
+        }
+
+        const url = `${this.baseUrl}:generateContent?key=${this.apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+
+          // Auto-retry on 429/503 with parsed delay
+          if ((response.status === 429 || response.status === 503) && attempt < maxRetries - 1) {
+            const retryMatch = errorText.match(/retry in ([\d.]+)s/i) || errorText.match(/"retryDelay":\s*"(\d+)s"/);
+            const waitSec = retryMatch ? Math.min(parseFloat(retryMatch[1]), 60) : (15 * (attempt + 1));
+            log.warn(`⏳ Gemini ${response.status} — auto-retrying in ${Math.ceil(waitSec)}s (attempt ${attempt + 1}/${maxRetries})`);
+            await new Promise(r => setTimeout(r, waitSec * 1000));
+            continue;
+          }
+
+          throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(`Gemini API error: ${JSON.stringify(data.error)}`);
+        }
+
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!content) {
+          throw new Error('Gemini returned empty response — possibly blocked by safety filters');
+        }
+
+        log.debug(`Gemini completion received (${content.length} chars)`);
+        return content;
+      } catch (error: any) {
+        lastError = error;
+        // Only retry on rate limit / server errors
+        if (attempt < maxRetries - 1 && (error.message?.includes('429') || error.message?.includes('503'))) {
+          continue;
+        }
+        throw error;
+      }
     }
-    if (options?.maxTokens) {
-      body.generationConfig = { ...body.generationConfig, maxOutputTokens: options.maxTokens };
-    }
-
-    const url = `${this.baseUrl}:generateContent?key=${this.apiKey}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Gemini API error: ${JSON.stringify(data.error)}`);
-    }
-
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!content) {
-      throw new Error('Gemini returned empty response — possibly blocked by safety filters');
-    }
-
-    log.debug(`Gemini completion received (${content.length} chars)`);
-    return content;
+    throw lastError || new Error('Max retries exceeded');
   }
 
   async completeJSON<T = any>(prompt: string, options?: CompletionOptions): Promise<T> {
@@ -240,7 +265,7 @@ class GeminiProvider implements AIProviderClient {
     try {
       return JSON.parse(cleaned) as T;
     } catch {
-      // Attempt to repair truncated JSON
+      // Attempt to repair truncated JSON (multiple strategies)
       const repaired = this.repairJSON(cleaned);
       if (repaired) {
         try {
@@ -254,57 +279,86 @@ class GeminiProvider implements AIProviderClient {
   /** Try to repair truncated JSON by closing open brackets/braces */
   private repairJSON(json: string): string | null {
     try {
-      // Count open vs close brackets
-      let braces = 0, brackets = 0, inString = false, escape = false;
-      for (const ch of json) {
-        if (escape) { escape = false; continue; }
-        if (ch === '\\') { escape = true; continue; }
-        if (ch === '"') { inString = !inString; continue; }
-        if (inString) continue;
-        if (ch === '{') braces++;
-        else if (ch === '}') braces--;
-        else if (ch === '[') brackets++;
-        else if (ch === ']') brackets--;
+      // Strategy 1: Simple close — close open strings, brackets, braces
+      const attempt1 = this.tryCloseJSON(json);
+      if (attempt1) {
+        try { JSON.parse(attempt1); return attempt1; } catch { /* try next */ }
       }
 
-      if (braces === 0 && brackets === 0) return null; // not a truncation issue
+      // Strategy 2: Strip last incomplete array item/object, then close
+      // Find the last complete item by looking for }, or ], before truncation
+      let stripped = json;
 
-      let repaired = json;
+      // Close open string first
+      if (this.isInString(stripped)) stripped += '"';
 
-      // Close the string if we're inside one
-      if (inString) repaired += '"';
+      // Remove trailing partial object in array: {...truncated
+      stripped = stripped.replace(/,\s*\{[^}]*$/s, '');
+      // Remove trailing partial key-value pair
+      stripped = stripped.replace(/,\s*"[^"]*"\s*:\s*(?:"[^"]*"?|[^,}\]]*)?$/s, '');
+      // Remove trailing comma/colon
+      stripped = stripped.replace(/[,:\s]+$/, '');
 
-      // Remove trailing incomplete key-value (e.g. truncated mid-value)
-      // This handles cases like: ..."key": "truncated val
-      repaired = repaired.replace(/,\s*"[^"]*"\s*:\s*"[^"]*"?\s*$/, '');
-      // Remove trailing comma, colon, or dangling key
-      repaired = repaired.replace(/[,:]\s*$/, '');
-      repaired = repaired.replace(/,\s*"[^"]*"\s*$/, '');
-
-      // Recount after cleanup
-      braces = 0; brackets = 0; inString = false; escape = false;
-      for (const ch of repaired) {
-        if (escape) { escape = false; continue; }
-        if (ch === '\\') { escape = true; continue; }
-        if (ch === '"') { inString = !inString; continue; }
-        if (inString) continue;
-        if (ch === '{') braces++;
-        else if (ch === '}') braces--;
-        else if (ch === '[') brackets++;
-        else if (ch === ']') brackets--;
+      const attempt2 = this.tryCloseJSON(stripped);
+      if (attempt2) {
+        try { JSON.parse(attempt2); log.warn('Repaired truncated JSON (stripped incomplete items)'); return attempt2; } catch { /* try next */ }
       }
 
-      if (inString) repaired += '"';
+      // Strategy 3: Progressive strip — walk backwards to find last parseable boundary
+      let progressive = stripped;
+      for (let i = 0; i < 10; i++) {
+        // Remove last item (either a key-value or array element)
+        const prevLen = progressive.length;
+        progressive = progressive.replace(/,\s*\{[^{}]*\}?\s*$/s, '');
+        progressive = progressive.replace(/,\s*"[^"]*"\s*:\s*(?:"[^"]*"|[\d.]+|true|false|null|\[[^\]]*\])\s*$/s, '');
+        progressive = progressive.replace(/[,:\s]+$/, '');
+        if (progressive.length === prevLen) break; // no more to strip
 
-      // Close open brackets/braces
-      for (let i = 0; i < brackets; i++) repaired += ']';
-      for (let i = 0; i < braces; i++) repaired += '}';
+        const attempt3 = this.tryCloseJSON(progressive);
+        if (attempt3) {
+          try { JSON.parse(attempt3); log.warn(`Repaired truncated JSON (progressive strip, pass ${i + 1})`); return attempt3; } catch { /* keep stripping */ }
+        }
+      }
 
-      log.warn(`Repaired truncated JSON (closed ${braces} braces, ${brackets} brackets)`);
-      return repaired;
+      // Last resort: return strategy 1 result anyway (may still fail)
+      return attempt1;
     } catch {
       return null;
     }
+  }
+
+  /** Check if the string ends inside an open JSON string */
+  private isInString(json: string): boolean {
+    let inString = false, escape = false;
+    for (const ch of json) {
+      if (escape) { escape = false; continue; }
+      if (ch === '\\') { escape = true; continue; }
+      if (ch === '"') { inString = !inString; }
+    }
+    return inString;
+  }
+
+  /** Close open strings, brackets, braces */
+  private tryCloseJSON(json: string): string {
+    let repaired = json;
+    if (this.isInString(repaired)) repaired += '"';
+    repaired = repaired.replace(/[,:\s]+$/, '');
+
+    let braces = 0, brackets = 0, inString = false, escape = false;
+    for (const ch of repaired) {
+      if (escape) { escape = false; continue; }
+      if (ch === '\\') { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === '{') braces++;
+      else if (ch === '}') braces--;
+      else if (ch === '[') brackets++;
+      else if (ch === ']') brackets--;
+    }
+
+    for (let i = 0; i < brackets; i++) repaired += ']';
+    for (let i = 0; i < braces; i++) repaired += '}';
+    return repaired;
   }
 }
 
