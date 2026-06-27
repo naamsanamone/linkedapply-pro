@@ -57,7 +57,13 @@ export async function aiTailorResume(
     });
 
     // Validate score
-    result.atsScore = Math.max(0, Math.min(100, result.atsScore));
+    result.atsScore = Math.max(0, Math.min(100, result.atsScore || 0));
+
+    // Ensure arrays exist (truncated responses may omit them)
+    result.keywordsAdded = result.keywordsAdded || [];
+    result.skills = result.skills || [];
+    result.experience = result.experience || [];
+    result.summary = result.summary || '';
 
     log.info(`Resume tailored — ATS score: ${result.atsScore}/100, ${result.keywordsAdded.length} keywords added`);
     return result;
