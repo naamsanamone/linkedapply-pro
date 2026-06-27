@@ -34,13 +34,48 @@ export interface Job {
   dateListed: string;
   status: JobStatus;
   matchScore: number | null;
+  matchDetails?: MatchDetails | null;
   resumeUsed: string;
   hrName: string;
   hrLink: string;
   questionsAnswered: QuestionAnswer[];
   skillsExtracted: ExtractedSkills | null;
   tailoredResume?: TailoredResumeData | null;
+  coverLetter?: CoverLetterData | null;
+  standOutTips?: StandOutTips | null;
   notes: string;
+}
+
+export interface MatchDetails {
+  score: number;
+  headline: string;
+  recommendation: string;
+  shouldApply: boolean;
+  strengths: string[];
+  gaps: string[];
+  requiredQualifications: QualificationMatch[];
+  preferredQualifications: QualificationMatch[];
+}
+
+export interface QualificationMatch {
+  description: string;
+  matched: boolean;
+  note?: string;
+}
+
+export interface CoverLetterData {
+  subject: string;
+  greeting: string;
+  body: string[];
+  closing: string;
+  signature: string;
+  fullText: string;
+}
+
+export interface StandOutTips {
+  highlightSkills: string[];
+  highlightAchievements: string[];
+  profileImprovements: string[];
 }
 
 export interface TailoredResumeData {
@@ -207,7 +242,9 @@ export type MessageType =
   | 'RETRY_JOB'
   | 'RETRY_APPLY'
   | 'AI_MATCH_JOB'
-  | 'AI_TAILOR_RESUME';
+  | 'AI_TAILOR_RESUME'
+  | 'AI_COVER_LETTER'
+  | 'AI_STANDOUT_TIPS';
 
 export interface ExtensionMessage {
   type: MessageType;

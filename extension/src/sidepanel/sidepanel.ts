@@ -515,16 +515,20 @@ function openJobModal(jobId: string): void {
         top: '🟢 Top Match', high: '🔵 High Match',
         medium: '🟡 Medium Match', low: '🔴 Low Match',
       };
-      const recommendations: Record<string, string> = {
+
+      // Use AI-generated headline/recommendation if available
+      const md = job.matchDetails;
+      const headline = md?.headline || catLabels[cat] || cat;
+      const recommendation = md?.recommendation || {
         top: 'Excellent fit — strongly recommended to apply',
         high: 'Good match — your skills align well',
         medium: 'Partial match — some gaps in requirements',
         low: 'Weak match — consider skipping this role',
-      };
+      }[cat] || '';
 
       setText('modal-match-value', `${score}%`);
-      setText('modal-match-category', catLabels[cat] || cat);
-      setText('modal-match-recommendation', recommendations[cat] || '');
+      setText('modal-match-category', headline);
+      setText('modal-match-recommendation', recommendation);
 
       // Update ring fill
       const fillEl = document.getElementById('modal-match-fill');
@@ -539,6 +543,90 @@ function openJobModal(jobId: string): void {
       }
     } else {
       matchHero.style.display = 'none';
+    }
+  }
+
+  // Qualification Breakdown
+  const qualsSection = document.getElementById('modal-quals-section');
+  if (qualsSection) {
+    const md = job.matchDetails;
+    if (md && (md.requiredQualifications.length > 0 || md.preferredQualifications.length > 0)) {
+      qualsSection.style.display = 'block';
+
+      // Header: "Matches X of Y required qualifications:"
+      const reqMatched = md.requiredQualifications.filter(q => q.matched).length;
+      const reqTotal = md.requiredQualifications.length;
+      const headerEl = document.getElementById('modal-quals-header');
+      if (headerEl) {
+        headerEl.textContent = reqTotal > 0
+          ? `Matches ${reqMatched} of ${reqTotal} required qualification${reqTotal !== 1 ? 's' : ''}:`
+          : '';
+      }
+
+      // Required qualifications list
+      const reqList = document.getElementById('modal-required-quals');
+      if (reqList) {
+        reqList.innerHTML = md.requiredQualifications.map(q => `
+          <div class="quals__item">
+            <span class="quals__icon ${q.matched ? 'quals__icon--matched' : 'quals__icon--missed'}">
+              ${q.matched ? '✓' : '?'}
+            </span>
+            <span class="quals__text">
+              ${esc(q.description)}
+              ${q.note ? `<span class="quals__note">(${esc(q.note)})</span>` : ''}
+            </span>
+          </div>
+        `).join('');
+      }
+
+      // Preferred qualifications
+      const prefDetails = document.getElementById('modal-preferred-details') as HTMLDetailsElement;
+      const prefList = document.getElementById('modal-preferred-quals');
+      if (prefDetails && prefList) {
+        if (md.preferredQualifications.length > 0) {
+          prefDetails.style.display = 'block';
+          const prefMatched = md.preferredQualifications.filter(q => q.matched).length;
+          const prefTotal = md.preferredQualifications.length;
+          const summaryEl = prefDetails.querySelector('.quals__preferred-summary');
+          if (summaryEl) {
+            summaryEl.textContent = `Matches ${prefMatched} of ${prefTotal} preferred qualification${prefTotal !== 1 ? 's' : ''}`;
+          }
+          prefList.innerHTML = md.preferredQualifications.map(q => `
+            <div class="quals__item">
+              <span class="quals__icon ${q.matched ? 'quals__icon--matched' : 'quals__icon--missed'}">
+                ${q.matched ? '✓' : '?'}
+              </span>
+              <span class="quals__text">
+                ${esc(q.description)}
+                ${q.note ? `<span class="quals__note">(${esc(q.note)})</span>` : ''}
+              </span>
+            </div>
+          `).join('');
+        } else {
+          prefDetails.style.display = 'none';
+        }
+      }
+
+      // Strengths & Gaps tags
+      const sgSection = document.getElementById('modal-strengths-gaps');
+      if (sgSection) {
+        const hasData = (md.strengths.length > 0 || md.gaps.length > 0);
+        sgSection.style.display = hasData ? 'flex' : 'none';
+        const strengthsEl = document.getElementById('modal-strengths');
+        const gapsEl = document.getElementById('modal-gaps');
+        if (strengthsEl) {
+          strengthsEl.innerHTML = md.strengths.map(s =>
+            `<span class="badge badge-success">${esc(s)}</span>`
+          ).join('');
+        }
+        if (gapsEl) {
+          gapsEl.innerHTML = md.gaps.map(g =>
+            `<span class="badge badge-warning">${esc(g)}</span>`
+          ).join('');
+        }
+      }
+    } else {
+      qualsSection.style.display = 'none';
     }
   }
 

@@ -5,22 +5,25 @@
 
 import { createLogger } from '../../shared/logger';
 import type { AIProviderClient } from './ai-provider';
-import type { UserProfile } from '../../shared/types';
+import type { UserProfile, QualificationMatch } from '../../shared/types';
 import { fillPrompt, JOB_MATCH_PROMPT } from './prompts';
 
 const log = createLogger('AI:Matcher');
 
 export interface JobMatchResult {
   score: number;
+  headline: string;
   strengths: string[];
   gaps: string[];
   recommendation: string;
   shouldApply: boolean;
+  requiredQualifications: QualificationMatch[];
+  preferredQualifications: QualificationMatch[];
 }
 
 /**
  * Score how well a user matches a job description (0-100).
- * Uses resume text + skills map for accurate matching.
+ * Returns detailed qualification breakdown like LinkedIn Premium.
  */
 export async function aiMatchJob(
   client: AIProviderClient,
@@ -35,17 +38,27 @@ export async function aiMatchJob(
     const userProfileStr = formatProfileForAI(profile, resumeText, skillsMap);
     const prompt = fillPrompt(JOB_MATCH_PROMPT, {
       userProfile: userProfileStr,
-      jobDescription: jobDescription.substring(0, 3000), // Limit JD length for token efficiency
+      jobDescription: jobDescription.substring(0, 3000),
     });
 
     const result = await client.completeJSON<JobMatchResult>(prompt, {
       temperature: 0.1,
+      maxTokens: 2000,
     });
 
     // Validate score range
     result.score = Math.max(0, Math.min(100, result.score));
 
-    log.info(`Job match score: ${result.score}/100 (should apply: ${result.shouldApply})`);
+    // Ensure arrays exist (in case AI omits them)
+    result.requiredQualifications = result.requiredQualifications || [];
+    result.preferredQualifications = result.preferredQualifications || [];
+    result.strengths = result.strengths || [];
+    result.gaps = result.gaps || [];
+    result.headline = result.headline || (result.score >= 80 ? "You'd be a top applicant" : result.score >= 60 ? 'Good match for this role' : 'Job match is low');
+
+    const reqMatched = result.requiredQualifications.filter(q => q.matched).length;
+    const reqTotal = result.requiredQualifications.length;
+    log.info(`Job match: ${result.score}/100 — ${reqMatched}/${reqTotal} required quals matched (${result.headline})`);
     return result;
   } catch (error) {
     log.error('Job matching failed', error);

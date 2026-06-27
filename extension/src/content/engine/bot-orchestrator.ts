@@ -16,6 +16,7 @@ import type {
   Job,
   FailedJob,
   ExtensionMessage,
+  MatchDetails,
 } from '../../shared/types';
 
 import { navigateToSearch, applyFilters, getPageInfo, goToNextPage, getJobListings, isDailyLimitReached } from './job-search';
@@ -207,6 +208,7 @@ async function processJob(
 
   // Step 6: JD Match Scoring (if enabled) — routed through background worker
   let computedMatchScore: number | null = null;
+  let computedMatchDetails: MatchDetails | null = null;
   const matchFilter = await getStorage<{ enabled: boolean; top: boolean; high: boolean; medium: boolean; low: boolean }>(STORAGE_KEYS.MATCH_FILTER);
   
   if (matchFilter?.enabled && jd.description !== 'Unknown') {
@@ -222,12 +224,24 @@ async function processJob(
       } else if (matchResponse?.result) {
         const matchResult = matchResponse.result;
         computedMatchScore = Math.max(0, Math.min(100, matchResult.score));
+        computedMatchDetails = {
+          score: computedMatchScore,
+          headline: matchResult.headline || '',
+          recommendation: matchResult.recommendation || '',
+          shouldApply: matchResult.shouldApply ?? true,
+          strengths: matchResult.strengths || [],
+          gaps: matchResult.gaps || [],
+          requiredQualifications: matchResult.requiredQualifications || [],
+          preferredQualifications: matchResult.preferredQualifications || [],
+        };
         const category: 'top' | 'high' | 'medium' | 'low' = 
           computedMatchScore >= 80 ? 'top' :
           computedMatchScore >= 60 ? 'high' :
           computedMatchScore >= 40 ? 'medium' : 'low';
         
-        log.info(`📊 Match: ${computedMatchScore}% (${category}) for "${details.title}" — ${matchResult.recommendation}`);
+        const reqMatched = computedMatchDetails.requiredQualifications.filter(q => q.matched).length;
+        const reqTotal = computedMatchDetails.requiredQualifications.length;
+        log.info(`📊 Match: ${computedMatchScore}% (${category}) — ${reqMatched}/${reqTotal} required quals — "${details.title}"`);
         
         if (!matchFilter[category]) {
           log.info(`⏭ Skipping "${details.title}" — ${category} match (${computedMatchScore}%) below filter threshold`);
@@ -277,6 +291,7 @@ async function processJob(
       // Save applied job
       const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, 'Easy Applied', result.questionsAnswered);
       job.matchScore = computedMatchScore;
+      if (computedMatchDetails) job.matchDetails = computedMatchDetails;
       if (tailoredResult) job.tailoredResume = tailoredResult;
       job.status = 'applied';
       await saveAppliedJob(job);
@@ -299,6 +314,7 @@ async function processJob(
         const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, extResult.applicationLink, []);
         job.status = 'external';
         job.matchScore = computedMatchScore;
+        if (computedMatchDetails) job.matchDetails = computedMatchDetails;
         if (tailoredResult) job.tailoredResume = tailoredResult;
         await saveAppliedJob(job);
         appliedJobIds.add(details.jobId);

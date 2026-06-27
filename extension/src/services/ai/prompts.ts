@@ -64,6 +64,7 @@ Select exactly ONE option from the list above. Return only the exact option text
 
 export const JOB_MATCH_PROMPT = `
 You are a career advisor AI. Evaluate how well this candidate matches the job description.
+Provide a detailed qualification breakdown like LinkedIn Premium.
 
 CANDIDATE PROFILE:
 {userProfile}
@@ -71,13 +72,31 @@ CANDIDATE PROFILE:
 JOB DESCRIPTION:
 {jobDescription}
 
-Score the match from 0 to 100 and explain briefly. Return ONLY valid JSON:
+Analyze every qualification mentioned in the job description. Classify each as required or preferred.
+For each qualification, determine if the candidate matches it based on their profile/resume.
+
+Score the overall match from 0 to 100. Return ONLY valid JSON:
 {
   "score": <number 0-100>,
+  "headline": "<e.g. You'd be a top applicant OR Job match is low>",
+  "recommendation": "<2-3 sentence recommendation explaining the match>",
+  "shouldApply": <true/false>,
   "strengths": ["<strength 1>", "<strength 2>"],
   "gaps": ["<gap 1>", "<gap 2>"],
-  "recommendation": "<1-2 sentence recommendation>",
-  "shouldApply": <true/false>
+  "requiredQualifications": [
+    {
+      "description": "<qualification text>",
+      "matched": <true/false>,
+      "note": "<optional: why partial/no match, e.g. User has 3 years, requires 5+>"
+    }
+  ],
+  "preferredQualifications": [
+    {
+      "description": "<qualification text>",
+      "matched": <true/false>,
+      "note": "<optional>"
+    }
+  ]
 }
 `;
 
