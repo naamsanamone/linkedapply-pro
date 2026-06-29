@@ -338,77 +338,164 @@
             <textarea class="input" id="modal-notes" rows="3" placeholder="Add notes..."></textarea>
           </div>
 
-          <!-- Tailored Resume Section -->
-          <div class="modal__tailored-card" id="modal-tailored-section" style="display:none;">
-            <div class="tailored-card__header">
-              <div class="tailored-card__title">
-                <span>📝 AI-Tailored Resume</span>
-                <span class="badge badge-success tailored-card__ats">ATS <span id="modal-ats-score">—</span>%</span>
+          <!-- ========== 4-TAB BAR ========== -->
+          <div class="modal-tabs">
+            <button class="modal-tab active" data-tab="tab-match">📊 Match</button>
+            <button class="modal-tab" data-tab="tab-resume">📝 Resume</button>
+            <button class="modal-tab" data-tab="tab-coverletter">✉️ Cover Letter</button>
+            <button class="modal-tab" data-tab="tab-standout">⭐ Stand Out</button>
+          </div>
+
+          <!-- ========== TAB PANELS ========== -->
+
+          <!-- TAB 1: Match -->
+          <div class="modal-tab-panel active" id="tab-match">
+            <div id="tab-match-content">
+              <!-- Match details card (populated by JS) -->
+              <div class="modal__match-card" id="modal-match-card-inner" style="display:none;">
+                <div class="match-card__header">
+                  <div class="match-card__score">
+                    <span class="match-card__score-value" id="modal-match-score-tab">—</span>
+                    <span class="match-card__score-label">Match</span>
+                  </div>
+                  <div class="match-card__headline" id="modal-match-headline-tab">—</div>
+                </div>
+                <div class="match-card__body">
+                  <div class="match-card__recommendation" id="modal-match-rec-tab">—</div>
+                  <div class="match-card__quals">
+                    <div class="match-card__quals-title">Qualifications (<span id="modal-quals-matched-tab">0</span>/<span id="modal-quals-total-tab">0</span>)</div>
+                    <div class="match-card__quals-list" id="modal-quals-list-tab"></div>
+                  </div>
+                  <div class="match-card__tags">
+                    <div class="match-card__tag-group">
+                      <span class="match-card__tag-label">Strengths</span>
+                      <div id="modal-strengths-tab"></div>
+                    </div>
+                    <div class="match-card__tag-group">
+                      <span class="match-card__tag-label">Gaps</span>
+                      <div id="modal-gaps-tab"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <button class="btn btn-sm btn-primary" id="modal-copy-tailored">📋 Copy</button>
             </div>
-            <div class="tailored-card__body">
-              <div class="tailored-card__section">
-                <div class="tailored-card__section-title">Professional Summary</div>
-                <p class="tailored-card__text" id="modal-tailored-summary"></p>
-              </div>
-              <div class="tailored-card__section">
-                <div class="tailored-card__section-title">Key Skills</div>
-                <div class="tailored-card__badges" id="modal-tailored-skills"></div>
-              </div>
-              <div class="tailored-card__section">
-                <div class="tailored-card__section-title">Experience</div>
-                <div id="modal-tailored-experience"></div>
-              </div>
-              <div class="tailored-card__section">
-                <div class="tailored-card__section-title">Keywords Added</div>
-                <div class="tailored-card__badges" id="modal-tailored-keywords"></div>
-              </div>
+            <div class="tab-generate" id="tab-match-generate" style="display:none;">
+              <p>No match data yet.</p>
+              <button class="btn btn-primary btn-sm" id="btn-generate-match">🔄 Generate Match Analysis</button>
+            </div>
+            <div class="tab-loading" id="tab-match-loading" style="display:none;">
+              <div class="spinner"></div>
+              <span>Analyzing match...</span>
             </div>
           </div>
 
-          <!-- Cover Letter Section -->
-          <div class="modal__cover-letter-card" id="modal-cl-section" style="display:none;">
-            <div class="cl-card__header">
-              <div class="cl-card__title">
-                <span>📧 AI Cover Letter</span>
-                <span class="badge badge-primary cl-card__badge" id="modal-cl-badge">Generated</span>
+          <!-- TAB 2: Resume -->
+          <div class="modal-tab-panel" id="tab-resume">
+            <div id="tab-resume-content" style="display:none;">
+              <div class="modal__tailored-card" id="modal-tailored-section-tab">
+                <div class="tailored-card__header">
+                  <div class="tailored-card__title">
+                    <span>📝 AI-Tailored Resume</span>
+                    <span class="badge badge-success tailored-card__ats">ATS <span id="modal-ats-score">—</span>%</span>
+                  </div>
+                  <button class="btn btn-sm btn-primary" id="modal-copy-tailored">📋 Copy</button>
+                </div>
+                <div class="tailored-card__body">
+                  <div class="tailored-card__section">
+                    <div class="tailored-card__section-title">Professional Summary</div>
+                    <p class="tailored-card__text" id="modal-tailored-summary"></p>
+                  </div>
+                  <div class="tailored-card__section">
+                    <div class="tailored-card__section-title">Key Skills</div>
+                    <div class="tailored-card__badges" id="modal-tailored-skills"></div>
+                  </div>
+                  <div class="tailored-card__section">
+                    <div class="tailored-card__section-title">Experience</div>
+                    <div id="modal-tailored-experience"></div>
+                  </div>
+                  <div class="tailored-card__section">
+                    <div class="tailored-card__section-title">Keywords Added</div>
+                    <div class="tailored-card__badges" id="modal-tailored-keywords"></div>
+                  </div>
+                </div>
               </div>
-              <button class="btn btn-sm btn-primary" id="modal-copy-cl">📋 Copy</button>
             </div>
-            <div class="cl-card__body">
-              <div class="cl-card__subject" id="modal-cl-subject"></div>
-              <div class="cl-card__preview" id="modal-cl-preview"></div>
+            <div class="tab-generate" id="tab-resume-generate" style="display:none;">
+              <p>No tailored resume yet.</p>
+              <button class="btn btn-primary btn-sm" id="btn-generate-resume">🔄 Generate Tailored Resume</button>
             </div>
-            <div class="cl-card__actions">
-              <button class="btn btn-sm" id="modal-dl-pdf">📄 Download PDF</button>
-              <button class="btn btn-sm" id="modal-dl-docx">📝 Download DOCX</button>
+            <div class="tab-loading" id="tab-resume-loading" style="display:none;">
+              <div class="spinner"></div>
+              <span>Tailoring resume...</span>
             </div>
           </div>
 
-          <!-- Stand Out Tips Section -->
-          <div class="modal__standout-card" id="modal-standout-section" style="display:none;">
-            <div class="standout-card__header">
-              <span class="standout-card__title">💡 How to Stand Out</span>
-              <span class="badge badge-warning standout-card__badge">Premium</span>
+          <!-- TAB 3: Cover Letter -->
+          <div class="modal-tab-panel" id="tab-coverletter">
+            <div id="tab-cl-content" style="display:none;">
+              <div class="modal__cover-letter-card" id="modal-cl-section-tab">
+                <div class="cl-card__header">
+                  <div class="cl-card__title">
+                    <span>✉️ AI Cover Letter</span>
+                    <span class="badge badge-primary cl-card__badge">Generated</span>
+                  </div>
+                  <button class="btn btn-sm btn-primary" id="modal-copy-cl">📋 Copy</button>
+                </div>
+                <div class="cl-card__body">
+                  <div class="cl-card__subject" id="modal-cl-subject"></div>
+                  <div class="cl-card__preview" id="modal-cl-preview"></div>
+                </div>
+                <div class="cl-card__actions">
+                  <button class="btn btn-sm" id="modal-dl-pdf">📄 Download PDF</button>
+                  <button class="btn btn-sm" id="modal-dl-docx">📝 Download DOCX</button>
+                </div>
+              </div>
             </div>
-            <div class="standout-card__body">
-              <div class="standout-card__group">
-                <div class="standout-card__group-title">🎯 Skills to Highlight</div>
-                <div class="standout-card__list" id="modal-so-skills"></div>
-              </div>
-              <div class="standout-card__group">
-                <div class="standout-card__group-title">🏆 Achievements to Mention</div>
-                <div class="standout-card__list" id="modal-so-achievements"></div>
-              </div>
-              <div class="standout-card__group">
-                <div class="standout-card__group-title">📈 Profile Improvements</div>
-                <div class="standout-card__list" id="modal-so-improvements"></div>
-              </div>
+            <div class="tab-generate" id="tab-cl-generate" style="display:none;">
+              <p>No cover letter yet.</p>
+              <button class="btn btn-primary btn-sm" id="btn-generate-cl">🔄 Generate Cover Letter</button>
+            </div>
+            <div class="tab-loading" id="tab-cl-loading" style="display:none;">
+              <div class="spinner"></div>
+              <span>Writing cover letter...</span>
             </div>
           </div>
 
-          <!-- Questions Answered -->
+          <!-- TAB 4: Stand Out -->
+          <div class="modal-tab-panel" id="tab-standout">
+            <div id="tab-standout-content" style="display:none;">
+              <div class="modal__standout-card" id="modal-standout-section-tab">
+                <div class="standout-card__header">
+                  <span class="standout-card__title">💡 How to Stand Out</span>
+                  <span class="badge badge-warning standout-card__badge">Premium</span>
+                </div>
+                <div class="standout-card__body">
+                  <div class="standout-card__group">
+                    <div class="standout-card__group-title">🎯 Skills to Highlight</div>
+                    <div class="standout-card__list" id="modal-so-skills"></div>
+                  </div>
+                  <div class="standout-card__group">
+                    <div class="standout-card__group-title">🏆 Achievements to Mention</div>
+                    <div class="standout-card__list" id="modal-so-achievements"></div>
+                  </div>
+                  <div class="standout-card__group">
+                    <div class="standout-card__group-title">📈 Profile Improvements</div>
+                    <div class="standout-card__list" id="modal-so-improvements"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-generate" id="tab-standout-generate" style="display:none;">
+              <p>No stand-out tips yet.</p>
+              <button class="btn btn-primary btn-sm" id="btn-generate-standout">🔄 Generate Stand Out Tips</button>
+            </div>
+            <div class="tab-loading" id="tab-standout-loading" style="display:none;">
+              <div class="spinner"></div>
+              <span>Generating tips...</span>
+            </div>
+          </div>
+
+          <!-- Questions Answered (outside tabs) -->
           <details class="modal__details" id="modal-questions-section">
             <summary>Questions Answered (<span id="modal-q-count">0</span>)</summary>
             <div class="modal__questions-list" id="modal-questions"></div>

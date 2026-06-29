@@ -669,149 +669,203 @@ function openJobModal(jobId: string): void {
     `).join('');
   }
 
-  // Tailored Resume
-  const tailoredSection = document.getElementById('modal-tailored-section');
-  if (tailoredSection) {
-    const tr = job.tailoredResume;
-    if (tr) {
-      tailoredSection.style.display = 'block';
-      setText('modal-ats-score', String(tr.atsScore));
+  // ========== 4-TAB SETUP ==========
+  // Tab switching
+  document.querySelectorAll('.modal-tab').forEach(tab => {
+    (tab as HTMLElement).onclick = () => {
+      document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.modal-tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panelId = (tab as HTMLElement).dataset.tab;
+      if (panelId) document.getElementById(panelId)?.classList.add('active');
+    };
+  });
+  // Reset to Match tab
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.modal-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.modal-tab[data-tab="tab-match"]')?.classList.add('active');
+  document.getElementById('tab-match')?.classList.add('active');
 
-      // Summary
-      const summaryEl = document.getElementById('modal-tailored-summary');
-      if (summaryEl) summaryEl.textContent = tr.summary;
+  // Helper: show one of content/generate/loading
+  const showTabState = (prefix: string, state: 'content' | 'generate' | 'loading') => {
+    ['content', 'generate', 'loading'].forEach(s => {
+      const el = document.getElementById(`${prefix}-${s}`);
+      if (el) el.style.display = s === state ? (s === 'content' ? 'block' : (s === 'loading' ? 'flex' : 'block')) : 'none';
+    });
+  };
 
-      // Skills badges
-      const skillsEl = document.getElementById('modal-tailored-skills');
-      if (skillsEl) {
-        skillsEl.innerHTML = tr.skills.map(s =>
-          `<span class="badge badge-primary">${esc(s)}</span>`
-        ).join('');
-      }
+  // ---- TAB 1: Match ----
+  const md = job.matchDetails;
+  if (md && job.matchScore !== null) {
+    showTabState('tab-match', 'content');
+    const matchCard = document.getElementById('modal-match-card-inner');
+    if (matchCard) matchCard.style.display = 'block';
+    setText('modal-match-score-tab', `${job.matchScore}%`);
+    setText('modal-match-headline-tab', md.headline || '—');
+    setText('modal-match-rec-tab', md.recommendation || '—');
 
-      // Experience
-      const expEl = document.getElementById('modal-tailored-experience');
-      if (expEl) {
-        expEl.innerHTML = tr.experience.map(exp => `
-          <div class="tailored-exp">
-            <div class="tailored-exp__header">
-              <span class="tailored-exp__title">${esc(exp.title)}</span>
-              <span class="tailored-exp__company">${esc(exp.company)}</span>
-            </div>
-            <div class="tailored-exp__duration">${esc(exp.duration)}</div>
-            <ul class="tailored-exp__bullets">
-              ${exp.bullets.map(b => `<li>${esc(b)}</li>`).join('')}
-            </ul>
+    // Qualifications list ✓/?
+    const allQuals = [...(md.requiredQualifications || []), ...(md.preferredQualifications || [])];
+    const matched = allQuals.filter(q => q.matched).length;
+    setText('modal-quals-matched-tab', String(matched));
+    setText('modal-quals-total-tab', String(allQuals.length));
+    const qualsListEl = document.getElementById('modal-quals-list-tab');
+    if (qualsListEl) {
+      qualsListEl.innerHTML = allQuals.map(q => `
+        <div class="qual-item ${q.matched ? 'qual-item--matched' : 'qual-item--missed'}">
+          <span class="qual-icon">${q.matched ? '✓' : '?'}</span>
+          <span>${esc(q.description)}${q.note ? ` <em style="opacity:0.7">(${esc(q.note)})</em>` : ''}</span>
+        </div>
+      `).join('');
+    }
+
+    // Strengths/Gaps
+    const strengthsEl = document.getElementById('modal-strengths-tab');
+    if (strengthsEl) strengthsEl.innerHTML = (md.strengths || []).map(s => `<span class="badge badge-success">${esc(s)}</span>`).join('');
+    const gapsEl = document.getElementById('modal-gaps-tab');
+    if (gapsEl) gapsEl.innerHTML = (md.gaps || []).map(g => `<span class="badge badge-warning">${esc(g)}</span>`).join('');
+  } else {
+    showTabState('tab-match', 'generate');
+    const matchCard = document.getElementById('modal-match-card-inner');
+    if (matchCard) matchCard.style.display = 'none';
+  }
+
+  // ---- TAB 2: Resume ----
+  const tr = job.tailoredResume;
+  if (tr) {
+    showTabState('tab-resume', 'content');
+    setText('modal-ats-score', String(tr.atsScore));
+    const summaryEl = document.getElementById('modal-tailored-summary');
+    if (summaryEl) summaryEl.textContent = tr.summary;
+    const skillsEl = document.getElementById('modal-tailored-skills');
+    if (skillsEl) skillsEl.innerHTML = tr.skills.map(s => `<span class="badge badge-primary">${esc(s)}</span>`).join('');
+    const expEl = document.getElementById('modal-tailored-experience');
+    if (expEl) {
+      expEl.innerHTML = tr.experience.map(exp => `
+        <div class="tailored-exp">
+          <div class="tailored-exp__header">
+            <span class="tailored-exp__title">${esc(exp.title)}</span>
+            <span class="tailored-exp__company">${esc(exp.company)}</span>
           </div>
-        `).join('');
-      }
-
-      // Keywords added
-      const kwEl = document.getElementById('modal-tailored-keywords');
-      if (kwEl) {
-        kwEl.innerHTML = tr.keywordsAdded.map(kw =>
-          `<span class="badge badge-success">+ ${esc(kw)}</span>`
-        ).join('');
-      }
-
-      // Copy button
-      const copyBtn = document.getElementById('modal-copy-tailored');
-      if (copyBtn) {
-        copyBtn.onclick = () => {
-          const text = formatTailoredResumeText(tr);
-          navigator.clipboard.writeText(text).then(() => {
-            copyBtn.textContent = '✓ Copied!';
-            setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 2000);
-          });
-        };
-      }
-    } else {
-      tailoredSection.style.display = 'none';
+          <div class="tailored-exp__duration">${esc(exp.duration)}</div>
+          <ul class="tailored-exp__bullets">${exp.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
+        </div>
+      `).join('');
     }
+    const kwEl = document.getElementById('modal-tailored-keywords');
+    if (kwEl) kwEl.innerHTML = tr.keywordsAdded.map(kw => `<span class="badge badge-success">+ ${esc(kw)}</span>`).join('');
+    const copyBtn = document.getElementById('modal-copy-tailored');
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        const text = formatTailoredResumeText(tr);
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.textContent = '✓ Copied!';
+          setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 2000);
+        });
+      };
+    }
+  } else {
+    showTabState('tab-resume', 'generate');
   }
 
-  // Cover Letter
-  const clSection = document.getElementById('modal-cl-section');
-  if (clSection) {
-    const cl = job.coverLetter;
-    if (cl) {
-      clSection.style.display = 'block';
-      setText('modal-cl-subject', cl.subject);
-
-      // Preview text
-      const previewEl = document.getElementById('modal-cl-preview');
-      if (previewEl) previewEl.textContent = cl.plainText;
-
-      // Copy button
-      const copyCl = document.getElementById('modal-copy-cl');
-      if (copyCl) {
-        copyCl.onclick = () => {
-          navigator.clipboard.writeText(cl.plainText).then(() => {
-            copyCl.textContent = '✓ Copied!';
-            setTimeout(() => { copyCl.textContent = '📋 Copy'; }, 2000);
-          });
-        };
-      }
-
-      // Download PDF
-      const dlPdf = document.getElementById('modal-dl-pdf');
-      if (dlPdf) {
-        dlPdf.onclick = () => {
-          try {
-            const blob = generateCoverLetterPDF(cl);
-            const filename = `CoverLetter_${cl.company.replace(/\s+/g, '_')}_${cl.jobTitle.replace(/\s+/g, '_')}.pdf`;
-            downloadBlob(blob, filename);
-            dlPdf.textContent = '✓ Downloaded!';
-            setTimeout(() => { dlPdf.textContent = '📄 Download PDF'; }, 2000);
-          } catch (e) {
-            log.error('PDF download failed', e);
-          }
-        };
-      }
-
-      // Download DOCX
-      const dlDocx = document.getElementById('modal-dl-docx');
-      if (dlDocx) {
-        dlDocx.onclick = async () => {
-          try {
-            const blob = await generateCoverLetterDOCX(cl);
-            const filename = `CoverLetter_${cl.company.replace(/\s+/g, '_')}_${cl.jobTitle.replace(/\s+/g, '_')}.docx`;
-            downloadBlob(blob, filename);
-            dlDocx.textContent = '✓ Downloaded!';
-            setTimeout(() => { dlDocx.textContent = '📝 Download DOCX'; }, 2000);
-          } catch (e) {
-            log.error('DOCX download failed', e);
-          }
-        };
-      }
-    } else {
-      clSection.style.display = 'none';
+  // ---- TAB 3: Cover Letter ----
+  const cl = job.coverLetter;
+  if (cl) {
+    showTabState('tab-cl', 'content');
+    setText('modal-cl-subject', cl.subject);
+    const previewEl = document.getElementById('modal-cl-preview');
+    if (previewEl) previewEl.textContent = cl.plainText;
+    const copyCl = document.getElementById('modal-copy-cl');
+    if (copyCl) {
+      copyCl.onclick = () => {
+        navigator.clipboard.writeText(cl.plainText).then(() => {
+          copyCl.textContent = '✓ Copied!';
+          setTimeout(() => { copyCl.textContent = '📋 Copy'; }, 2000);
+        });
+      };
     }
+    const dlPdf = document.getElementById('modal-dl-pdf');
+    if (dlPdf) {
+      dlPdf.onclick = () => {
+        try {
+          const blob = generateCoverLetterPDF(cl);
+          downloadBlob(blob, `CoverLetter_${cl.company.replace(/\s+/g, '_')}.pdf`);
+          dlPdf.textContent = '✓ Downloaded!';
+          setTimeout(() => { dlPdf.textContent = '📄 Download PDF'; }, 2000);
+        } catch (e) { log.error('PDF failed', e); }
+      };
+    }
+    const dlDocx = document.getElementById('modal-dl-docx');
+    if (dlDocx) {
+      dlDocx.onclick = async () => {
+        try {
+          const blob = await generateCoverLetterDOCX(cl);
+          downloadBlob(blob, `CoverLetter_${cl.company.replace(/\s+/g, '_')}.docx`);
+          dlDocx.textContent = '✓ Downloaded!';
+          setTimeout(() => { dlDocx.textContent = '📝 Download DOCX'; }, 2000);
+        } catch (e) { log.error('DOCX failed', e); }
+      };
+    }
+  } else {
+    showTabState('tab-cl', 'generate');
   }
 
-  // Stand Out Tips
-  const soSection = document.getElementById('modal-standout-section');
-  if (soSection) {
-    const tips = job.standOutTips;
-    if (tips) {
-      soSection.style.display = 'block';
+  // ---- TAB 4: Stand Out ----
+  const tips = job.standOutTips;
+  if (tips) {
+    showTabState('tab-standout', 'content');
+    const renderTips = (id: string, items: string[]) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = items.map(t => `<div class="standout-tip">${esc(t)}</div>`).join('');
+    };
+    renderTips('modal-so-skills', tips.highlightSkills || []);
+    renderTips('modal-so-achievements', tips.highlightAchievements || []);
+    renderTips('modal-so-improvements', tips.profileImprovements || []);
+  } else {
+    showTabState('tab-standout', 'generate');
+  }
 
-      const renderTips = (containerId: string, items: string[]) => {
-        const el = document.getElementById(containerId);
-        if (el) {
-          el.innerHTML = items.map(tip =>
-            `<div class="standout-tip">${esc(tip)}</div>`
-          ).join('');
+  // ---- On-demand Generate Buttons ----
+  const setupGenerateBtn = (btnId: string, tabPrefix: string, msgType: string) => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.onclick = async () => {
+        showTabState(tabPrefix, 'loading');
+        try {
+          const resp = await chrome.runtime.sendMessage({
+            type: msgType,
+            payload: { jobTitle: job.title, company: job.company, jobDescription: job.description || '' },
+            timestamp: Date.now(),
+          });
+          if (resp?.result) {
+            // Refresh job data and reopen modal
+            const jobs = await getStorage<Job[]>(STORAGE_KEYS.APPLIED_JOBS) || [];
+            const idx = jobs.findIndex(j => j.jobId === jobId);
+            if (idx >= 0) {
+              if (msgType === 'AI_MATCH_JOB') { jobs[idx].matchScore = resp.result.score; jobs[idx].matchDetails = resp.result; }
+              if (msgType === 'AI_TAILOR_RESUME') { jobs[idx].tailoredResume = resp.result; }
+              if (msgType === 'AI_COVER_LETTER') { jobs[idx].coverLetter = resp.result; }
+              if (msgType === 'AI_STANDOUT_TIPS') { jobs[idx].standOutTips = resp.result; }
+              await setStorage(STORAGE_KEYS.APPLIED_JOBS, jobs);
+              allJobs = jobs;
+              openJobModal(jobId); // re-open with new data
+            }
+          } else {
+            showTabState(tabPrefix, 'generate');
+            log.warn(`Generate failed: ${resp?.error}`);
+          }
+        } catch (e) {
+          showTabState(tabPrefix, 'generate');
+          log.error('On-demand generate failed', e);
         }
       };
-
-      renderTips('modal-so-skills', tips.highlightSkills || []);
-      renderTips('modal-so-achievements', tips.highlightAchievements || []);
-      renderTips('modal-so-improvements', tips.profileImprovements || []);
-    } else {
-      soSection.style.display = 'none';
     }
-  }
+  };
+
+  setupGenerateBtn('btn-generate-match', 'tab-match', 'AI_MATCH_JOB');
+  setupGenerateBtn('btn-generate-resume', 'tab-resume', 'AI_TAILOR_RESUME');
+  setupGenerateBtn('btn-generate-cl', 'tab-cl', 'AI_COVER_LETTER');
+  setupGenerateBtn('btn-generate-standout', 'tab-standout', 'AI_STANDOUT_TIPS');
 
   // Job link
   const jobLink = document.getElementById('modal-job-link') as HTMLAnchorElement;
