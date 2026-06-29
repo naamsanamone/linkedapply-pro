@@ -194,6 +194,27 @@ Write a concise (2-3 sentence) follow-up message that:
 Return only the message text. No quotes, no formatting.
 `;
 
+// ======== STAND OUT TIPS (Premium) ========
+
+export const STAND_OUT_TIPS_PROMPT = `
+Help this candidate stand out for this job application. Like LinkedIn Premium's "Help Stand Out" feature.
+
+CANDIDATE:
+{userProfile}
+
+JOB: {jobTitle} at {company}
+{jobDescription}
+
+Provide actionable tips. Keep each tip under 15 words.
+
+Return ONLY valid JSON:
+{
+  "highlightSkills": ["<skill to emphasize in application>", "<skill>"],
+  "highlightAchievements": ["<achievement to mention>", "<achievement>"],
+  "profileImprovements": ["<specific LinkedIn profile improvement>", "<improvement>"]
+}
+`;
+
 // ======== HELPER: Template interpolation ========
 
 /**

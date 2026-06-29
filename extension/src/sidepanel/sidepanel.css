@@ -1040,6 +1040,69 @@
   font-size: 11px;
 }
 
+/* ---- Stand Out Tips Card ---- */
+.modal__standout-card {
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(251, 191, 36, 0.06));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  overflow: hidden;
+}
+
+.standout-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.standout-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.standout-card__badge { font-size: 10px; }
+
+.standout-card__body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.standout-card__group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.standout-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.standout-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.standout-tip::before {
+  content: '→';
+  color: var(--color-warning);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 /* ---- Questions & Details ---- */
 .modal__details {
   margin-top: 8px;

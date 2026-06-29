@@ -789,6 +789,30 @@ function openJobModal(jobId: string): void {
     }
   }
 
+  // Stand Out Tips
+  const soSection = document.getElementById('modal-standout-section');
+  if (soSection) {
+    const tips = job.standOutTips;
+    if (tips) {
+      soSection.style.display = 'block';
+
+      const renderTips = (containerId: string, items: string[]) => {
+        const el = document.getElementById(containerId);
+        if (el) {
+          el.innerHTML = items.map(tip =>
+            `<div class="standout-tip">${esc(tip)}</div>`
+          ).join('');
+        }
+      };
+
+      renderTips('modal-so-skills', tips.highlightSkills || []);
+      renderTips('modal-so-achievements', tips.highlightAchievements || []);
+      renderTips('modal-so-improvements', tips.profileImprovements || []);
+    } else {
+      soSection.style.display = 'none';
+    }
+  }
+
   // Job link
   const jobLink = document.getElementById('modal-job-link') as HTMLAnchorElement;
   if (jobLink) jobLink.href = job.jobLink || '#';

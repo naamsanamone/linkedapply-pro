@@ -18,6 +18,7 @@ import type {
   ExtensionMessage,
   MatchDetails,
   CoverLetterData,
+  StandOutTips,
 } from '../../shared/types';
 
 import { navigateToSearch, applyFilters, getPageInfo, goToNextPage, getJobListings, isDailyLimitReached } from './job-search';
@@ -301,6 +302,31 @@ async function processJob(
     }
   }
 
+  // Step 6d: Stand Out Tips (for jobs with score >= 50) — routed through background worker
+  let standOutResult: StandOutTips | null = null;
+  if (computedMatchScore !== null && computedMatchScore >= 50 && jd.description !== 'Unknown') {
+    try {
+      const soResponse = await chrome.runtime.sendMessage({
+        type: 'AI_STANDOUT_TIPS',
+        payload: {
+          jobTitle: details.title,
+          company: details.company,
+          jobDescription: jd.description,
+        },
+        timestamp: Date.now(),
+      });
+
+      if (soResponse?.result) {
+        standOutResult = soResponse.result;
+        log.info(`💡 Stand-out tips generated for "${details.title}"`);
+      } else if (soResponse?.error) {
+        log.warn(`Stand-out tips: ${soResponse.error}`);
+      }
+    } catch (error) {
+      log.warn('Stand-out tips generation failed, continuing without', error);
+    }
+  }
+
   // Step 7: Check if Easy Apply or External
   const easyApplyBtn = isEasyApplyJob();
 
@@ -320,6 +346,7 @@ async function processJob(
       if (computedMatchDetails) job.matchDetails = computedMatchDetails;
       if (tailoredResult) job.tailoredResume = tailoredResult;
       if (coverLetterResult) job.coverLetter = coverLetterResult;
+      if (standOutResult) job.standOutTips = standOutResult;
       job.status = 'applied';
       await saveAppliedJob(job);
       appliedJobIds.add(details.jobId);
@@ -344,6 +371,7 @@ async function processJob(
         if (computedMatchDetails) job.matchDetails = computedMatchDetails;
         if (tailoredResult) job.tailoredResume = tailoredResult;
         if (coverLetterResult) job.coverLetter = coverLetterResult;
+        if (standOutResult) job.standOutTips = standOutResult;
         await saveAppliedJob(job);
         appliedJobIds.add(details.jobId);
         await incrementSession('externalCollected');

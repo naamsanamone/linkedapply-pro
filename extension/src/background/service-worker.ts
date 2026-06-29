@@ -11,6 +11,7 @@ import { createAIProviderFromStorage } from '../services/ai/ai-provider';
 import { aiMatchJob } from '../services/ai/job-matcher';
 import { aiTailorResume } from '../services/ai/resume-tailor';
 import { aiGenerateCoverLetter } from '../services/ai/cover-letter-gen';
+import { aiGenerateStandOutTips } from '../services/ai/standout-tips';
 
 const log = createLogger('ServiceWorker');
 
@@ -109,6 +110,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'AI_COVER_LETTER':
         handleAICoverLetter(message.payload).then(sendResponse);
+        return true; // async
+
+      case 'AI_STANDOUT_TIPS':
+        handleAIStandOutTips(message.payload).then(sendResponse);
         return true; // async
 
       default:
@@ -592,5 +597,35 @@ async function handleAICoverLetter(payload: any): Promise<any> {
     }
     log.error('AI cover letter failed in service worker', error);
     return { error: error.message || 'AI cover letter failed' };
+  }
+}
+
+async function handleAIStandOutTips(payload: any): Promise<any> {
+  const rateLimitMsg = checkRateLimit();
+  if (rateLimitMsg) return { error: rateLimitMsg };
+
+  try {
+    const aiClient = await getOrCreateAIClient();
+    if (!aiClient) return { error: 'No AI provider configured' };
+
+    const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
+    if (!profile) return { error: 'No user profile found' };
+
+    const result = await aiGenerateStandOutTips(
+      aiClient, profile,
+      payload.jobTitle || 'Software Engineer',
+      payload.company || 'Unknown Company',
+      payload.jobDescription || ''
+    );
+
+    clearRateLimit();
+    return { success: true, result };
+  } catch (error: any) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
+      handleRateLimitError(error);
+      return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
+    log.error('AI stand-out tips failed in service worker', error);
+    return { error: error.message || 'AI stand-out tips failed' };
   }
 }
