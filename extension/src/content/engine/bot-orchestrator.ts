@@ -17,6 +17,7 @@ import type {
   FailedJob,
   ExtensionMessage,
   MatchDetails,
+  CoverLetterData,
 } from '../../shared/types';
 
 import { navigateToSearch, applyFilters, getPageInfo, goToNextPage, getJobListings, isDailyLimitReached } from './job-search';
@@ -275,6 +276,31 @@ async function processJob(
     }
   }
 
+  // Step 6c: Cover Letter Generation (for jobs with score >= 60) — routed through background worker
+  let coverLetterResult: CoverLetterData | null = null;
+  if (computedMatchScore !== null && computedMatchScore >= 60 && jd.description !== 'Unknown') {
+    try {
+      const clResponse = await chrome.runtime.sendMessage({
+        type: 'AI_COVER_LETTER',
+        payload: {
+          jobTitle: details.title,
+          company: details.company,
+          jobDescription: jd.description,
+        },
+        timestamp: Date.now(),
+      });
+
+      if (clResponse?.result) {
+        coverLetterResult = clResponse.result;
+        log.info(`📧 Cover letter generated for "${details.title}" at ${details.company}`);
+      } else if (clResponse?.error) {
+        log.warn(`Cover letter: ${clResponse.error}`);
+      }
+    } catch (error) {
+      log.warn('Cover letter generation failed, continuing without', error);
+    }
+  }
+
   // Step 7: Check if Easy Apply or External
   const easyApplyBtn = isEasyApplyJob();
 
@@ -293,6 +319,7 @@ async function processJob(
       job.matchScore = computedMatchScore;
       if (computedMatchDetails) job.matchDetails = computedMatchDetails;
       if (tailoredResult) job.tailoredResume = tailoredResult;
+      if (coverLetterResult) job.coverLetter = coverLetterResult;
       job.status = 'applied';
       await saveAppliedJob(job);
       appliedJobIds.add(details.jobId);
@@ -316,6 +343,7 @@ async function processJob(
         job.matchScore = computedMatchScore;
         if (computedMatchDetails) job.matchDetails = computedMatchDetails;
         if (tailoredResult) job.tailoredResume = tailoredResult;
+        if (coverLetterResult) job.coverLetter = coverLetterResult;
         await saveAppliedJob(job);
         appliedJobIds.add(details.jobId);
         await incrementSession('externalCollected');

@@ -123,25 +123,28 @@ Return ONLY valid JSON (put atsScore and keywordsAdded FIRST):
 // ======== COVER LETTER (Premium) ========
 
 export const COVER_LETTER_PROMPT = `
-You are an expert cover letter writer. Create a compelling, personalized cover letter.
+Write a personalized cover letter for this job application.
 
-CANDIDATE PROFILE:
+CANDIDATE:
 {userProfile}
 
-TARGET JOB:
-Title: {jobTitle}
-Company: {company}
-Description: {jobDescription}
+JOB: {jobTitle} at {company}
+{jobDescription}
 
-Write a 3-4 paragraph cover letter that:
-- Opens with a strong, personalized hook (not "I am writing to apply...")
-- Connects the candidate's strongest relevant experience to the job requirements
-- Shows genuine interest in the company
-- Closes with a confident call to action
-- Is professional but not overly formal
-- Is under 350 words
+RULES:
+- Open with a strong hook (NOT "I am writing to apply...")
+- Connect candidate's experience to job requirements
+- Professional but conversational tone
+- Under 300 words total
 
-Return the cover letter as plain text. No JSON. No markdown formatting.
+Return ONLY valid JSON:
+{
+  "subject": "Application for <job title>",
+  "greeting": "Dear Hiring Manager,",
+  "body": ["<paragraph 1>", "<paragraph 2>", "<paragraph 3>"],
+  "closing": "Sincerely,",
+  "signature": "<candidate full name>"
+}
 `;
 
 // ======== ATS KEYWORD ANALYSIS (Premium) ========

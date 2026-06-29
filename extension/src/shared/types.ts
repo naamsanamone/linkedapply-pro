@@ -66,10 +66,13 @@ export interface QualificationMatch {
 export interface CoverLetterData {
   subject: string;
   greeting: string;
-  body: string[];
+  bodyParagraphs: string[];
   closing: string;
   signature: string;
-  fullText: string;
+  plainText: string;
+  generatedAt: number;
+  jobTitle: string;
+  company: string;
 }
 
 export interface StandOutTips {

@@ -367,6 +367,25 @@
             </div>
           </div>
 
+          <!-- Cover Letter Section -->
+          <div class="modal__cover-letter-card" id="modal-cl-section" style="display:none;">
+            <div class="cl-card__header">
+              <div class="cl-card__title">
+                <span>📧 AI Cover Letter</span>
+                <span class="badge badge-primary cl-card__badge" id="modal-cl-badge">Generated</span>
+              </div>
+              <button class="btn btn-sm btn-primary" id="modal-copy-cl">📋 Copy</button>
+            </div>
+            <div class="cl-card__body">
+              <div class="cl-card__subject" id="modal-cl-subject"></div>
+              <div class="cl-card__preview" id="modal-cl-preview"></div>
+            </div>
+            <div class="cl-card__actions">
+              <button class="btn btn-sm" id="modal-dl-pdf">📄 Download PDF</button>
+              <button class="btn btn-sm" id="modal-dl-docx">📝 Download DOCX</button>
+            </div>
+          </div>
+
           <!-- Questions Answered -->
           <details class="modal__details" id="modal-questions-section">
             <summary>Questions Answered (<span id="modal-q-count">0</span>)</summary>

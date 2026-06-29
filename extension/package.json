@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "docx": "^9.7.1",
+    "jspdf": "^4.2.1",
     "pdfjs-dist": "^6.0.227"
   },
   "devDependencies": {

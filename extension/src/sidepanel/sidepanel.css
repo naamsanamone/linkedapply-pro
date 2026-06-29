@@ -979,6 +979,67 @@
 
 .tailored-exp__bullets li { margin-bottom: 2px; }
 
+/* ---- Cover Letter Card ---- */
+.modal__cover-letter-card {
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+}
+
+.cl-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.cl-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.cl-card__badge { font-size: 11px; }
+
+.cl-card__body {
+  padding: 14px;
+}
+
+.cl-card__subject {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.cl-card__preview {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  border-left: 3px solid rgba(99, 102, 241, 0.3);
+  padding-left: 12px;
+}
+
+.cl-card__actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.cl-card__actions .btn {
+  flex: 1;
+  font-size: 11px;
+}
+
 /* ---- Questions & Details ---- */
 .modal__details {
   margin-top: 8px;

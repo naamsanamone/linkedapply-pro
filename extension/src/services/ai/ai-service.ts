@@ -7,7 +7,7 @@
 import { createLogger } from '../../shared/logger';
 import { getStorage } from '../../shared/storage';
 import { STORAGE_KEYS } from '../../shared/constants';
-import type { AIConfig, UserProfile, ExtractedSkills, QuestionType } from '../../shared/types';
+import type { AIConfig, UserProfile, ExtractedSkills, QuestionType, CoverLetterData } from '../../shared/types';
 import { createAIProvider, createAIProviderFromStorage, type AIProviderClient } from './ai-provider';
 import { aiAnswerQuestion } from './ai-question-answerer';
 import { aiExtractSkills } from './ai-skills-extractor';
@@ -102,7 +102,7 @@ class AIServiceImpl {
     jobTitle: string,
     company: string,
     jobDescription: string
-  ): Promise<string | null> {
+  ): Promise<CoverLetterData | null> {
     if (!this.client || !this.profile) return null;
     return aiGenerateCoverLetter(this.client, this.profile, jobTitle, company, jobDescription);
   }

@@ -7,7 +7,8 @@
 import { createLogger } from '../shared/logger';
 import { getStorage, setStorage } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/constants';
-import type { Job, JobStatus, SessionSummary, BotStatus, FailedJob, ExtensionMessage } from '../shared/types';
+import type { Job, JobStatus, SessionSummary, BotStatus, FailedJob, ExtensionMessage, CoverLetterData } from '../shared/types';
+import { generateCoverLetterPDF, generateCoverLetterDOCX, downloadBlob } from '../services/export/pdf-generator';
 
 const log = createLogger('SidePanel');
 
@@ -726,6 +727,65 @@ function openJobModal(jobId: string): void {
       }
     } else {
       tailoredSection.style.display = 'none';
+    }
+  }
+
+  // Cover Letter
+  const clSection = document.getElementById('modal-cl-section');
+  if (clSection) {
+    const cl = job.coverLetter;
+    if (cl) {
+      clSection.style.display = 'block';
+      setText('modal-cl-subject', cl.subject);
+
+      // Preview text
+      const previewEl = document.getElementById('modal-cl-preview');
+      if (previewEl) previewEl.textContent = cl.plainText;
+
+      // Copy button
+      const copyCl = document.getElementById('modal-copy-cl');
+      if (copyCl) {
+        copyCl.onclick = () => {
+          navigator.clipboard.writeText(cl.plainText).then(() => {
+            copyCl.textContent = '✓ Copied!';
+            setTimeout(() => { copyCl.textContent = '📋 Copy'; }, 2000);
+          });
+        };
+      }
+
+      // Download PDF
+      const dlPdf = document.getElementById('modal-dl-pdf');
+      if (dlPdf) {
+        dlPdf.onclick = () => {
+          try {
+            const blob = generateCoverLetterPDF(cl);
+            const filename = `CoverLetter_${cl.company.replace(/\s+/g, '_')}_${cl.jobTitle.replace(/\s+/g, '_')}.pdf`;
+            downloadBlob(blob, filename);
+            dlPdf.textContent = '✓ Downloaded!';
+            setTimeout(() => { dlPdf.textContent = '📄 Download PDF'; }, 2000);
+          } catch (e) {
+            log.error('PDF download failed', e);
+          }
+        };
+      }
+
+      // Download DOCX
+      const dlDocx = document.getElementById('modal-dl-docx');
+      if (dlDocx) {
+        dlDocx.onclick = async () => {
+          try {
+            const blob = await generateCoverLetterDOCX(cl);
+            const filename = `CoverLetter_${cl.company.replace(/\s+/g, '_')}_${cl.jobTitle.replace(/\s+/g, '_')}.docx`;
+            downloadBlob(blob, filename);
+            dlDocx.textContent = '✓ Downloaded!';
+            setTimeout(() => { dlDocx.textContent = '📝 Download DOCX'; }, 2000);
+          } catch (e) {
+            log.error('DOCX download failed', e);
+          }
+        };
+      }
+    } else {
+      clSection.style.display = 'none';
     }
   }
 
