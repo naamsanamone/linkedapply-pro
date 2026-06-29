@@ -6,6 +6,7 @@
 
 import { createLogger } from '../shared/logger';
 import { getStorage, setStorage } from '../shared/storage';
+import { estimateCost } from '../services/usage-tracker';
 import {
   STORAGE_KEYS,
   DEFAULT_PROFILE,
@@ -456,10 +457,67 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('save-ai')?.addEventListener('click', saveAI);
   document.getElementById('test-ai')?.addEventListener('click', testAIConnection);
   initAIProviderSync();
+  initTierSwitcher();
   await loadAI();
+  await loadUsageDashboard();
 
   // Bot
   document.getElementById('save-bot')?.addEventListener('click', saveBot);
   initBotSpeedToggle();
   await loadBot();
 });
+
+// ---- Tier Switcher ----
+function initTierSwitcher(): void {
+  const byokRadio = document.getElementById('tier-byok') as HTMLInputElement;
+  const proRadio = document.getElementById('tier-pro') as HTMLInputElement;
+  const byokConfig = document.getElementById('byok-config');
+  const proConfig = document.getElementById('pro-config');
+  const byokLabel = document.getElementById('tier-byok-label');
+  const proLabel = document.getElementById('tier-pro-label');
+
+  const switchTier = () => {
+    const isByok = byokRadio?.checked;
+    if (byokConfig) byokConfig.style.display = isByok ? 'block' : 'none';
+    if (proConfig) proConfig.style.display = isByok ? 'none' : 'block';
+    byokLabel?.classList.toggle('tier-option--active', !!isByok);
+    proLabel?.classList.toggle('tier-option--active', !isByok);
+  };
+
+  byokRadio?.addEventListener('change', switchTier);
+  proRadio?.addEventListener('change', switchTier);
+  switchTier(); // set initial state
+
+  // Pro activate button
+  document.getElementById('activate-pro')?.addEventListener('click', () => {
+    const keyEl = document.getElementById('pro-license-key') as HTMLInputElement;
+    const statusEl = document.getElementById('pro-status');
+    if (keyEl && statusEl) {
+      if (keyEl.value.trim().startsWith('LP-')) {
+        statusEl.textContent = '✓ License activated (demo mode)';
+        statusEl.style.color = 'var(--color-success)';
+      } else {
+        statusEl.textContent = '✗ Invalid license key';
+        statusEl.style.color = 'var(--color-danger)';
+      }
+    }
+  });
+}
+
+// ---- Usage Dashboard ----
+async function loadUsageDashboard(): Promise<void> {
+  try {
+    const usage = await chrome.runtime.sendMessage({ type: 'GET_USAGE', timestamp: Date.now() });
+    if (usage) {
+      const dailyEl = document.getElementById('usage-daily');
+      const totalEl = document.getElementById('usage-total');
+      const costEl = document.getElementById('usage-cost');
+      if (dailyEl) dailyEl.textContent = String(usage.dailyCalls?.count || 0);
+      if (totalEl) totalEl.textContent = String(usage.totalCalls || 0);
+      if (costEl) costEl.textContent = estimateCost(usage.dailyCalls?.count || 0);
+    }
+  } catch (e) {
+    log.warn('Failed to load usage dashboard', e);
+  }
+}
+

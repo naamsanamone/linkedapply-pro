@@ -12,6 +12,7 @@ import { aiMatchJob } from '../services/ai/job-matcher';
 import { aiTailorResume } from '../services/ai/resume-tailor';
 import { aiGenerateCoverLetter } from '../services/ai/cover-letter-gen';
 import { aiGenerateStandOutTips } from '../services/ai/standout-tips';
+import { recordAICall, getUsageState } from '../services/usage-tracker';
 
 const log = createLogger('ServiceWorker');
 
@@ -114,6 +115,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'AI_STANDOUT_TIPS':
         handleAIStandOutTips(message.payload).then(sendResponse);
+        return true; // async
+
+      case 'GET_USAGE':
+        getUsageState().then(sendResponse);
         return true; // async
 
       default:
@@ -527,6 +532,7 @@ async function handleAIMatchJob(payload: any): Promise<any> {
     );
 
     clearRateLimit();
+    await recordAICall();
     return { success: true, result };
   } catch (error: any) {
     if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
@@ -559,6 +565,7 @@ async function handleAITailorResume(payload: any): Promise<any> {
     );
 
     clearRateLimit();
+    await recordAICall();
     return { success: true, result };
   } catch (error: any) {
     if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
@@ -589,6 +596,7 @@ async function handleAICoverLetter(payload: any): Promise<any> {
     );
 
     clearRateLimit();
+    await recordAICall();
     return { success: true, result };
   } catch (error: any) {
     if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
@@ -619,6 +627,7 @@ async function handleAIStandOutTips(payload: any): Promise<any> {
     );
 
     clearRateLimit();
+    await recordAICall();
     return { success: true, result };
   } catch (error: any) {
     if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {

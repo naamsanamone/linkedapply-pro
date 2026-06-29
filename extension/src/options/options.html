@@ -375,30 +375,56 @@
 
       <!-- AI Settings Page -->
       <section class="options__page" id="page-ai" style="display:none;">
-        <h2 class="options__page-title">AI Settings</h2>
-        <p class="options__page-desc">Configure your AI provider for smart question answering, resume tailoring, and more.</p>
+        <h2 class="options__page-title">🔑 AI Configuration</h2>
+        <p class="options__page-desc">Configure your AI provider for smart question answering, resume tailoring, cover letters, and more.</p>
+
+        <!-- Tier Selection -->
         <div class="options__form glass-card">
+          <div class="options__field">
+            <label class="options__label">Plan</label>
+            <div class="tier-selector">
+              <label class="tier-option tier-option--active" id="tier-byok-label">
+                <input type="radio" name="ai-tier" value="byok" id="tier-byok" checked>
+                <div class="tier-option__content">
+                  <span class="tier-option__name">🔑 BYOK (Free)</span>
+                  <span class="tier-option__desc">Use your own API key — no limits, zero cost from us</span>
+                </div>
+              </label>
+              <label class="tier-option" id="tier-pro-label">
+                <input type="radio" name="ai-tier" value="pro" id="tier-pro">
+                <div class="tier-option__content">
+                  <span class="tier-option__name">⚡ Pro</span>
+                  <span class="tier-option__desc">Use LinkedApply's hosted API — get a license key</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- BYOK Config -->
+        <div class="options__form glass-card" id="byok-config">
+          <h3 class="options__section-title">API Key Configuration</h3>
           <div class="options__form-row">
             <div class="options__field">
-              <label class="options__label" for="ai-provider">AI Provider</label>
+              <label class="options__label" for="ai-provider">Provider</label>
               <select class="input" id="ai-provider">
-                <option value="openai">OpenAI (GPT-4o, GPT-4, etc.)</option>
                 <option value="gemini">Google Gemini</option>
+                <option value="openai">OpenAI (GPT-4o, GPT-4, etc.)</option>
                 <option value="deepseek">DeepSeek</option>
               </select>
             </div>
             <div class="options__field">
               <label class="options__label" for="ai-model">Model</label>
-              <input class="input" type="text" id="ai-model" placeholder="gpt-4o-mini">
+              <input class="input" type="text" id="ai-model" placeholder="gemini-2.5-flash">
             </div>
           </div>
           <div class="options__field">
             <label class="options__label" for="ai-apiUrl">API URL</label>
-            <input class="input" type="url" id="ai-apiUrl" placeholder="https://api.openai.com/v1">
+            <input class="input" type="url" id="ai-apiUrl" placeholder="https://generativelanguage.googleapis.com/v1beta">
           </div>
           <div class="options__field">
             <label class="options__label" for="ai-apiKey">API Key</label>
-            <input class="input" type="password" id="ai-apiKey" placeholder="sk-...">
+            <input class="input" type="password" id="ai-apiKey" placeholder="AIza...">
           </div>
           <div class="options__form-row">
             <div class="options__field">
@@ -411,6 +437,39 @@
             <button class="btn btn-primary" id="save-ai">Save AI Settings</button>
             <button class="btn btn-ghost" id="test-ai">🧪 Test Connection</button>
             <span class="options__save-status" id="ai-status"></span>
+          </div>
+        </div>
+
+        <!-- Pro Config (hidden by default) -->
+        <div class="options__form glass-card" id="pro-config" style="display:none;">
+          <h3 class="options__section-title">Pro License</h3>
+          <div class="options__field">
+            <label class="options__label" for="pro-license-key">License Key</label>
+            <input class="input" type="text" id="pro-license-key" placeholder="LP-XXXX-XXXX-XXXX">
+          </div>
+          <div class="options__form-actions">
+            <button class="btn btn-primary" id="activate-pro">Activate</button>
+            <span class="options__save-status" id="pro-status"></span>
+          </div>
+          <p class="options__hint">Get your license key at <a href="https://linkedapply.pro" target="_blank">linkedapply.pro</a></p>
+        </div>
+
+        <!-- Usage Dashboard -->
+        <div class="options__form glass-card">
+          <h3 class="options__section-title">📊 Usage Dashboard</h3>
+          <div class="usage-stats">
+            <div class="usage-stat">
+              <span class="usage-stat__value" id="usage-daily">0</span>
+              <span class="usage-stat__label">Calls Today</span>
+            </div>
+            <div class="usage-stat">
+              <span class="usage-stat__value" id="usage-total">0</span>
+              <span class="usage-stat__label">Total Calls</span>
+            </div>
+            <div class="usage-stat">
+              <span class="usage-stat__value" id="usage-cost">&lt;$0.01</span>
+              <span class="usage-stat__label">Est. Cost Today</span>
+            </div>
           </div>
         </div>
       </section>

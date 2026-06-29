@@ -247,7 +247,8 @@ export type MessageType =
   | 'AI_MATCH_JOB'
   | 'AI_TAILOR_RESUME'
   | 'AI_COVER_LETTER'
-  | 'AI_STANDOUT_TIPS';
+  | 'AI_STANDOUT_TIPS'
+  | 'GET_USAGE';
 
 export interface ExtensionMessage {
   type: MessageType;

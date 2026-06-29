@@ -83,6 +83,7 @@ export const STORAGE_KEYS = {
   ANSWER_MEMORY: 'answer_memory',
   RESUME_TEXT: 'resume_text',
   MATCH_FILTER: 'match_filter',
+  USAGE_STATE: 'linkedapply_usage_state',
 } as const;
 
 // ---- Default Values ----
