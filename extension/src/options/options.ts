@@ -477,6 +477,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Account
   initAccountPage();
   await loadStorageInfo();
+
+  // Onboarding (show if first run)
+  await checkOnboarding();
 });
 
 // ---- Tier Switcher ----
@@ -824,4 +827,109 @@ function extractTextFromPdfArrayBuffer(buffer: ArrayBuffer): string {
   const text = textBlocks.join('\n').replace(/\\n/g, '\n').replace(/\\r/g, '').trim();
   if (!text) throw new Error('No text found');
   return text;
+}
+
+// ---- Onboarding Wizard ----
+async function checkOnboarding(): Promise<void> {
+  const done = await getStorage<boolean>(STORAGE_KEYS.ONBOARDING_COMPLETE);
+  if (done) return;
+  showOnboardingWizard();
+}
+
+function showOnboardingWizard(): void {
+  const overlay = document.getElementById('onboarding-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+
+  let currentStep = 0;
+  const totalSteps = 4;
+
+  function goToStep(step: number): void {
+    // Hide all steps
+    for (let i = 0; i < totalSteps; i++) {
+      const el = document.getElementById(`ob-step-${i}`);
+      if (el) el.style.display = i === step ? 'block' : 'none';
+    }
+    // Update dots
+    document.querySelectorAll('.onboarding__dot').forEach((dot, i) => {
+      dot.classList.remove('onboarding__dot--active', 'onboarding__dot--done');
+      if (i === step) dot.classList.add('onboarding__dot--active');
+      else if (i < step) dot.classList.add('onboarding__dot--done');
+    });
+    currentStep = step;
+  }
+
+  async function finishOnboarding(): Promise<void> {
+    await setStorage(STORAGE_KEYS.ONBOARDING_COMPLETE, true);
+    overlay!.style.display = 'none';
+    // Reload settings so main page reflects what was saved
+    await loadResume();
+    log.info('Onboarding complete');
+  }
+
+  // Step 0: Welcome
+  document.getElementById('ob-start')?.addEventListener('click', () => goToStep(1));
+  document.getElementById('ob-skip')?.addEventListener('click', finishOnboarding);
+
+  // Step 1: Resume
+  const obResume = document.getElementById('ob-resume') as HTMLTextAreaElement;
+  const obResumeCount = document.getElementById('ob-resume-count');
+  obResume?.addEventListener('input', () => {
+    if (obResumeCount) obResumeCount.textContent = `${obResume.value.length} characters`;
+  });
+  document.getElementById('ob-resume-next')?.addEventListener('click', async () => {
+    const text = obResume?.value?.trim();
+    if (text) {
+      await setStorage(STORAGE_KEYS.RESUME_TEXT, text);
+      // Also populate the resume textarea on the profile page
+      const mainTextarea = document.getElementById('resume-text') as HTMLTextAreaElement;
+      if (mainTextarea) mainTextarea.value = text;
+    }
+    goToStep(2);
+  });
+  document.getElementById('ob-resume-skip')?.addEventListener('click', () => goToStep(2));
+
+  // Step 2: AI Provider
+  document.getElementById('ob-ai-next')?.addEventListener('click', async () => {
+    const provider = (document.getElementById('ob-ai-provider') as HTMLSelectElement)?.value || 'gemini';
+    const apiKey = (document.getElementById('ob-ai-key') as HTMLInputElement)?.value?.trim();
+    if (apiKey) {
+      const config: AIConfig = {
+        provider: provider as any,
+        model: DEFAULT_MODELS[provider] || 'gemini-2.5-flash',
+        apiUrl: DEFAULT_API_URLS[provider] || '',
+        apiKey,
+        streaming: false,
+      };
+      await setStorage(STORAGE_KEYS.AI_CONFIG, config);
+      // Populate AI settings fields on the main page
+      setVal('ai-provider', config.provider);
+      setVal('ai-apiUrl', config.apiUrl);
+      setVal('ai-model', config.model);
+      setVal('ai-apiKey', config.apiKey);
+    }
+    goToStep(3);
+  });
+  document.getElementById('ob-ai-skip')?.addEventListener('click', () => goToStep(3));
+
+  // Step 3: Search + Finish
+  document.getElementById('ob-finish')?.addEventListener('click', async () => {
+    const keywords = (document.getElementById('ob-search-keywords') as HTMLInputElement)?.value?.trim();
+    const location = (document.getElementById('ob-search-location') as HTMLInputElement)?.value?.trim();
+    if (keywords || location) {
+      // Load existing search prefs and merge
+      const existing = await getStorage<SearchPreferences>(STORAGE_KEYS.SEARCH_PREFS) || {} as SearchPreferences;
+      if (keywords) {
+        existing.searchTerms = keywords.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (location) {
+        existing.searchLocation = location;
+      }
+      await setStorage(STORAGE_KEYS.SEARCH_PREFS, existing);
+      // Populate search fields on main page
+      if (keywords) setVal('s-searchTerms', (existing.searchTerms || []).join('\n'));
+      if (location) setVal('s-searchLocation', location);
+    }
+    await finishOnboarding();
+  });
 }

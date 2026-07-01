@@ -847,6 +847,86 @@
       </section>
     </main>
   </div>
+  <!-- ============ ONBOARDING WIZARD ============ -->
+  <div class="onboarding-overlay" id="onboarding-overlay" style="display:none;">
+    <div class="onboarding glass-card">
+      <!-- Progress Dots -->
+      <div class="onboarding__dots">
+        <span class="onboarding__dot onboarding__dot--active" data-step="0"></span>
+        <span class="onboarding__dot" data-step="1"></span>
+        <span class="onboarding__dot" data-step="2"></span>
+        <span class="onboarding__dot" data-step="3"></span>
+      </div>
+
+      <!-- Step 0: Welcome -->
+      <div class="onboarding__step" id="ob-step-0">
+        <div class="onboarding__icon">⚡</div>
+        <h2 class="onboarding__title">Welcome to LinkedApply Pro</h2>
+        <p class="onboarding__text">Let's get you set up in under 2 minutes. We'll walk through the essentials so the bot can start applying for you.</p>
+        <div class="onboarding__actions">
+          <button class="btn btn-primary" id="ob-start">🚀 Let's Go</button>
+          <button class="btn btn-ghost btn-sm" id="ob-skip">Skip Setup</button>
+        </div>
+      </div>
+
+      <!-- Step 1: Resume -->
+      <div class="onboarding__step" id="ob-step-1" style="display:none;">
+        <div class="onboarding__icon">📄</div>
+        <h2 class="onboarding__title">Paste Your Resume</h2>
+        <p class="onboarding__text">The AI uses your resume to answer application questions, tailor content, and score job matches.</p>
+        <textarea class="input onboarding__textarea" id="ob-resume" rows="8" placeholder="Paste your resume text here..."></textarea>
+        <div class="onboarding__char-count" id="ob-resume-count">0 characters</div>
+        <div class="onboarding__actions">
+          <button class="btn btn-primary" id="ob-resume-next">Next →</button>
+          <button class="btn btn-ghost btn-sm" id="ob-resume-skip">Skip</button>
+        </div>
+      </div>
+
+      <!-- Step 2: AI Provider -->
+      <div class="onboarding__step" id="ob-step-2" style="display:none;">
+        <div class="onboarding__icon">🤖</div>
+        <h2 class="onboarding__title">Set Up AI (BYOK)</h2>
+        <p class="onboarding__text">Bring your own API key for unlimited free AI features. We recommend <strong>Gemini</strong> — it's free to get a key.</p>
+        <div class="onboarding__field">
+          <label class="onboarding__label">Provider</label>
+          <select class="input" id="ob-ai-provider">
+            <option value="gemini" selected>Gemini (Recommended — Free)</option>
+            <option value="openai">OpenAI</option>
+            <option value="deepseek">DeepSeek</option>
+          </select>
+        </div>
+        <div class="onboarding__field">
+          <label class="onboarding__label">API Key</label>
+          <input class="input" type="password" id="ob-ai-key" placeholder="Paste your API key here">
+        </div>
+        <div class="onboarding__hint">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank">🔗 Get a free Gemini API key</a>
+        </div>
+        <div class="onboarding__actions">
+          <button class="btn btn-primary" id="ob-ai-next">Next →</button>
+          <button class="btn btn-ghost btn-sm" id="ob-ai-skip">Skip</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Search Preferences -->
+      <div class="onboarding__step" id="ob-step-3" style="display:none;">
+        <div class="onboarding__icon">🔍</div>
+        <h2 class="onboarding__title">Search Preferences</h2>
+        <p class="onboarding__text">Tell us what kind of jobs you're looking for. You can always change this later in Settings.</p>
+        <div class="onboarding__field">
+          <label class="onboarding__label">Job Title / Keywords</label>
+          <input class="input" type="text" id="ob-search-keywords" placeholder="e.g. Software Engineer, Data Analyst">
+        </div>
+        <div class="onboarding__field">
+          <label class="onboarding__label">Location</label>
+          <input class="input" type="text" id="ob-search-location" placeholder="e.g. Remote, New York, London">
+        </div>
+        <div class="onboarding__actions">
+          <button class="btn btn-primary" id="ob-finish">✅ Finish Setup</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="options.ts"></script>
 </body>
