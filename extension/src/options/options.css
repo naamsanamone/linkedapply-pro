@@ -194,3 +194,91 @@ select.input {
 }
 .usage-stat__value { font-size: 22px; font-weight: 700; color: var(--color-primary); }
 .usage-stat__label { font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; }
+
+/* ---- Billing Page ---- */
+.billing__current-plan {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px !important;
+}
+.billing__plan-info { display: flex; flex-direction: column; gap: 4px; }
+.billing__plan-badge {
+  display: inline-block; font-size: 16px; font-weight: 700;
+  color: var(--color-primary); background: rgba(99,102,241,0.1);
+  padding: 4px 12px; border-radius: 8px; width: fit-content;
+}
+.billing__plan-status { font-size: 12px; color: var(--color-text-tertiary); }
+
+/* Usage Bar */
+.billing__usage-bar-container { margin-top: 16px; }
+.billing__usage-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+.billing__usage-bar {
+  height: 8px; border-radius: 4px;
+  background: rgba(99,102,241,0.1); overflow: hidden;
+}
+.billing__usage-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent, #818cf8));
+  transition: width 0.6s ease;
+}
+
+/* Plan Cards Grid */
+.billing__plans-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; margin-top: 8px;
+}
+.billing__plan-card {
+  position: relative; border-radius: 12px; overflow: hidden;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  display: flex; flex-direction: column;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.billing__plan-card:hover {
+  border-color: rgba(99,102,241,0.4);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.08);
+}
+.billing__plan-card--featured {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary), 0 4px 20px rgba(99,102,241,0.12);
+}
+.billing__card-ribbon {
+  position: absolute; top: 0; right: 0;
+  background: var(--color-primary); color: #fff;
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 0 10px 0 8px;
+}
+.billing__card-header { padding: 14px 14px 8px; }
+.billing__card-name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); display: block; }
+.billing__card-price {
+  font-size: 22px; font-weight: 700; color: var(--color-primary);
+  display: block; margin-top: 2px;
+}
+.billing__card-was {
+  font-size: 12px; font-weight: 400; color: var(--color-text-tertiary);
+  text-decoration: line-through; margin-left: 6px;
+}
+.billing__card-features {
+  list-style: none; padding: 0 14px; margin: 0; flex: 1;
+}
+.billing__card-features li {
+  font-size: 12px; color: var(--color-text-secondary);
+  padding: 3px 0; padding-left: 16px; position: relative;
+}
+.billing__card-features li::before {
+  content: '✓'; position: absolute; left: 0;
+  color: var(--color-success); font-size: 11px; font-weight: 700;
+}
+.billing__card-footer { padding: 10px 14px 14px; text-align: center; }
+.billing__card-note { font-size: 11px; color: var(--color-text-tertiary); }
+
+/* BYOK Note */
+.billing__byok-note {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px !important; margin-top: 12px;
+  font-size: 13px; color: var(--color-text-secondary);
+  border-left: 3px solid var(--color-primary);
+}
+.billing__byok-note span { font-size: 20px; flex-shrink: 0; }
+.billing__byok-note p { margin: 4px 0 0; font-size: 12px; color: var(--color-text-tertiary); }
+.billing__byok-note a { color: var(--color-primary); text-decoration: none; }
+.billing__byok-note a:hover { text-decoration: underline; }

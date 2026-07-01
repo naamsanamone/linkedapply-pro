@@ -571,10 +571,159 @@
       </section>
 
       <section class="options__page" id="page-billing" style="display:none;">
-        <h2 class="options__page-title">Billing & Plans</h2>
+        <h2 class="options__page-title">💳 Billing & Plans</h2>
         <p class="options__page-desc">Manage your subscription and view usage.</p>
-        <div class="glass-card" style="padding: var(--space-8); text-align: center; color: var(--color-text-tertiary);">
-          Billing management — Coming in Phase 6
+
+        <!-- Current Plan Hero -->
+        <div class="glass-card billing__current-plan">
+          <div class="billing__plan-info">
+            <div class="billing__plan-badge" id="billing-plan-badge">BYOK (Free)</div>
+            <div class="billing__plan-status" id="billing-plan-status">Active — Using your own API key</div>
+          </div>
+          <div class="billing__plan-action">
+            <a class="btn btn-primary btn-sm" id="billing-upgrade-btn" href="#" target="_blank">⚡ Upgrade</a>
+          </div>
+        </div>
+
+        <!-- Usage Stats -->
+        <div class="glass-card">
+          <h3 class="options__section-title">📊 Usage Today</h3>
+          <div class="usage-stats">
+            <div class="usage-stat">
+              <span class="usage-stat__value" id="billing-daily">0</span>
+              <span class="usage-stat__label">AI Calls Today</span>
+            </div>
+            <div class="usage-stat">
+              <span class="usage-stat__value" id="billing-total">0</span>
+              <span class="usage-stat__label">Total AI Calls</span>
+            </div>
+            <div class="usage-stat">
+              <span class="usage-stat__value" id="billing-cost">&lt;$0.01</span>
+              <span class="usage-stat__label">Est. Cost Today</span>
+            </div>
+          </div>
+          <div class="billing__usage-bar-container" id="billing-usage-bar-wrap" style="display:none;">
+            <div class="billing__usage-label">
+              <span id="billing-usage-text">0 / 20 calls used</span>
+            </div>
+            <div class="billing__usage-bar">
+              <div class="billing__usage-fill" id="billing-usage-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan Cards -->
+        <h3 class="options__section-title" style="margin-top:16px;">Choose a Plan</h3>
+        <div class="billing__plans-grid">
+
+          <div class="billing__plan-card">
+            <div class="billing__card-header">
+              <span class="billing__card-name">Free Trial</span>
+              <span class="billing__card-price">$0</span>
+            </div>
+            <ul class="billing__card-features">
+              <li>5 applications/day</li>
+              <li>Basic job filters</li>
+              <li>Local job history</li>
+              <li>3 search terms</li>
+            </ul>
+            <div class="billing__card-footer">
+              <span class="billing__card-note">3 days</span>
+            </div>
+          </div>
+
+          <div class="billing__plan-card">
+            <div class="billing__card-header">
+              <span class="billing__card-name">Day Pass</span>
+              <span class="billing__card-price">$2.99</span>
+            </div>
+            <ul class="billing__card-features">
+              <li>Unlimited applications</li>
+              <li>AI-powered answers</li>
+              <li>All job filters</li>
+              <li>Speed control</li>
+            </ul>
+            <div class="billing__card-footer">
+              <button class="btn btn-sm btn-ghost billing__select-btn" data-plan="day">Select</button>
+            </div>
+          </div>
+
+          <div class="billing__plan-card">
+            <div class="billing__card-header">
+              <span class="billing__card-name">Weekly</span>
+              <span class="billing__card-price">$7.99</span>
+            </div>
+            <ul class="billing__card-features">
+              <li>Everything in Day Pass</li>
+              <li>AI resume tailoring</li>
+              <li>Job match scoring</li>
+              <li>Cloud job sync</li>
+            </ul>
+            <div class="billing__card-footer">
+              <button class="btn btn-sm btn-ghost billing__select-btn" data-plan="week">Select</button>
+            </div>
+          </div>
+
+          <div class="billing__plan-card billing__plan-card--featured">
+            <div class="billing__card-ribbon">Most Popular</div>
+            <div class="billing__card-header">
+              <span class="billing__card-name">Monthly</span>
+              <span class="billing__card-price">$14.99<span class="billing__card-was">$29.99</span></span>
+            </div>
+            <ul class="billing__card-features">
+              <li>AI cover letter generation</li>
+              <li>ATS keyword analysis</li>
+              <li>Kanban job tracker</li>
+              <li>Analytics dashboard</li>
+              <li>Follow-up reminders</li>
+              <li>Data export (CSV/PDF)</li>
+            </ul>
+            <div class="billing__card-footer">
+              <button class="btn btn-sm btn-primary billing__select-btn" data-plan="month">Select</button>
+            </div>
+          </div>
+
+          <div class="billing__plan-card">
+            <div class="billing__card-header">
+              <span class="billing__card-name">Yearly</span>
+              <span class="billing__card-price">$99.99<span class="billing__card-was">$179.88</span></span>
+            </div>
+            <ul class="billing__card-features">
+              <li>Everything in Monthly</li>
+              <li>Priority support</li>
+              <li>Early access to features</li>
+              <li>Save 44%</li>
+            </ul>
+            <div class="billing__card-footer">
+              <button class="btn btn-sm btn-ghost billing__select-btn" data-plan="year">Select</button>
+            </div>
+          </div>
+
+          <div class="billing__plan-card">
+            <div class="billing__card-header">
+              <span class="billing__card-name">Lifetime</span>
+              <span class="billing__card-price">$199.99<span class="billing__card-was">$499.99</span></span>
+            </div>
+            <ul class="billing__card-features">
+              <li>Everything in Yearly</li>
+              <li>Lifetime updates</li>
+              <li>Lifetime support</li>
+              <li>One-time payment</li>
+            </ul>
+            <div class="billing__card-footer">
+              <button class="btn btn-sm btn-ghost billing__select-btn" data-plan="lifetime">Select</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BYOK Note -->
+        <div class="glass-card billing__byok-note">
+          <span>🔑</span>
+          <div>
+            <strong>Using BYOK (Bring Your Own Key)?</strong>
+            <p>All AI features are free and unlimited when you use your own API key. Configure it in <a href="#" id="billing-goto-ai">AI Settings</a>.</p>
+          </div>
         </div>
       </section>
 

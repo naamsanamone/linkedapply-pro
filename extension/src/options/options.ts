@@ -465,6 +465,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('save-bot')?.addEventListener('click', saveBot);
   initBotSpeedToggle();
   await loadBot();
+
+  // Billing
+  await loadBillingPage();
+  initBillingActions();
 });
 
 // ---- Tier Switcher ----
@@ -521,3 +525,55 @@ async function loadUsageDashboard(): Promise<void> {
   }
 }
 
+// ---- Billing Page ----
+async function loadBillingPage(): Promise<void> {
+  try {
+    const usage = await chrome.runtime.sendMessage({ type: 'GET_USAGE', timestamp: Date.now() });
+    if (usage) {
+      const daily = usage.dailyCalls?.count || 0;
+      const total = usage.totalCalls || 0;
+      const setText = (id: string, t: string) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = t;
+      };
+      setText('billing-daily', String(daily));
+      setText('billing-total', String(total));
+      setText('billing-cost', estimateCost(daily));
+
+      // Update plan badge
+      const tier = usage.tier || 'byok';
+      setText('billing-plan-badge', tier === 'pro' ? 'Pro' : 'BYOK (Free)');
+      setText('billing-plan-status',
+        tier === 'pro' ? 'Active — Hosted API' : 'Active — Using your own API key'
+      );
+    }
+  } catch (e) {
+    log.warn('Failed to load billing data', e);
+  }
+}
+
+function initBillingActions(): void {
+  // Plan select buttons → open pricing page
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  document.querySelectorAll('.billing__select-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const plan = (btn as HTMLElement).dataset.plan;
+      chrome.tabs.create({ url: `${backendUrl}/#pricing` });
+      log.info(`Plan selected: ${plan}`);
+    });
+  });
+
+  // Upgrade button
+  const upgradeBtn = document.getElementById('billing-upgrade-btn') as HTMLAnchorElement;
+  if (upgradeBtn) {
+    upgradeBtn.href = `${backendUrl}/#pricing`;
+  }
+
+  // BYOK → AI Settings link
+  document.getElementById('billing-goto-ai')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Switch to AI page
+    const aiNav = document.querySelector('[data-page="ai"]') as HTMLElement;
+    if (aiNav) aiNav.click();
+  });
+}
