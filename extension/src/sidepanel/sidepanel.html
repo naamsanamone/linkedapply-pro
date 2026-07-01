@@ -127,7 +127,11 @@
           <button class="btn btn-ghost btn-xs" id="sp-view-all-btn">View All →</button>
         </div>
         <div class="sidepanel__job-list" id="sp-recent-jobs">
-          <p class="sidepanel__empty-state">No applications yet. Start the bot to begin!</p>
+          <div class="empty-state" id="overview-empty">
+            <div class="empty-state__icon">🚀</div>
+            <div class="empty-state__title">Ready to launch!</div>
+            <div class="empty-state__text">Hit <strong>▶ Start</strong> above to begin auto-applying. Your recent applications will appear here.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -148,7 +152,12 @@
         </select>
       </div>
 
-      <div class="kanban" id="kanban-board">
+      <div class="empty-state" id="jobs-empty">
+        <div class="empty-state__icon">📋</div>
+        <div class="empty-state__title">No jobs yet</div>
+        <div class="empty-state__text">Applied jobs will appear here in a Kanban board. Start applying to see your pipeline!</div>
+      </div>
+      <div class="kanban" id="kanban-board" style="display:none;">
         <div class="kanban__column" data-status="bookmarked">
           <h4 class="kanban__column-title">📌 Bookmarked <span class="kanban__count badge badge-primary">0</span></h4>
           <div class="kanban__cards" data-status="bookmarked"></div>
@@ -174,8 +183,14 @@
 
     <!-- ============ TAB: ANALYTICS ============ -->
     <div class="sidepanel__content" id="tab-analytics" style="display: none;">
+      <!-- Empty state -->
+      <div class="empty-state" id="analytics-empty">
+        <div class="empty-state__icon">📊</div>
+        <div class="empty-state__title">No analytics yet</div>
+        <div class="empty-state__text">Apply to a few jobs first — charts, stats, and insights will appear here automatically.</div>
+      </div>
       <!-- Summary Stats -->
-      <div class="sidepanel__stats stagger-children">
+      <div class="sidepanel__stats stagger-children" id="analytics-content" style="display:none;">
         <div class="stat-card stat-card--primary">
           <span class="stat-card__value" id="an-total">0</span>
           <span class="stat-card__label">Total Applied</span>

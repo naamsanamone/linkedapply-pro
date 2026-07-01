@@ -195,6 +195,28 @@ select.input {
 .usage-stat__value { font-size: 22px; font-weight: 700; color: var(--color-primary); }
 .usage-stat__label { font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; }
 
+/* ---- Resume Upload ---- */
+.resume__desc { font-size: 12px; color: var(--color-text-tertiary); margin: 0 0 12px; line-height: 1.5; }
+.resume__upload-row { display: flex; align-items: center; gap: 10px; }
+.resume__upload-label { cursor: pointer; }
+.resume__file-name { font-size: 12px; color: var(--color-text-tertiary); }
+.resume__or {
+  text-align: center; font-size: 11px; color: var(--color-text-tertiary);
+  margin: 10px 0; letter-spacing: 1px;
+}
+.resume__textarea {
+  width: 100%; min-height: 160px; resize: vertical;
+  font-family: 'Fira Code', 'SF Mono', monospace; font-size: 12px;
+  line-height: 1.6; padding: 12px; border-radius: 8px;
+  background: var(--color-bg-primary); color: var(--color-text-primary);
+  border: 1.5px solid var(--color-border);
+}
+.resume__textarea:focus { border-color: var(--color-primary); outline: none; }
+.resume__meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 6px; font-size: 11px; color: var(--color-text-tertiary);
+}
+
 /* ---- Billing Page ---- */
 .billing__current-plan {
   display: flex; align-items: center; justify-content: space-between;

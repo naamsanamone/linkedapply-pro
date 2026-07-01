@@ -203,12 +203,16 @@ function renderSparkline(jobs: Job[]): void {
 // ---- Recent Jobs ----
 function renderRecentJobs(jobs: Job[]): void {
   const container = document.getElementById('sp-recent-jobs');
+  const emptyEl = document.getElementById('overview-empty');
   if (!container) return;
 
   if (jobs.length === 0) {
-    container.innerHTML = '<p class="sidepanel__empty-state">No applications yet. Start the bot to begin!</p>';
+    if (emptyEl) emptyEl.style.display = 'flex';
+    container.querySelectorAll('.job-card').forEach(c => c.remove());
     return;
   }
+
+  if (emptyEl) emptyEl.style.display = 'none';
 
   container.innerHTML = jobs.map((job) => `
     <div class="job-card" data-job-id="${job.id}">
@@ -250,6 +254,10 @@ function renderRecentJobs(jobs: Job[]): void {
 //  JOBS TAB (KANBAN)
 // ================================================
 function renderKanban(jobs: Job[], searchTerm = '', filterStatus = 'all'): void {
+  const jobsEmpty = document.getElementById('jobs-empty');
+  const kanbanEl = document.getElementById('kanban-board');
+  if (jobsEmpty) jobsEmpty.style.display = jobs.length === 0 ? 'flex' : 'none';
+  if (kanbanEl) kanbanEl.style.display = jobs.length === 0 ? 'none' : '';
   let filtered = jobs;
 
   if (searchTerm) {
@@ -328,6 +336,14 @@ function initJobSearch(): void {
 //  ANALYTICS TAB
 // ================================================
 function renderAnalytics(jobs: Job[], session?: SessionSummary | null): void {
+  const analyticsEmpty = document.getElementById('analytics-empty');
+  const analyticsContent = document.getElementById('analytics-content');
+  const chartCards = document.querySelectorAll('#tab-analytics .sidepanel__chart-card');
+  const hasData = jobs.length > 0;
+  if (analyticsEmpty) analyticsEmpty.style.display = hasData ? 'none' : 'flex';
+  if (analyticsContent) analyticsContent.style.display = hasData ? '' : 'none';
+  chartCards.forEach(c => (c as HTMLElement).style.display = hasData ? '' : 'none');
+
   // Summary stats
   const interviews = jobs.filter((j) => j.status === 'interview').length;
   const total = jobs.length;

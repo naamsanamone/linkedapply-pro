@@ -461,6 +461,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAI();
   await loadUsageDashboard();
 
+  // Resume
+  initResume();
+  await loadResume();
+
   // Bot
   document.getElementById('save-bot')?.addEventListener('click', saveBot);
   initBotSpeedToggle();
@@ -704,4 +708,120 @@ function downloadBlob(content: string, filename: string, mime: string): void {
 
 function dateSlug(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+// ---- Resume Upload/Paste ----
+function initResume(): void {
+  const textarea = document.getElementById('resume-text') as HTMLTextAreaElement;
+  const charCount = document.getElementById('resume-char-count');
+  const saveStatus = document.getElementById('resume-save-status');
+
+  // Character counter
+  textarea?.addEventListener('input', () => {
+    if (charCount) charCount.textContent = `${textarea.value.length} characters`;
+  });
+
+  // Save resume
+  document.getElementById('save-resume')?.addEventListener('click', async () => {
+    const text = textarea?.value?.trim() || '';
+    if (!text) {
+      if (saveStatus) saveStatus.textContent = 'Nothing to save';
+      return;
+    }
+    await setStorage(STORAGE_KEYS.RESUME_TEXT, text);
+    if (saveStatus) {
+      saveStatus.textContent = `\u2713 Saved (${text.length} chars)`;
+      saveStatus.style.color = 'var(--color-success)';
+      setTimeout(() => saveStatus.textContent = '', 3000);
+    }
+  });
+
+  // Clear resume
+  document.getElementById('clear-resume')?.addEventListener('click', async () => {
+    if (!confirm('Clear your saved resume?')) return;
+    if (textarea) textarea.value = '';
+    if (charCount) charCount.textContent = '0 characters';
+    await chrome.storage.local.remove(STORAGE_KEYS.RESUME_TEXT);
+    if (saveStatus) {
+      saveStatus.textContent = 'Cleared';
+      setTimeout(() => saveStatus.textContent = '', 2000);
+    }
+  });
+
+  // PDF upload
+  const fileInput = document.getElementById('resume-file-input') as HTMLInputElement;
+  const fileName = document.getElementById('resume-file-name');
+
+  fileInput?.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    if (fileName) fileName.textContent = file.name;
+
+    if (file.name.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (textarea) {
+          textarea.value = reader.result as string;
+          if (charCount) charCount.textContent = `${textarea.value.length} characters`;
+        }
+      };
+      reader.readAsText(file);
+    } else if (file.name.endsWith('.pdf')) {
+      // Read PDF as text (basic extraction)
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = extractTextFromPdfArrayBuffer(reader.result as ArrayBuffer);
+          if (textarea) {
+            textarea.value = text;
+            if (charCount) charCount.textContent = `${text.length} characters`;
+          }
+        } catch {
+          if (fileName) fileName.textContent = 'PDF parse failed — try pasting text instead';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  });
+}
+
+async function loadResume(): Promise<void> {
+  const text = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
+  const textarea = document.getElementById('resume-text') as HTMLTextAreaElement;
+  const charCount = document.getElementById('resume-char-count');
+  if (text && textarea) {
+    textarea.value = text;
+    if (charCount) charCount.textContent = `${text.length} characters`;
+  }
+}
+
+// Simple PDF text extraction (best-effort from raw PDF stream)
+function extractTextFromPdfArrayBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const raw = new TextDecoder('latin1').decode(bytes);
+  // Extract text between BT...ET blocks
+  const textBlocks: string[] = [];
+  const btRegex = /BT[\s\S]*?ET/g;
+  let match;
+  while ((match = btRegex.exec(raw)) !== null) {
+    const block = match[0];
+    // Extract text from Tj and TJ operators
+    const tjRegex = /\(([^)]*?)\)\s*Tj/g;
+    let tjMatch;
+    while ((tjMatch = tjRegex.exec(block)) !== null) {
+      textBlocks.push(tjMatch[1]);
+    }
+    const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
+    let tjArrMatch;
+    while ((tjArrMatch = tjArrayRegex.exec(block)) !== null) {
+      const inner = tjArrMatch[1];
+      const parts = inner.match(/\(([^)]*?)\)/g);
+      if (parts) {
+        textBlocks.push(parts.map(p => p.slice(1, -1)).join(''));
+      }
+    }
+  }
+  const text = textBlocks.join('\n').replace(/\\n/g, '\n').replace(/\\r/g, '').trim();
+  if (!text) throw new Error('No text found');
+  return text;
 }
