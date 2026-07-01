@@ -117,14 +117,48 @@ CREATE POLICY "Users can insert own AI usage" ON ai_usage_logs
 CREATE POLICY "Users can update own AI usage" ON ai_usage_logs
   FOR UPDATE USING (auth.uid() = user_id);
 
--- ---- Extend profiles table (if ShipFast default doesn't have these) ----
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS price_id TEXT;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS customer_id TEXT;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS has_access BOOLEAN DEFAULT false;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan_name TEXT DEFAULT 'free_trial';
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan_started_at TIMESTAMPTZ;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan_status TEXT DEFAULT 'active';
+-- ---- Profiles table (linked to auth.users) ----
+CREATE TABLE IF NOT EXISTS profiles (
+  id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email           TEXT,
+  name            TEXT,
+  image           TEXT,
+  customer_id     TEXT,          -- Stripe customer ID
+  price_id        TEXT,          -- Active Stripe price ID
+  has_access      BOOLEAN DEFAULT false,
+  plan_name       TEXT DEFAULT 'free_trial',
+  plan_started_at TIMESTAMPTZ,
+  plan_expires_at TIMESTAMPTZ,
+  plan_status     TEXT DEFAULT 'active',
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+
+-- Auto-create profile when user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, name)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', '')
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop trigger if exists, then create
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = id);
 
 -- ---- Subscription Events (audit trail for billing) ----
 CREATE TABLE IF NOT EXISTS subscription_events (
