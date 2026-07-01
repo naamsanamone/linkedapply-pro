@@ -469,6 +469,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Billing
   await loadBillingPage();
   initBillingActions();
+
+  // Account
+  initAccountPage();
+  await loadStorageInfo();
 });
 
 // ---- Tier Switcher ----
@@ -576,4 +580,128 @@ function initBillingActions(): void {
     const aiNav = document.querySelector('[data-page="ai"]') as HTMLElement;
     if (aiNav) aiNav.click();
   });
+}
+
+// ---- Account Page ----
+function initAccountPage(): void {
+  // Export JSON
+  document.getElementById('export-json-btn')?.addEventListener('click', async () => {
+    const statusEl = document.getElementById('export-status');
+    try {
+      const allData = await chrome.storage.local.get(null);
+      const json = JSON.stringify(allData, null, 2);
+      downloadBlob(json, `linkedapply-backup-${dateSlug()}.json`, 'application/json');
+      if (statusEl) { statusEl.textContent = '✓ Exported'; setTimeout(() => statusEl.textContent = '', 3000); }
+    } catch (e) {
+      if (statusEl) statusEl.textContent = '✗ Export failed';
+    }
+  });
+
+  // Export CSV (jobs only)
+  document.getElementById('export-csv-btn')?.addEventListener('click', async () => {
+    const statusEl = document.getElementById('export-status');
+    try {
+      const jobs = await getStorage<any[]>(STORAGE_KEYS.APPLIED_JOBS) || [];
+      const headers = ['Job ID','Title','Company','Location','Work Style','Status','Date Applied','Match Score','Job Link'];
+      const rows = jobs.map(j => [
+        j.id, j.title, j.company, j.location, j.workStyle, j.status,
+        j.dateApplied, j.matchScore ?? '', j.jobLink
+      ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      downloadBlob(csv, `linkedapply-jobs-${dateSlug()}.csv`, 'text/csv');
+      if (statusEl) { statusEl.textContent = `✓ Exported ${jobs.length} jobs`; setTimeout(() => statusEl.textContent = '', 3000); }
+    } catch (e) {
+      if (statusEl) statusEl.textContent = '✗ Export failed';
+    }
+  });
+
+  // Import file picker
+  let pendingImportData: Record<string, any> | null = null;
+  const fileInput = document.getElementById('import-file-input') as HTMLInputElement;
+  const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
+  const fileNameEl = document.getElementById('import-file-name');
+
+  fileInput?.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    if (fileNameEl) fileNameEl.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        pendingImportData = JSON.parse(reader.result as string);
+        if (importBtn) importBtn.disabled = false;
+      } catch {
+        if (fileNameEl) fileNameEl.textContent = 'Invalid JSON file';
+        pendingImportData = null;
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  importBtn?.addEventListener('click', async () => {
+    const statusEl = document.getElementById('import-status');
+    if (!pendingImportData) return;
+    try {
+      await chrome.storage.local.set(pendingImportData);
+      if (statusEl) { statusEl.textContent = '✓ Data imported — reload to apply'; statusEl.style.color = 'var(--color-success)'; }
+      pendingImportData = null;
+      if (importBtn) importBtn.disabled = true;
+    } catch (e) {
+      if (statusEl) { statusEl.textContent = '✗ Import failed'; statusEl.style.color = 'var(--color-danger)'; }
+    }
+  });
+
+  // Clear jobs
+  document.getElementById('clear-jobs-btn')?.addEventListener('click', async () => {
+    if (!confirm('Delete all job records? Settings will be kept.')) return;
+    await chrome.storage.local.remove([STORAGE_KEYS.APPLIED_JOBS, STORAGE_KEYS.FAILED_JOBS]);
+    alert('Job history cleared.');
+    await loadStorageInfo();
+  });
+
+  // Reset all
+  document.getElementById('reset-all-btn')?.addEventListener('click', async () => {
+    if (!confirm('⚠️ This will DELETE ALL DATA including your profile, settings, and jobs. Continue?')) return;
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+    await chrome.storage.local.clear();
+    alert('Extension reset. The page will now reload.');
+    location.reload();
+  });
+
+  // Version from manifest
+  try {
+    const manifest = chrome.runtime.getManifest();
+    const versionEl = document.getElementById('about-version');
+    if (versionEl && manifest.version) versionEl.textContent = `v${manifest.version}`;
+  } catch { /* ignore */ }
+}
+
+async function loadStorageInfo(): Promise<void> {
+  try {
+    const allData = await chrome.storage.local.get(null);
+    const bytes = new Blob([JSON.stringify(allData)]).size;
+    const usedEl = document.getElementById('storage-used');
+    if (usedEl) {
+      usedEl.textContent = bytes > 1024 * 1024
+        ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        : `${(bytes / 1024).toFixed(1)} KB`;
+    }
+    const jobs = allData[STORAGE_KEYS.APPLIED_JOBS];
+    const jobsEl = document.getElementById('storage-jobs-count');
+    if (jobsEl) jobsEl.textContent = Array.isArray(jobs) ? String(jobs.length) : '0';
+  } catch { /* ignore */ }
+}
+
+function downloadBlob(content: string, filename: string, mime: string): void {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function dateSlug(): string {
+  return new Date().toISOString().slice(0, 10);
 }

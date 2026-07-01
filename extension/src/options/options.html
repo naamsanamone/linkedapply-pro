@@ -728,10 +728,88 @@
       </section>
 
       <section class="options__page" id="page-account" style="display:none;">
-        <h2 class="options__page-title">Account</h2>
-        <p class="options__page-desc">Login, data export, and account management.</p>
-        <div class="glass-card" style="padding: var(--space-8); text-align: center; color: var(--color-text-tertiary);">
-          Account management — Coming in Phase 5
+        <h2 class="options__page-title">🔐 Account & Data</h2>
+        <p class="options__page-desc">Export your data, import backups, and manage your extension.</p>
+
+        <!-- Data Export -->
+        <div class="glass-card">
+          <h3 class="options__section-title">📦 Export Data</h3>
+          <p class="account__desc">Download all your jobs, settings, and AI history as a backup file.</p>
+          <div class="account__btn-row">
+            <button class="btn btn-primary btn-sm" id="export-json-btn">💾 Export as JSON</button>
+            <button class="btn btn-ghost btn-sm" id="export-csv-btn">📊 Export Jobs as CSV</button>
+          </div>
+          <span class="options__save-status" id="export-status"></span>
+        </div>
+
+        <!-- Data Import -->
+        <div class="glass-card">
+          <h3 class="options__section-title">📥 Import Data</h3>
+          <p class="account__desc">Restore from a previous JSON backup. This will merge with your existing data.</p>
+          <div class="account__btn-row">
+            <label class="btn btn-ghost btn-sm account__file-label" for="import-file-input">
+              📂 Choose Backup File
+            </label>
+            <input type="file" id="import-file-input" accept=".json" style="display:none;">
+            <span class="account__file-name" id="import-file-name">No file selected</span>
+          </div>
+          <div class="account__btn-row" style="margin-top:8px;">
+            <button class="btn btn-primary btn-sm" id="import-btn" disabled>⬆️ Import</button>
+            <span class="options__save-status" id="import-status"></span>
+          </div>
+        </div>
+
+        <!-- Storage Info -->
+        <div class="glass-card">
+          <h3 class="options__section-title">💾 Storage</h3>
+          <div class="account__storage-row">
+            <span class="account__storage-label">Local Storage Used</span>
+            <span class="account__storage-value" id="storage-used">Calculating...</span>
+          </div>
+          <div class="account__storage-row">
+            <span class="account__storage-label">Total Jobs Saved</span>
+            <span class="account__storage-value" id="storage-jobs-count">—</span>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="glass-card account__danger-zone">
+          <h3 class="options__section-title" style="color: var(--color-danger);">⚠️ Danger Zone</h3>
+          <div class="account__danger-item">
+            <div>
+              <strong>Clear Job History</strong>
+              <p>Remove all applied/failed job records. Settings are kept.</p>
+            </div>
+            <button class="btn btn-sm account__danger-btn" id="clear-jobs-btn">Clear Jobs</button>
+          </div>
+          <div class="account__danger-item">
+            <div>
+              <strong>Reset Extension</strong>
+              <p>Delete ALL data including settings, profile, and jobs. This cannot be undone.</p>
+            </div>
+            <button class="btn btn-sm account__danger-btn account__danger-btn--destructive" id="reset-all-btn">Reset All</button>
+          </div>
+        </div>
+
+        <!-- About -->
+        <div class="glass-card">
+          <h3 class="options__section-title">ℹ️ About</h3>
+          <div class="account__about">
+            <div class="account__about-row">
+              <span>Version</span>
+              <span class="account__about-value" id="about-version">1.0.0</span>
+            </div>
+            <div class="account__about-row">
+              <span>Build</span>
+              <span class="account__about-value">Chrome Extension (Manifest V3)</span>
+            </div>
+            <div class="account__about-links">
+              <a href="https://linkedapplypro.com" target="_blank">🌐 Website</a>
+              <a href="https://linkedapplypro.com/privacy-policy" target="_blank">🔒 Privacy Policy</a>
+              <a href="https://linkedapplypro.com/tos" target="_blank">📄 Terms of Service</a>
+              <a href="https://github.com/naamsanamone/linkedapply-pro/releases" target="_blank">📋 Changelog</a>
+            </div>
+          </div>
         </div>
       </section>
     </main>
