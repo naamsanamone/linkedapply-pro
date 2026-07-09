@@ -86,8 +86,7 @@ All AI features are **free with BYOK** (Bring Your Own Key). No subscription req
 ---
 
 ## 💰 Pricing — BYOK Model
-
-Inspired by [Pluely](https://github.com/iamsrikanthnani/pluely) and [Natively](https://github.com/Natively-AI-assistant/natively-cluely-ai-assistant) — the software is **free**, you bring your own AI keys.
+The software is **free**, you bring your own AI keys.
 
 | Tier | Cost | How It Works |
 |---|---|---|
