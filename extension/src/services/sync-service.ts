@@ -8,7 +8,6 @@ import { getStorage, setStorage } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/constants';
 import type { Job } from '../shared/types';
 import { pushJobsToCloud, pullJobsFromCloud } from './api-client';
-import { hasFeature } from './subscription-service';
 
 const log = createLogger('Sync');
 
@@ -19,13 +18,6 @@ const SYNC_TIMESTAMP_KEY = STORAGE_KEYS.LAST_SYNC_TIMESTAMP;
  * Called after each application and periodically via alarm.
  */
 export async function syncToCloud(): Promise<boolean> {
-  // Check if user has cloud_sync feature
-  const canSync = await hasFeature('cloud_sync');
-  if (!canSync) {
-    log.debug('Cloud sync not available on current plan');
-    return false;
-  }
-
   try {
     const jobs = await getStorage<Job[]>(STORAGE_KEYS.APPLIED_JOBS);
     if (!jobs || jobs.length === 0) {
@@ -70,9 +62,6 @@ export async function syncToCloud(): Promise<boolean> {
  * Used for cross-device sync and data recovery.
  */
 export async function syncFromCloud(): Promise<number> {
-  const canSync = await hasFeature('cloud_sync');
-  if (!canSync) return 0;
-
   try {
     const lastSync = await getStorage<string>(SYNC_TIMESTAMP_KEY);
     const result = await pullJobsFromCloud(lastSync || undefined);

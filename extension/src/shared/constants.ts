@@ -17,34 +17,9 @@ export const LINKEDIN_LOGIN_URL = `${LINKEDIN_BASE}/login`;
 export const LINKEDIN_FEED_URL = `${LINKEDIN_BASE}/feed/`;
 
 // ---- Plan Limits ----
-export const PLAN_LIMITS: Record<string, { dailyApplications: number; searchTerms: number; badWords: number; companies: number }> = {
-  free_trial: { dailyApplications: 5, searchTerms: 3, badWords: 3, companies: 5 },
-  day: { dailyApplications: -1, searchTerms: -1, badWords: -1, companies: -1 },
-  week: { dailyApplications: -1, searchTerms: -1, badWords: -1, companies: -1 },
-  month: { dailyApplications: -1, searchTerms: -1, badWords: -1, companies: -1 },
-  year: { dailyApplications: -1, searchTerms: -1, badWords: -1, companies: -1 },
-  lifetime: { dailyApplications: -1, searchTerms: -1, badWords: -1, companies: -1 },
+export const PLAN_LIMITS = {
+  free: { dailyApplications: -1 },  // unlimited
 };
-
-// ---- Premium Features (gated by plan) ----
-export const PREMIUM_FEATURES = [
-  'ai_answers',
-  'ai_resume_tailor',
-  'ai_cover_letter',
-  'job_match_score',
-  'ats_keywords',
-  'kanban_board',
-  'analytics',
-  'export_data',
-  'cloud_sync',
-  'email_notifications',
-  'turbo_speed',
-  'unlimited_search_terms',
-  'unlimited_blacklist',
-  'follow_up_reminders',
-] as const;
-
-export type PremiumFeature = typeof PREMIUM_FEATURES[number];
 
 // ---- Bot Timing Defaults ----
 export const DEFAULT_CLICK_GAP = 2000;  // ms

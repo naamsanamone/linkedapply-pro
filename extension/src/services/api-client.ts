@@ -5,9 +5,9 @@
    ============================================================ */
 
 import { createLogger } from '../shared/logger';
-import { getStorage, setStorage } from '../shared/storage';
+import { getStorage } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/constants';
-import type { Subscription, Job, ExtractedSkills } from '../shared/types';
+import type { Job } from '../shared/types';
 
 const log = createLogger('API');
 
@@ -57,42 +57,6 @@ async function apiRequest<T>(
     log.error(`API request failed: ${endpoint} → ${errMsg}`);
     return { data: null, error: errMsg, status: 0 };
   }
-}
-
-// ================================================
-//  SUBSCRIPTION
-// ================================================
-
-export interface VerifySubscriptionResponse {
-  valid: boolean;
-  subscription: Subscription;
-  usage: {
-    applicationsToday: number;
-    remainingToday: number;
-  };
-  user: {
-    id: string;
-    email: string;
-  };
-}
-
-/**
- * Verify the user's subscription status with the backend.
- * Caches the result in chrome.storage for offline access.
- */
-export async function verifySubscription(): Promise<VerifySubscriptionResponse | null> {
-  const { data, error } = await apiRequest<VerifySubscriptionResponse>(
-    '/verify-subscription',
-    { method: 'POST' }
-  );
-
-  if (data?.subscription) {
-    // Cache subscription locally
-    await setStorage(STORAGE_KEYS.SUBSCRIPTION, data.subscription);
-    log.info(`Subscription verified: ${data.subscription.plan} (${data.subscription.status})`);
-  }
-
-  return data;
 }
 
 // ================================================
@@ -222,95 +186,6 @@ export async function deleteJobFromCloud(jobId: string): Promise<boolean> {
 }
 
 // ================================================
-//  AI PROXY
-// ================================================
-
-export interface AIProxyResponse {
-  response: string;
-  usage: {
-    used: number;
-    limit: number;
-    remaining: number;
-  };
-}
-
-/**
- * Send an AI prompt through the backend proxy (uses platform API keys).
- * For users who don't have their own API keys configured.
- */
-export async function aiProxy(
-  prompt: string,
-  options?: {
-    provider?: string;
-    model?: string;
-    temperature?: number;
-    maxTokens?: number;
-    responseFormat?: 'text' | 'json';
-  }
-): Promise<AIProxyResponse | null> {
-  const { data, error, status } = await apiRequest<AIProxyResponse>(
-    '/ai-proxy',
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        prompt,
-        provider: options?.provider,
-        model: options?.model,
-        temperature: options?.temperature,
-        maxTokens: options?.maxTokens,
-        responseFormat: options?.responseFormat,
-      }),
-    }
-  );
-
-  if (status === 429) {
-    log.error('AI daily limit reached');
-  }
-
-  return data;
-}
-
-// ================================================
-//  CHECKOUT & BILLING
-// ================================================
-
-export interface CheckoutResponse {
-  url: string;
-  mode: 'payment' | 'subscription';
-  plan: string;
-}
-
-/**
- * Create a Stripe checkout session for a plan purchase.
- * Returns a URL to redirect the user to Stripe Checkout.
- */
-export async function createCheckoutSession(priceId: string): Promise<CheckoutResponse | null> {
-  const { data } = await apiRequest<CheckoutResponse>(
-    '/checkout',
-    {
-      method: 'POST',
-      body: JSON.stringify({ priceId }),
-    }
-  );
-
-  if (data?.url) {
-    log.info(`Checkout session created for plan: ${data.plan}`);
-  }
-  return data;
-}
-
-/**
- * Get the Stripe Customer Portal URL for managing billing.
- */
-export async function getCustomerPortalUrl(): Promise<string | null> {
-  const { data } = await apiRequest<{ url: string }>(
-    '/checkout',
-    { method: 'GET' }
-  );
-  return data?.url || null;
-}
-
-// ================================================
 //  HEALTH CHECK
 // ================================================
 
@@ -328,4 +203,3 @@ export async function healthCheck(): Promise<boolean> {
     return false;
   }
 }
-

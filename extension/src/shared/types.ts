@@ -6,16 +6,12 @@
 export type BotStatus = 'idle' | 'searching' | 'filtering' | 'applying' | 'paused' | 'error' | 'stopped';
 
 // ---- Plan Types ----
-export type PlanType = 'free_trial' | 'day' | 'week' | 'month' | 'year' | 'lifetime';
+export type PlanType = 'free';
 export type PlanStatus = 'active' | 'expired' | 'canceled' | 'past_due';
 
 export interface Subscription {
   plan: PlanType;
-  status: PlanStatus;
-  expiresAt: string | null;
-  features: string[];
-  dailyLimit: number;       // -1 = unlimited
-  trialDaysRemaining?: number;
+  status: PlanStatus | string;
 }
 
 // ---- Job Models ----

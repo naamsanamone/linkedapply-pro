@@ -154,21 +154,9 @@ function updatePlanUI(subscription: Subscription): void {
   const badgeEl = planBadge.querySelector('.badge') as HTMLElement;
   if (!badgeEl) return;
 
-  if (subscription.plan === 'free_trial') {
-    badgeEl.className = 'badge badge-primary';
-    badgeEl.textContent = subscription.trialDaysRemaining
-      ? `Trial: ${subscription.trialDaysRemaining}d left`
-      : 'Free Trial';
-    upgradeCta.style.display = 'flex';
-  } else {
-    badgeEl.className = 'badge badge-pro';
-    const planNames: Record<string, string> = {
-      day: 'Day Pass', week: 'Weekly', month: 'Monthly',
-      year: 'Yearly', lifetime: '♾️ Lifetime',
-    };
-    badgeEl.textContent = planNames[subscription.plan] || 'Pro';
-    upgradeCta.style.display = 'none';
-  }
+  badgeEl.className = 'badge badge-primary';
+  badgeEl.textContent = 'Free (BYOK)';
+  upgradeCta.style.display = 'none';
 }
 
 // ---- Helpers ----

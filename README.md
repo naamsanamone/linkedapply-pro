@@ -85,15 +85,15 @@ All AI features are **free with BYOK** (Bring Your Own Key). No subscription req
 
 ---
 
-## 💰 Pricing — BYOK Model
-The software is **free**, you bring your own AI keys.
+## 💰 Pricing — 100% Free (BYOK)
 
-| Tier | Cost | How It Works |
+The software is **completely free**. You bring your own AI API key — all features unlocked, no limits, no subscriptions.
+
+| | Cost | How It Works |
 |---|---|---|
-| 🔑 **Free (BYOK)** | $0 + API usage (~$0.001/job) | Bring your own Gemini/OpenAI/DeepSeek key. All features unlocked. |
-| ⭐ **Pro** | ~$5-10/month | For users who don't want to manage API keys. License key activates hosted API. |
+| 🔑 **Free (BYOK)** | $0 + API usage (~$0.001/job) | Bring your own Gemini/OpenAI/DeepSeek key. Every feature unlocked. |
 
-> **Why BYOK?** You pay the AI provider directly for what you use. No markup, full transparency. A typical job application costs ~$0.001 in API tokens.
+> **Why BYOK?** You pay the AI provider directly for what you use. No markup, full transparency. A typical job application costs ~$0.001 in API tokens. With Gemini's free tier, you may pay nothing at all.
 
 ---
 
@@ -242,7 +242,6 @@ npm test             # Run unit tests
 | AI | OpenAI / Gemini / DeepSeek via native fetch (zero SDKs) |
 | PDF/DOCX | jsPDF + docx library |
 | Backend | Next.js 14, Supabase (PostgreSQL + Auth) |
-| Payments | Razorpay (Pro tier) |
 | Testing | Jest + ts-jest |
 
 ---
@@ -256,12 +255,13 @@ npm test             # Run unit tests
 - [x] Kanban board with job detail modal
 - [x] Rate limit handling with exponential backoff
 - [x] Match score hero ring + tailored resume card in modal
-- [ ] Qualification breakdown (✓/? per requirement)
-- [ ] AI cover letter + PDF/DOCX download
-- [ ] Stand out suggestions
-- [ ] 4-tab job detail modal (Match / Resume / Cover Letter / Stand Out)
-- [ ] BYOK usage dashboard
-- [ ] Pro tier with hosted API
+- [x] Qualification breakdown (✓/? per requirement)
+- [x] AI cover letter + PDF/DOCX download
+- [x] Stand out suggestions
+- [x] 4-tab job detail modal (Match / Resume / Cover Letter / Stand Out)
+- [x] BYOK usage dashboard
+- [ ] Chrome Web Store listing
+- [ ] Multi-language support
 
 ---
 

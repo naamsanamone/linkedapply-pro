@@ -8,14 +8,13 @@ import { createLogger } from '../../shared/logger';
 import { getStorage } from '../../shared/storage';
 import { STORAGE_KEYS } from '../../shared/constants';
 import type { AIConfig, UserProfile, ExtractedSkills, QuestionType, CoverLetterData } from '../../shared/types';
-import { createAIProvider, createAIProviderFromStorage, createProxyProvider, type AIProviderClient } from './ai-provider';
+import { createAIProvider, createAIProviderFromStorage, type AIProviderClient } from './ai-provider';
 import { aiAnswerQuestion } from './ai-question-answerer';
 import { aiExtractSkills } from './ai-skills-extractor';
 import { aiMatchJob, type JobMatchResult } from './job-matcher';
 import { aiTailorResume, type TailoredResume } from './resume-tailor';
 import { aiGenerateCoverLetter } from './cover-letter-gen';
 import { aiAnalyzeATS, type ATSAnalysisResult } from './ats-analyzer';
-import type { Subscription } from '../../shared/types';
 
 const log = createLogger('AIService');
 
@@ -32,7 +31,6 @@ class AIServiceImpl {
   private profile: UserProfile | null = null;
 
   async init(): Promise<boolean> {
-    // 1. Try BYOK (user's own API key)
     this.client = await createAIProviderFromStorage();
     this.profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
 
@@ -40,19 +38,6 @@ class AIServiceImpl {
       log.info(`AI initialized (BYOK): ${this.client.provider} (${this.client.model})`);
       return true;
     }
-
-    // 2. Fall back to Pro proxy if user has active subscription
-    try {
-      const sub = await getStorage<Subscription>(STORAGE_KEYS.SUBSCRIPTION);
-      if (sub && sub.status === 'active' && sub.plan !== 'free_trial') {
-        this.client = createProxyProvider();
-        log.info('AI initialized (Pro proxy) — using backend AI');
-        return true;
-      }
-    } catch (e) {
-      log.warn('Failed to check subscription for proxy fallback', e);
-    }
-
     log.info('AI not configured — running without AI');
     return false;
   }

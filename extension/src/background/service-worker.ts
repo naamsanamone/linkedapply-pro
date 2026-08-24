@@ -341,22 +341,11 @@ async function openSidePanel(sender: chrome.runtime.MessageSender): Promise<void
   }
 }
 
-// ---- Alarms (reminders, subscription refresh, sync) ----
+// ---- Alarms (reminders, sync) ----
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   log.info(`Alarm fired: ${alarm.name}`);
 
   switch (alarm.name) {
-    case 'subscription_check': {
-      // Periodic subscription refresh from backend
-      try {
-        const { refreshSubscription } = await import('../services/subscription-service');
-        await refreshSubscription();
-      } catch (e) {
-        log.error('Subscription refresh failed', e);
-      }
-      break;
-    }
-
     case 'cloud_sync': {
       // Periodic cloud sync
       try {
@@ -406,7 +395,6 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 });
 
 // ---- Set up periodic alarms ----
-chrome.alarms.create('subscription_check', { periodInMinutes: 60 });
 chrome.alarms.create('cloud_sync', { periodInMinutes: 30 });
 chrome.alarms.create('reminder_cleanup', { periodInMinutes: 1440 }); // Once daily
 
