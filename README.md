@@ -124,7 +124,7 @@ linkedapply-pro/
 ├── extension/                        # Chrome Extension (Manifest V3)
 │   ├── src/
 │   │   ├── background/               # Service worker
-│   │   │   └── service-worker.ts     #   AI proxy, rate limiter, job tracker
+│   │   │   └── service-worker.ts     #   Rate limiter, job tracker, alarms
 │   │   ├── content/                   # LinkedIn content scripts
 │   │   │   └── engine/               #   Automation engine
 │   │   │       ├── bot-orchestrator.ts    # Main job processing pipeline
@@ -134,7 +134,7 @@ linkedapply-pro/
 │   │   │       └── dom-utils.ts           # LinkedIn DOM helpers
 │   │   ├── popup/                     # Browser action popup
 │   │   ├── sidepanel/                 # Dashboard (Kanban, Analytics, AI tabs)
-│   │   ├── options/                   # Settings (5 config pages)
+│   │   ├── options/                   # Settings (Profile, Search, AI, Bot, Account)
 │   │   ├── services/
 │   │   │   ├── ai/                    # AI services
 │   │   │   │   ├── ai-provider.ts         # Multi-provider client
@@ -145,13 +145,12 @@ linkedapply-pro/
 │   │   │   │   ├── ats-analyzer.ts        # ATS keyword analysis
 │   │   │   │   └── prompts.ts             # All AI prompt templates
 │   │   │   ├── pdf-generator.ts       # PDF/DOCX cover letter export
-│   │   │   ├── usage-tracker.ts       # BYOK usage tracking
-│   │   │   └── subscription-service.ts
+│   │   │   └── usage-tracker.ts       # BYOK usage tracking
 │   │   └── shared/                    # Types, constants, utilities
 │   ├── manifest.json
 │   └── vite.config.ts
 │
-└── web/                              # Next.js Backend (Pro tier only)
+└── web/                              # Next.js Backend (cloud sync & usage tracking)
     ├── app/api/extension/            # Extension API routes
     └── supabase/schema.sql           # Database schema
 ```
