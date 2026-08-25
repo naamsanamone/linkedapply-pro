@@ -256,49 +256,29 @@ export async function handleExternalApply(
 
 /**
  * Discard the current job application (press Escape → click Discard).
- * Made robust: searches both buttons and spans, retries if dialog persists.
+ * Made robust: tries clicking Discard immediately, then Escape + retry.
  */
 export async function discardApplication(): Promise<void> {
   try {
+    // First check if "Save this application?" dialog is already visible
+    const discardedFast = await tryClickDiscard();
+    if (discardedFast) return;
+
     // Press Escape to trigger the "Save this application?" dialog
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    await humanDelay(200, 400);
+    await humanDelay(300, 500);
 
     // Retry loop — dialog may take a moment to appear
-    for (let attempt = 0; attempt < 3; attempt++) {
-      // Strategy 1: Find Discard button by text in <button> elements
-      const allButtons = Array.from(document.querySelectorAll('button'));
-      for (const btn of allButtons) {
-        const text = btn.textContent?.trim().toLowerCase() || '';
-        if (text === 'discard' || text.includes('discard')) {
-          btn.click();
-          await humanDelay(150, 300);
-          log.info('Application discarded (via button)');
-          return;
-        }
-      }
-
-      // Strategy 2: Find Discard via span (LinkedIn sometimes wraps text in spans)
-      const discardSpan = findSpanByText('Discard');
-      if (discardSpan) {
-        await clickElement(discardSpan as HTMLElement);
-        await humanDelay(150, 300);
-        log.info('Application discarded (via span)');
-        return;
-      }
-
-      // Strategy 3: Try clicking the X close button on the modal
-      const closeBtn = document.querySelector('button[aria-label="Dismiss"], button[data-test-modal-close-btn]') as HTMLElement;
-      if (closeBtn) {
-        closeBtn.click();
-        await humanDelay(150, 300);
-        log.info('Application discarded (via close button)');
-        return;
-      }
-
-      // Wait briefly before retrying
-      await humanDelay(200, 400);
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const clicked = await tryClickDiscard();
+      if (clicked) return;
+      await humanDelay(150, 300);
     }
+
+    // Last resort: press Escape again + force close
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await humanDelay(200, 300);
+    await tryClickDiscard();
 
     log.warn('Discard button not found after retries');
   } catch (error) {
@@ -306,9 +286,48 @@ export async function discardApplication(): Promise<void> {
   }
 }
 
+/**
+ * Try to find and click the "Discard" button. Returns true if clicked.
+ */
+async function tryClickDiscard(): Promise<boolean> {
+  // Strategy 1: Find Discard button by text
+  const allButtons = Array.from(document.querySelectorAll('button'));
+  for (const btn of allButtons) {
+    const text = btn.textContent?.trim().toLowerCase() || '';
+    if (text === 'discard' || text.includes('discard')) {
+      btn.click();
+      await humanDelay(100, 200);
+      log.info('Application discarded (via button)');
+      return true;
+    }
+  }
+
+  // Strategy 2: Find Discard via span
+  const discardSpan = findSpanByText('Discard');
+  if (discardSpan) {
+    (discardSpan as HTMLElement).click();
+    await humanDelay(100, 200);
+    log.info('Application discarded (via span)');
+    return true;
+  }
+
+  // Strategy 3: X close button on modal
+  const closeBtn = document.querySelector<HTMLElement>(
+    'button[aria-label="Dismiss"], button[data-test-modal-close-btn], button.artdeco-modal__dismiss'
+  );
+  if (closeBtn) {
+    closeBtn.click();
+    await humanDelay(100, 200);
+    log.info('Application discarded (via close button)');
+    return true;
+  }
+
+  return false;
+}
+
 // ---- Post-Apply Modal Dismissal ----
 
-const DISMISS_TEXTS = ['not now', 'skip', 'no thanks', 'done', 'dismiss', 'got it', 'close'];
+const DISMISS_TEXTS = ['not now', 'skip', 'no thanks', 'done', 'dismiss', 'discard', 'got it', 'close'];
 
 async function dismissPostApplyModal(): Promise<void> {
   log.info('Dismissing post-apply confirmation modal...');
@@ -409,30 +428,41 @@ export async function dismissAnyOverlay(): Promise<void> {
 
   log.info('Found lingering overlay — attempting to dismiss...');
 
-  // Try dismiss buttons inside the modal
+  // Priority 1: Check for "Save this application?" dialog — click Discard immediately
   const allButtons = Array.from(modal.querySelectorAll('button'));
+  for (const btn of allButtons) {
+    const text = btn.textContent?.trim().toLowerCase() || '';
+    if (text === 'discard' || text.includes('discard')) {
+      btn.click();
+      log.info('Dismissed "Save this application?" dialog via Discard');
+      await humanDelay(300, 500);
+      return;
+    }
+  }
+
+  // Priority 2: Try other dismiss texts
   for (const btn of allButtons) {
     const text = btn.textContent?.trim().toLowerCase() || '';
     if (DISMISS_TEXTS.some(t => text === t || text.startsWith(t))) {
       btn.click();
       log.info(`Dismissed lingering overlay via "${btn.textContent?.trim()}"`);
-      await humanDelay(500, 1000);
+      await humanDelay(300, 500);
       return;
     }
   }
 
-  // Try X button
+  // Priority 3: Try X button
   const xBtn = modal.querySelector<HTMLElement>('button[aria-label="Dismiss"], button[aria-label="Close"], button.artdeco-modal__dismiss');
   if (xBtn) {
     xBtn.click();
     log.info('Dismissed lingering overlay via X button');
-    await humanDelay(500, 1000);
+    await humanDelay(300, 500);
     return;
   }
 
   // Escape as fallback
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  await humanDelay(500, 1000);
+  await humanDelay(300, 500);
   log.warn('Pressed Escape to dismiss lingering overlay');
 }
 
