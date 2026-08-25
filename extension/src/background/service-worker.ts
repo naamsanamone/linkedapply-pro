@@ -452,6 +452,17 @@ let _rateLimitUntil = 0;      // timestamp when we can retry
 let _rateLimitBackoff = 0;    // current backoff in ms
 const RATE_LIMIT_MAX_BACKOFF = 120_000; // 2 minutes max
 
+// Clear rate limit + AI cache when user changes API key
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes[STORAGE_KEYS.AI_CONFIG]) {
+    log.info('AI config changed — clearing rate limit and cached client');
+    _rateLimitUntil = 0;
+    _rateLimitBackoff = 0;
+    _cachedAIClient = null;
+    _aiClientCreatedAt = 0;
+  }
+});
+
 async function getOrCreateAIClient(): Promise<AIProviderClient | null> {
   const now = Date.now();
   if (_cachedAIClient && (now - _aiClientCreatedAt) < AI_CLIENT_TTL) {
