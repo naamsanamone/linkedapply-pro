@@ -11,8 +11,7 @@ const log = createLogger('UsageTracker');
 const USAGE_KEY = STORAGE_KEYS.USAGE_STATE;
 
 export interface UsageState {
-  tier: 'byok' | 'pro';
-  licenseKey?: string;
+  tier: 'byok';
   dailyCalls: { date: string; count: number };
   totalCalls: number;
   lastCallAt?: string;
@@ -61,16 +60,6 @@ export async function recordAICall(): Promise<UsageState> {
   return state;
 }
 
-/**
- * Set the tier and optionally a license key.
- */
-export async function setTier(tier: 'byok' | 'pro', licenseKey?: string): Promise<void> {
-  const state = await getUsageState();
-  state.tier = tier;
-  if (licenseKey) state.licenseKey = licenseKey;
-  await setStorage(USAGE_KEY, state);
-  log.info(`Tier set to: ${tier}`);
-}
 
 /**
  * Estimated cost based on Gemini 2.5 Flash pricing (~$0.15/M input tokens).

@@ -472,8 +472,18 @@ function checkRateLimit(): string | null {
 }
 
 function handleRateLimitError(error: any): void {
+  const errorMsg = error.message || '';
+
+  // Daily quota exhaustion — back off for 1 hour (won't reset sooner)
+  const isDailyQuota = errorMsg.includes('daily quota') || errorMsg.includes('PerDay') || errorMsg.includes('FreeTier');
+  if (isDailyQuota) {
+    _rateLimitUntil = Date.now() + 3_600_000; // 1 hour
+    log.warn('🚫 Daily AI quota exhausted — skipping all AI calls for ~1 hour');
+    return;
+  }
+
   // Parse retry delay from Gemini 429 response
-  const retryMatch = error.message?.match(/retry in ([\d.]+)s/i);
+  const retryMatch = errorMsg.match(/retry in ([\d.]+)s/i);
   let waitMs: number;
 
   if (retryMatch) {
@@ -513,11 +523,12 @@ async function handleAIMatchJob(payload: any): Promise<any> {
       resumeText || undefined, skillsMap || undefined
     );
 
+    if (!result) return { error: 'AI returned no result (quota may be exhausted)' };
     clearRateLimit();
     await recordAICall();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
     }
@@ -546,11 +557,12 @@ async function handleAITailorResume(payload: any): Promise<any> {
       resumeText || undefined, skillsMap || undefined
     );
 
+    if (!result) return { error: 'AI returned no result (quota may be exhausted)' };
     clearRateLimit();
     await recordAICall();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
     }
@@ -577,6 +589,7 @@ async function handleAICoverLetter(payload: any): Promise<any> {
       payload.jobDescription || ''
     );
 
+    if (!result) return { error: 'AI returned no result (quota may be exhausted)' };
     clearRateLimit();
     await recordAICall();
     return { success: true, result };
@@ -608,6 +621,7 @@ async function handleAIStandOutTips(payload: any): Promise<any> {
       payload.jobDescription || ''
     );
 
+    if (!result) return { error: 'AI returned no result (quota may be exhausted)' };
     clearRateLimit();
     await recordAICall();
     return { success: true, result };
