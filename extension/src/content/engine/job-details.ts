@@ -125,9 +125,109 @@ export async function getJobMainDetails(
         skipReason = 'Failed to open job details';
       }
     }
+
+    // Enhanced extraction from detail panel top card
+    if (!skip) {
+      const detailInfo = extractDetailPanelInfo();
+      if (!workLocation && detailInfo.location) workLocation = detailInfo.location;
+      if (!workStyle && detailInfo.workStyle) workStyle = detailInfo.workStyle;
+      // Override with detail panel data if card had no location
+      if (workLocation === '' && detailInfo.location) workLocation = detailInfo.location;
+    }
   }
 
   return { jobId, title, company, workLocation, workStyle, skip, skipReason };
+}
+
+/**
+ * Extract location and work style from the job detail panel's top card.
+ * LinkedIn shows these in spans like:
+ *   "San Francisco, CA · Remote" or "Bengaluru, India (On-site)"
+ * Selectors target the unified top card that appears after clicking a job.
+ */
+function extractDetailPanelInfo(): { location: string; workStyle: string } {
+  let location = '';
+  let workStyle = '';
+
+  try {
+    // Strategy 1: Look for the primary description container with location spans
+    const topCardSelectors = [
+      '.job-details-jobs-unified-top-card__primary-description-container',
+      '.job-details-jobs-unified-top-card__primary-description',
+      '.jobs-unified-top-card__primary-description',
+    ];
+
+    let topCard: Element | null = null;
+    for (const sel of topCardSelectors) {
+      topCard = document.querySelector(sel);
+      if (topCard) break;
+    }
+
+    if (topCard) {
+      const spans = topCard.querySelectorAll('span');
+      for (const span of spans) {
+        const text = span.textContent?.trim() || '';
+        // Work style keywords
+        const lowerText = text.toLowerCase();
+        if (lowerText === 'remote' || lowerText === 'on-site' || lowerText === 'hybrid') {
+          workStyle = text;
+        }
+        // Location patterns: "City, State" or "City, Country" (contains comma, no 'ago', not a number)
+        if (text.includes(',') && !text.includes('ago') && !text.match(/^\d/) && !location) {
+          location = text.trim();
+        }
+      }
+    }
+
+    // Strategy 2: Look for the job insight items (workplace type, location)
+    if (!workStyle) {
+      const insightItems = document.querySelectorAll('.job-details-jobs-unified-top-card__job-insight span');
+      for (const item of insightItems) {
+        const text = item.textContent?.trim().toLowerCase() || '';
+        if (text === 'remote' || text === 'on-site' || text === 'hybrid') {
+          workStyle = item.textContent?.trim() || '';
+        }
+      }
+    }
+
+    // Strategy 3: Check the subtitle line in the detail view
+    if (!workStyle || !location) {
+      const subtitleEl = document.querySelector(
+        '.job-details-jobs-unified-top-card__company-and-workplace, ' +
+        '.jobs-unified-top-card__subtitle-primary-grouping'
+      );
+      if (subtitleEl) {
+        const text = subtitleEl.textContent?.trim() || '';
+        // Pattern: "Company · Location · Work Style"
+        const parts = text.split('·').map(p => p.trim());
+        for (const part of parts) {
+          const lower = part.toLowerCase();
+          if (lower === 'remote' || lower === 'on-site' || lower === 'hybrid') {
+            if (!workStyle) workStyle = part;
+          } else if (part.includes(',') && !location) {
+            location = part;
+          }
+        }
+      }
+    }
+
+    // Strategy 4: Check for parenthesized work style in any location string
+    if (!workStyle && location) {
+      const parenOpen = location.lastIndexOf('(');
+      const parenClose = location.lastIndexOf(')');
+      if (parenOpen > -1 && parenClose > parenOpen) {
+        const inParen = location.substring(parenOpen + 1, parenClose).trim();
+        if (['remote', 'on-site', 'hybrid'].includes(inParen.toLowerCase())) {
+          workStyle = inParen;
+          location = location.substring(0, parenOpen).trim();
+        }
+      }
+    }
+  } catch (error) {
+    // Silent fail — we'll use whatever was extracted from the card
+  }
+
+  return { location, workStyle };
 }
 
 /**
