@@ -357,7 +357,7 @@ function renderAnalytics(jobs: Job[], session?: SessionSummary | null): void {
 
   renderActivityChart(jobs);
   renderCompaniesChart(jobs);
-  renderWorkStyleChart(jobs);
+
   renderPipeline(jobs);
   renderLocationsChart(jobs);
 }
@@ -399,51 +399,7 @@ function renderCompaniesChart(jobs: Job[]): void {
   `).join('');
 }
 
-// ---- Work Style Donut ----
-function renderWorkStyleChart(jobs: Job[]): void {
-  const container = document.getElementById('workstyle-chart');
-  if (!container) return;
 
-  const styleMap: Record<string, { count: number; color: string }> = {
-    Remote: { count: 0, color: '#6366f1' },
-    Hybrid: { count: 0, color: '#a78bfa' },
-    'On-site': { count: 0, color: '#f59e0b' },
-    '': { count: 0, color: '#64748b' },
-  };
-
-  jobs.forEach((j) => {
-    const style = j.workStyle || '';
-    if (styleMap[style]) styleMap[style].count++;
-    else styleMap[''].count++;
-  });
-
-  const total = jobs.length || 1;
-  const entries = Object.entries(styleMap).filter(([, v]) => v.count > 0);
-
-  // Build conic-gradient for donut ring
-  let gradientParts: string[] = [];
-  let cumPercent = 0;
-  entries.forEach(([, v]) => {
-    const pct = (v.count / total) * 100;
-    gradientParts.push(`${v.color} ${cumPercent}% ${cumPercent + pct}%`);
-    cumPercent += pct;
-  });
-
-  const donutGradient = `conic-gradient(${gradientParts.join(', ')})`;
-
-  const legend = entries.map(([label, v]) => `
-    <div class="donut-legend__item">
-      <span class="donut-legend__dot" style="background:${v.color}"></span>
-      <span>${label || 'Unknown'}</span>
-      <span class="donut-legend__value">${v.count}</span>
-    </div>
-  `).join('');
-
-  container.innerHTML = `
-    <div class="donut-ring" style="background:${donutGradient};-webkit-mask:radial-gradient(circle at center,transparent 35px,#000 36px);mask:radial-gradient(circle at center,transparent 35px,#000 36px);"></div>
-    <div class="donut-legend">${legend}</div>
-  `;
-}
 
 // ---- Pipeline Funnel ----
 function renderPipeline(jobs: Job[]): void {
