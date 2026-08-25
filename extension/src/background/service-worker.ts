@@ -214,10 +214,9 @@ async function handleStatusUpdate(payload: any): Promise<void> {
 }
 
 async function handleJobApplied(payload: any): Promise<void> {
+  // Session already incremented by content script's incrementSession()
+  // We just read it for badge update + notifications
   const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY) || { ...DEFAULT_SESSION };
-  session.easyApplied += 1;
-  session.estimatedTimeSaved += 80; // 80 seconds per easy apply
-  await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
 
   log.info(`Job applied! Total: ${session.easyApplied}`);
   updateBadge(session.easyApplied, 'running');
@@ -244,17 +243,12 @@ async function handleJobApplied(payload: any): Promise<void> {
 }
 
 async function handleJobFailed(payload: any): Promise<void> {
-  const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY) || { ...DEFAULT_SESSION };
-  session.failed += 1;
-  await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
+  // Session already incremented by content script
   broadcastUpdate();
 }
 
 async function handleJobSkipped(payload: any): Promise<void> {
-  const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY) || { ...DEFAULT_SESSION };
-  session.skipped += 1;
-  session.estimatedTimeSaved += 10;
-  await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
+  // Session already incremented by content script
   broadcastUpdate();
 }
 
