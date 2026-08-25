@@ -49,7 +49,11 @@ export async function aiGenerateStandOutTips(
 
     log.info(`Stand-out tips generated: ${result.highlightSkills.length} skills, ${result.highlightAchievements.length} achievements, ${result.profileImprovements.length} improvements`);
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    const msg = error?.message || '';
+    if (msg.includes('quota') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
+      throw error;
+    }
     log.error('Stand-out tips generation failed', error);
     return null;
   }

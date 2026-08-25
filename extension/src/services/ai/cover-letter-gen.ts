@@ -81,7 +81,11 @@ export async function aiGenerateCoverLetter(
 
     log.info(`Cover letter generated (${plainText.length} chars, ${result.body.length} paragraphs)`);
     return coverLetterData;
-  } catch (error) {
+  } catch (error: any) {
+    const msg = error?.message || '';
+    if (msg.includes('quota') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
+      throw error;
+    }
     log.error('Cover letter generation failed', error);
     return null;
   }

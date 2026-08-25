@@ -60,7 +60,12 @@ export async function aiMatchJob(
     const reqTotal = result.requiredQualifications.length;
     log.info(`Job match: ${result.score}/100 — ${reqMatched}/${reqTotal} required quals matched (${result.headline})`);
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    // Re-throw quota/rate-limit errors so service worker can set proper backoff
+    const msg = error?.message || '';
+    if (msg.includes('quota') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
+      throw error;
+    }
     log.error('Job matching failed', error);
     return null;
   }

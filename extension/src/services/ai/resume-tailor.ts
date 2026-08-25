@@ -67,7 +67,11 @@ export async function aiTailorResume(
 
     log.info(`Resume tailored — ATS score: ${result.atsScore}/100, ${result.keywordsAdded.length} keywords added`);
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    const msg = error?.message || '';
+    if (msg.includes('quota') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
+      throw error;
+    }
     log.error('Resume tailoring failed', error);
     return null;
   }
