@@ -1,4 +1,4 @@
-# ⚡ LinkedApply Pro
+# <img src="extension/public/icons/icon-128.png" width="32" height="32" align="top"> LinkedApply Pro
 
 **AI-Powered LinkedIn Auto-Applier with Premium Job Insights**
 
