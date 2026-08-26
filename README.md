@@ -1,4 +1,4 @@
-# <img src="extension/public/icons/icon-128.png" width="28" height="28" style="vertical-align: middle;"> LinkedApply Pro
+# <img src="extension/public/icons/icon-128.png" width="28" height="28" align="absmiddle"> LinkedApply Pro
 
 **AI-Powered LinkedIn Auto-Applier with Premium Job Insights**
 
