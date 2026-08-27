@@ -25,6 +25,10 @@ export interface ResumeSections {
     year: string;
   }[];
   certifications: string[];
+  projects: {
+    name: string;
+    description: string;
+  }[];
 }
 
 interface LayoutConfig {
@@ -235,8 +239,22 @@ function renderResumeContent(doc: jsPDF, sections: ResumeSections, config: Layou
     currentY = addSectionHeading('CERTIFICATIONS', currentY);
     sections.certifications.forEach(cert => {
       currentY = checkPageBreak(currentY, (config.fontSizeBody * config.lineHeight) / 72);
-      doc.text(cert, config.margin, currentY);
+      doc.text(`• ${cert}`, config.margin, currentY);
       currentY += (config.fontSizeBody * config.lineHeight) / 72 + 0.02;
+    });
+  }
+
+  // Projects
+  if (sections.projects && sections.projects.length > 0) {
+    currentY = addSectionHeading('PROJECTS', currentY);
+    sections.projects.forEach(proj => {
+      currentY = checkPageBreak(currentY, (config.fontSizeBody * config.lineHeight * 2) / 72);
+      doc.setFont('helvetica', 'bold');
+      doc.text(proj.name, config.margin, currentY);
+      doc.setFont('helvetica', 'normal');
+      currentY += (config.fontSizeBody * config.lineHeight) / 72;
+      currentY = addWrappedText(proj.description, config.margin + 0.1, currentY, maxContentWidth - 0.1);
+      currentY += 0.05;
     });
   }
 

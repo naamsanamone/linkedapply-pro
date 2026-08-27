@@ -1197,14 +1197,22 @@ async function downloadTailoredResume(): Promise<void> {
       contactInfo: { name: '', email: '', phone: '', location: '' }, // filled from profile at runtime
       summary: resume.summary,
       skills: resume.skills,
-      experience: resume.experience.map(e => ({
+      experience: (resume.experience || []).map((e: any) => ({
         company: e.company,
         title: e.title,
         dateRange: e.duration,
         bullets: e.bullets,
       })),
-      education: [],
-      certifications: [],
+      education: (resume.education || []).map((e: any) => ({
+        institution: e.institution,
+        degree: e.degree,
+        year: e.year,
+      })),
+      certifications: resume.certifications || [],
+      projects: (resume.projects || []).map((p: any) => ({
+        name: p.name,
+        description: p.description,
+      })),
     };
     const blob = generateTailoredResumePDF(sections, 1);
     downloadBlob(blob, `tailored-resume-${currentReviewData.company}.pdf`);

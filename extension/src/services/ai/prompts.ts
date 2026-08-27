@@ -97,26 +97,58 @@ Return ONLY valid JSON:
 // ======== RESUME TAILORING (Premium) ========
 
 export const RESUME_TAILOR_PROMPT = `
-You are an ATS resume optimizer. Rewrite the resume for this specific job.
+You are an expert ATS resume optimizer. Your job: take the candidate's FULL resume and rewrite it to achieve 90+ ATS score for this specific job.
 
-RESUME:
+CANDIDATE RESUME:
 {userProfile}
 
-JOB:
+TARGET JOB:
 {jobDescription}
 
 REQUIRED SKILLS:
 {requiredSkills}
 
-RULES: Keep facts truthful. Incorporate JD keywords. Use action verbs. Summary under 3 sentences.
+STRICT RULES:
+1. KEEP ALL FACTS TRUTHFUL — never fabricate experience, degrees, or companies
+2. PRESERVE ALL sections from the original resume: Summary, Skills, Experience (ALL jobs), Education, Certifications, Projects
+3. REWRITE summary to directly address this job's requirements (2-3 impactful sentences)
+4. REORDER skills to put job-relevant skills FIRST. Add JD keywords the candidate legitimately has
+5. REWRITE experience bullets using strong action verbs + quantified results. Include metrics (%, $, numbers)
+6. Each job should have 4-6 bullets. Earlier/more relevant jobs get more bullets
+7. INCLUDE ALL experience entries from the original resume, not just the most recent one
+8. INCLUDE education — copy EXACTLY from original resume (institution, degree, year)
+9. INCLUDE certifications if present in original resume
+10. INCLUDE projects if present in original resume (title + 1-line description)
+11. Target ATS score: 90-98 (be realistic, not always 95)
 
-Return ONLY valid JSON (put atsScore and keywordsAdded FIRST):
+Return ONLY valid JSON with ALL sections (put atsScore FIRST):
 {
-  "atsScore": <0-100>,
+  "atsScore": <90-98>,
   "keywordsAdded": ["<keyword>"],
-  "summary": "<tailored summary>",
-  "skills": ["<skill>"],
-  "experience": [{"title": "<title>", "company": "<co>", "duration": "<dates>", "bullets": ["<bullet>"]}]
+  "summary": "<2-3 sentence tailored professional summary>",
+  "skills": ["<skill1>", "<skill2>", "...at least 10-15 skills"],
+  "experience": [
+    {
+      "title": "<job title>",
+      "company": "<company name>",
+      "duration": "<start - end>",
+      "bullets": ["<action verb + result + metric>", "...4-6 bullets per job"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "<university/school name>",
+      "degree": "<degree name and major>",
+      "year": "<graduation year or date range>"
+    }
+  ],
+  "certifications": ["<cert name>"],
+  "projects": [
+    {
+      "name": "<project name>",
+      "description": "<1-line description with tech used>"
+    }
+  ]
 }
 `;
 

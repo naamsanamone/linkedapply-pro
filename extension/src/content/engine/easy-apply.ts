@@ -91,7 +91,7 @@ export async function executeEasyApply(
             name: `${profile.firstName} ${profile.lastName}`.trim(),
             email: profile.email,
             phone: profile.phoneNumber,
-            location: profile.currentCity || profile.state || '',
+            location: [profile.currentCity, profile.state].filter(Boolean).join(', ') || '',
             linkedin: questionDefaults.linkedIn || undefined,
           },
           summary: tailoredResume.summary || '',
@@ -102,12 +102,22 @@ export async function executeEasyApply(
             dateRange: e.duration,
             bullets: e.bullets,
           })),
-          education: [],
-          certifications: [],
+          education: (tailoredResume.education || []).map((e: any) => ({
+            institution: e.institution,
+            degree: e.degree,
+            year: e.year,
+          })),
+          certifications: tailoredResume.certifications || [],
+          projects: (tailoredResume.projects || []).map((p: any) => ({
+            name: p.name,
+            description: p.description,
+          })),
         };
         tailoredPdfBlob = generateTailoredResumePDF(sections, 1);
         resume = 'Tailored resume (AI)';
-        log.info(`📄 Tailored PDF generated: ${(tailoredPdfBlob.size / 1024).toFixed(1)} KB`);
+        log.info(`📄 Tailored PDF generated: ${(tailoredPdfBlob.size / 1024).toFixed(1)} KB | ` +
+          `Exp: ${sections.experience.length} | Edu: ${sections.education.length} | ` +
+          `Certs: ${sections.certifications.length} | Projects: ${sections.projects.length}`);
       } catch (e) {
         log.warn('Failed to generate tailored PDF, will use default resume', e);
       }

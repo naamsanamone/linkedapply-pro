@@ -81,6 +81,9 @@ export interface TailoredResumeData {
   summary: string;
   skills: string[];
   experience: { title: string; company: string; duration: string; bullets: string[] }[];
+  education: { institution: string; degree: string; year: string }[];
+  certifications: string[];
+  projects: { name: string; description: string }[];
   atsScore: number;
   keywordsAdded: string[];
 }

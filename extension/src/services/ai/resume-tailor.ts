@@ -14,8 +14,22 @@ export interface TailoredResume {
   summary: string;
   skills: string[];
   experience: TailoredExperience[];
+  education: TailoredEducation[];
+  certifications: string[];
+  projects: TailoredProject[];
   atsScore: number;
   keywordsAdded: string[];
+}
+
+export interface TailoredEducation {
+  institution: string;
+  degree: string;
+  year: string;
+}
+
+export interface TailoredProject {
+  name: string;
+  description: string;
 }
 
 export interface TailoredExperience {
@@ -53,7 +67,7 @@ export async function aiTailorResume(
 
     const result = await client.completeJSON<TailoredResume>(prompt, {
       temperature: 0.3,
-      maxTokens: 4000,
+      maxTokens: 6000,
     });
 
     // Validate score
@@ -63,6 +77,9 @@ export async function aiTailorResume(
     result.keywordsAdded = result.keywordsAdded || [];
     result.skills = result.skills || [];
     result.experience = result.experience || [];
+    result.education = result.education || [];
+    result.certifications = result.certifications || [];
+    result.projects = result.projects || [];
     result.summary = result.summary || '';
 
     log.info(`Resume tailored — ATS score: ${result.atsScore}/100, ${result.keywordsAdded.length} keywords added`);
@@ -98,7 +115,7 @@ function formatProfileForResume(
   }
 
   if (resumeText) {
-    parts.push(`\nRESUME CONTENT:\n${resumeText.substring(0, 2500)}`);
+    parts.push(`\nRESUME CONTENT:\n${resumeText.substring(0, 4000)}`);
   }
 
   return parts.filter(Boolean).join('\n');
