@@ -85,6 +85,35 @@ export interface TailoredResumeData {
   keywordsAdded: string[];
 }
 
+// ---- Pre-Apply Review ----
+export interface PreApplyReviewData {
+  jobId: string;
+  title: string;
+  company: string;
+  location: string;
+  matchScore: number | null;
+  matchDetails: MatchDetails | null;
+  tailoredResume: TailoredResumeData | null;
+  coverLetter: CoverLetterData | null;
+  standOutTips: StandOutTips | null;
+  jobDescription: string;
+  isEasyApply: boolean;
+}
+
+export interface PreApplyDecision {
+  action: 'apply_tailored' | 'apply_default' | 'skip';
+  jobId: string;
+  coverLetter?: CoverLetterData | null;
+  standOutTips?: StandOutTips | null;
+  timestamp: number;
+}
+
+export interface PreApplySettings {
+  enabled: boolean;
+  timeoutSeconds: number;         // default 30
+  defaultAction: 'apply_tailored' | 'apply_default' | 'skip';
+}
+
 export type JobStatus = 'bookmarked' | 'applied' | 'external' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';
 
 export interface FailedJob {
@@ -244,6 +273,7 @@ export type MessageType =
   | 'AI_TAILOR_RESUME'
   | 'AI_COVER_LETTER'
   | 'AI_STANDOUT_TIPS'
+  | 'PRE_APPLY_REVIEW'
   | 'GET_USAGE';
 
 export interface ExtensionMessage {

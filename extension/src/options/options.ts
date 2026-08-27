@@ -312,6 +312,14 @@ async function loadBot(): Promise<void> {
     (document.getElementById('b-matchLow') as HTMLInputElement).checked = matchFilter.low;
   }
 
+  // Load pre-apply review settings
+  const paSettings = await getStorage<{ enabled: boolean; timeoutSeconds: number; defaultAction: string }>(STORAGE_KEYS.PRE_APPLY_SETTINGS);
+  if (paSettings) {
+    setChecked('pa-enabled', paSettings.enabled);
+    setVal('pa-timeout', String(paSettings.timeoutSeconds));
+    setVal('pa-default-action', paSettings.defaultAction);
+  }
+
   log.info('Bot settings loaded');
 }
 
@@ -338,6 +346,14 @@ async function saveBot(): Promise<void> {
     low: (document.getElementById('b-matchLow') as HTMLInputElement)?.checked || false,
   };
   await setStorage(STORAGE_KEYS.MATCH_FILTER, matchFilterData);
+
+  // Save pre-apply review settings
+  const preApplySettings = {
+    enabled: getChecked('pa-enabled'),
+    timeoutSeconds: parseInt(getVal('pa-timeout')) || 30,
+    defaultAction: getVal('pa-default-action') || 'apply_tailored',
+  };
+  await setStorage(STORAGE_KEYS.PRE_APPLY_SETTINGS, preApplySettings);
 
   await setStorage(STORAGE_KEYS.BOT_SETTINGS, settings);
   showStatus('bot-status', '✓ Bot settings saved!');

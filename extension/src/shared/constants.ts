@@ -59,6 +59,11 @@ export const STORAGE_KEYS = {
   RESUME_TEXT: 'resume_text',
   MATCH_FILTER: 'match_filter',
   USAGE_STATE: 'linkedapply_usage_state',
+  PRE_APPLY_REVIEW: 'pre_apply_review',
+  PRE_APPLY_DECISION: 'pre_apply_decision',
+  PRE_APPLY_SETTINGS: 'pre_apply_settings',
+  RESUME_TEMPLATES: 'resume_templates',
+  DEFAULT_TEMPLATE_ID: 'default_template_id',
 } as const;
 
 // ---- Default Values ----
@@ -126,4 +131,10 @@ export const DEFAULT_SESSION = {
   endTime: '',
   estimatedTimeSaved: 0,
   dailyGoal: 25,
+};
+
+export const DEFAULT_PRE_APPLY_SETTINGS = {
+  enabled: true,
+  timeoutSeconds: 30,
+  defaultAction: 'apply_tailored' as const,
 };

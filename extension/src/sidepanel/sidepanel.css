@@ -1435,3 +1435,227 @@
   color: var(--color-text-tertiary);
   font-size: 12px;
 }
+
+/* ---- Pre-Apply Review Panel ---- */
+.review-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.review-panel {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.25rem;
+  border-radius: 16px;
+  animation: scaleIn 0.25s ease-out;
+}
+
+.review-panel__header {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.review-panel__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.review-panel__job-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.review-panel__job-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.review-panel__at {
+  margin: 0 0.25rem;
+  opacity: 0.5;
+}
+
+.review-panel__badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: #fff;
+}
+
+.review-card {
+  background: var(--surface-secondary);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.review-card__header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.review-match {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.review-match__score {
+  font-size: 2rem;
+  font-weight: 800;
+  min-width: 60px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary, #a78bfa));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.review-match__headline {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.review-match__quals {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.review-match__strengths,
+.review-match__gaps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+
+.review-match__strengths .badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  font-size: 0.7rem;
+}
+
+.review-match__gaps .badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-size: 0.7rem;
+}
+
+.review-resume__ats {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.review-resume__ats strong {
+  color: #10b981;
+  font-size: 1.1rem;
+}
+
+.review-resume__keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.review-resume__keywords .badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent);
+  font-size: 0.7rem;
+}
+
+.review-resume__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.review-cl__text,
+.review-so__list {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.review-so__list li {
+  margin-bottom: 4px;
+}
+
+.review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.review-actions .btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.review-timer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.75rem;
+}
+
+.review-timer strong {
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.review-timer__bar {
+  height: 3px;
+  background: var(--surface-secondary);
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.review-timer__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a78bfa);
+  border-radius: 2px;
+  width: 100%;
+  transition: width 1s linear;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background: var(--surface-secondary);
+  border-color: var(--accent);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+}

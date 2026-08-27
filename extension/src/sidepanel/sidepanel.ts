@@ -7,7 +7,7 @@
 import { createLogger } from '../shared/logger';
 import { getStorage, setStorage } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/constants';
-import type { Job, JobStatus, SessionSummary, BotStatus, FailedJob, ExtensionMessage, CoverLetterData } from '../shared/types';
+import type { Job, JobStatus, SessionSummary, BotStatus, FailedJob, ExtensionMessage, CoverLetterData, PreApplyReviewData, PreApplyDecision } from '../shared/types';
 import { generateCoverLetterPDF, generateCoverLetterDOCX, downloadBlob } from '../services/export/pdf-generator';
 
 const log = createLogger('SidePanel');
@@ -971,7 +971,242 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
   if (message.type === 'PAUSE_BEFORE_SUBMIT') {
     showPauseBanner(message.payload?.message);
   }
+  if (message.type === 'PRE_APPLY_REVIEW') {
+    showPreApplyReview(message.payload as PreApplyReviewData);
+  }
 });
+
+// ================================================
+//  PRE-APPLY REVIEW PANEL
+// ================================================
+let reviewCountdownTimer: ReturnType<typeof setInterval> | null = null;
+let currentReviewData: PreApplyReviewData | null = null;
+
+function showPreApplyReview(data: PreApplyReviewData): void {
+  currentReviewData = data;
+  const panel = document.getElementById('pre-apply-review');
+  if (!panel) return;
+
+  log.info(`Showing pre-apply review for "${data.title}" at ${data.company}`);
+  panel.style.display = 'flex';
+
+  // Populate header
+  setText('review-title', data.title);
+  setText('review-company', data.company);
+  const typeBadge = document.getElementById('review-apply-type');
+  if (typeBadge) typeBadge.textContent = data.isEasyApply ? 'Easy Apply' : 'External';
+
+  // Match score
+  if (data.matchScore !== null) {
+    setText('review-match-score', `${data.matchScore}%`);
+    const scoreEl = document.getElementById('review-match-score');
+    if (scoreEl) {
+      scoreEl.style.color = data.matchScore >= 80 ? '#10b981' : data.matchScore >= 60 ? '#6366f1' : data.matchScore >= 40 ? '#f59e0b' : '#ef4444';
+    }
+    if (data.matchDetails) {
+      setText('review-match-headline', data.matchDetails.headline);
+      const reqMatched = data.matchDetails.requiredQualifications.filter(q => q.matched).length;
+      const reqTotal = data.matchDetails.requiredQualifications.length;
+      setText('review-match-quals', `✅ ${reqMatched}/${reqTotal} required qualifications met`);
+
+      // Strengths
+      const strengthsEl = document.getElementById('review-strengths');
+      if (strengthsEl) {
+        strengthsEl.innerHTML = data.matchDetails.strengths.map(s => `<span class="badge">${esc(s)}</span>`).join('');
+      }
+      // Gaps
+      const gapsEl = document.getElementById('review-gaps');
+      if (gapsEl) {
+        gapsEl.innerHTML = data.matchDetails.gaps.length > 0
+          ? data.matchDetails.gaps.map(g => `<span class="badge">${esc(g)}</span>`).join('')
+          : '<span class="badge">No gaps identified ✅</span>';
+      }
+    }
+  } else {
+    const matchCard = document.getElementById('review-match-card');
+    if (matchCard) matchCard.style.display = 'none';
+  }
+
+  // Tailored resume
+  if (data.tailoredResume) {
+    setText('review-ats-score', String(data.tailoredResume.atsScore));
+    const kwEl = document.getElementById('review-keywords');
+    if (kwEl) {
+      kwEl.innerHTML = data.tailoredResume.keywordsAdded.map(k => `<span class="badge">${esc(k)}</span>`).join('');
+    }
+  } else {
+    const resumeCard = document.getElementById('review-resume-card');
+    if (resumeCard) resumeCard.style.display = 'none';
+  }
+
+  // Reset on-demand sections
+  const clContent = document.getElementById('review-cl-content');
+  if (clContent) clContent.innerHTML = '<button class="btn btn-outline btn-sm" id="review-gen-cl">🔄 Generate Cover Letter</button>';
+  const soContent = document.getElementById('review-so-content');
+  if (soContent) soContent.innerHTML = '<button class="btn btn-outline btn-sm" id="review-gen-so">🔄 Generate Stand-Out Tips</button>';
+
+  // Wire up on-demand buttons
+  document.getElementById('review-gen-cl')?.addEventListener('click', generateCoverLetterOnDemand);
+  document.getElementById('review-gen-so')?.addEventListener('click', generateStandOutOnDemand);
+
+  // Wire up action buttons
+  document.getElementById('review-apply-tailored')?.addEventListener('click', () => submitReviewDecision('apply_tailored'));
+  document.getElementById('review-apply-default')?.addEventListener('click', () => submitReviewDecision('apply_default'));
+  document.getElementById('review-skip')?.addEventListener('click', () => submitReviewDecision('skip'));
+
+  // Wire up download/copy buttons
+  document.getElementById('review-download-resume')?.addEventListener('click', downloadTailoredResume);
+  document.getElementById('review-copy-resume')?.addEventListener('click', copyTailoredResume);
+
+  // Start countdown timer
+  startReviewCountdown(30);
+}
+
+function hidePreApplyReview(): void {
+  const panel = document.getElementById('pre-apply-review');
+  if (panel) panel.style.display = 'none';
+  if (reviewCountdownTimer) {
+    clearInterval(reviewCountdownTimer);
+    reviewCountdownTimer = null;
+  }
+  currentReviewData = null;
+}
+
+function startReviewCountdown(seconds: number): void {
+  if (reviewCountdownTimer) clearInterval(reviewCountdownTimer);
+
+  let remaining = seconds;
+  const secondsEl = document.getElementById('review-seconds');
+  const fillEl = document.getElementById('review-timer-fill');
+
+  if (secondsEl) secondsEl.textContent = String(remaining);
+  if (fillEl) fillEl.style.width = '100%';
+
+  reviewCountdownTimer = setInterval(() => {
+    remaining--;
+    if (secondsEl) secondsEl.textContent = String(Math.max(0, remaining));
+    if (fillEl) fillEl.style.width = `${(remaining / seconds) * 100}%`;
+
+    if (remaining <= 0) {
+      // Timeout — auto-apply with tailored resume
+      submitReviewDecision('apply_tailored');
+    }
+  }, 1000);
+}
+
+async function submitReviewDecision(action: 'apply_tailored' | 'apply_default' | 'skip'): Promise<void> {
+  if (!currentReviewData) return;
+
+  const decision: PreApplyDecision = {
+    action,
+    jobId: currentReviewData.jobId,
+    timestamp: Date.now(),
+  };
+
+  log.info(`Pre-apply decision: ${action} for "${currentReviewData.title}"`);
+  await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, decision);
+  hidePreApplyReview();
+}
+
+async function generateCoverLetterOnDemand(): Promise<void> {
+  if (!currentReviewData) return;
+  const btn = document.getElementById('review-gen-cl');
+  if (btn) btn.textContent = '⏳ Generating...';
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'AI_COVER_LETTER',
+      payload: {
+        jobTitle: currentReviewData.title,
+        company: currentReviewData.company,
+        jobDescription: currentReviewData.jobDescription,
+      },
+      timestamp: Date.now(),
+    });
+
+    if (response?.result) {
+      const cl = response.result as CoverLetterData;
+      const clContent = document.getElementById('review-cl-content');
+      if (clContent) {
+        clContent.innerHTML = `
+          <div class="review-cl__text">${esc(cl.plainText).replace(/\n/g, '<br>')}</div>
+          <div class="review-resume__actions" style="margin-top:0.5rem">
+            <button class="btn btn-ghost btn-sm" id="review-copy-cl">📋 Copy</button>
+          </div>
+        `;
+        document.getElementById('review-copy-cl')?.addEventListener('click', () => {
+          navigator.clipboard.writeText(cl.plainText);
+        });
+      }
+    } else {
+      if (btn) btn.textContent = '❌ Failed — Try Again';
+    }
+  } catch (e) {
+    if (btn) btn.textContent = '❌ Failed — Try Again';
+  }
+}
+
+async function generateStandOutOnDemand(): Promise<void> {
+  if (!currentReviewData) return;
+  const btn = document.getElementById('review-gen-so');
+  if (btn) btn.textContent = '⏳ Generating...';
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'AI_STANDOUT_TIPS',
+      payload: {
+        jobTitle: currentReviewData.title,
+        company: currentReviewData.company,
+        jobDescription: currentReviewData.jobDescription,
+      },
+      timestamp: Date.now(),
+    });
+
+    if (response?.result) {
+      const tips = response.result;
+      const soContent = document.getElementById('review-so-content');
+      if (soContent) {
+        const items = [
+          ...tips.highlightSkills.map((s: string) => `<li>🎯 ${esc(s)}</li>`),
+          ...tips.highlightAchievements.map((a: string) => `<li>🏆 ${esc(a)}</li>`),
+          ...tips.profileImprovements.map((p: string) => `<li>📈 ${esc(p)}</li>`),
+        ];
+        soContent.innerHTML = `<ul class="review-so__list">${items.join('')}</ul>`;
+      }
+    } else {
+      if (btn) btn.textContent = '❌ Failed — Try Again';
+    }
+  } catch (e) {
+    if (btn) btn.textContent = '❌ Failed — Try Again';
+  }
+}
+
+function downloadTailoredResume(): void {
+  if (!currentReviewData?.tailoredResume) return;
+  try {
+    const { generateTailoredResumePDF } = require('../services/resume-pdf-generator');
+    const blob = generateTailoredResumePDF(
+      currentReviewData.tailoredResume,
+      1 // default 1 page for now
+    );
+    downloadBlob(blob, `tailored-resume-${currentReviewData.company}.pdf`);
+  } catch (e) {
+    log.warn('Failed to generate resume PDF', e);
+  }
+}
+
+function copyTailoredResume(): void {
+  if (!currentReviewData?.tailoredResume) return;
+  const resume = currentReviewData.tailoredResume;
+  const text = [
+    resume.summary,
+    '',
+    'SKILLS: ' + resume.skills.join(', '),
+    '',
+    ...resume.experience.map(e => `${e.title} at ${e.company} (${e.duration})\n${e.bullets.map(b => `• ${b}`).join('\n')}`),
+  ].join('\n');
+  navigator.clipboard.writeText(text);
+}
 
 // ================================================
 //  HELPERS

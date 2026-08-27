@@ -594,6 +594,31 @@
               </label>
             </div>
           </div>
+
+          <!-- Pre-Apply Review Section -->
+          <h3 class="options__section-title" style="margin-top:1.5rem;">🔍 Pre-Apply Review</h3>
+          <div class="options__grid">
+            <div class="options__field">
+              <label class="toggle-wrapper">
+                <input type="checkbox" class="toggle" id="pa-enabled" checked> Enable pre-apply review
+              </label>
+              <small class="options__hint">Pause before each job to review AI match score & tailored resume</small>
+            </div>
+            <div class="options__field">
+              <label>Auto-apply timeout (seconds)</label>
+              <input type="number" class="input" id="pa-timeout" value="30" min="10" max="120" step="5">
+              <small class="options__hint">Auto-apply with tailored resume when timer expires</small>
+            </div>
+            <div class="options__field">
+              <label>Default action on timeout</label>
+              <select class="input" id="pa-default-action">
+                <option value="apply_tailored">Apply with Tailored Resume</option>
+                <option value="apply_default">Apply with Default Resume</option>
+                <option value="skip">Skip Job</option>
+              </select>
+            </div>
+          </div>
+
           <div class="options__form-actions">
             <button class="btn btn-primary" id="save-bot">Save Bot Settings</button>
             <span class="options__save-status" id="bot-status"></span>

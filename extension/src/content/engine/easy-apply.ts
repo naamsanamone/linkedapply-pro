@@ -42,7 +42,8 @@ export async function executeEasyApply(
   easyApplyButton: HTMLElement,
   workLocation: string,
   jobDescription: string | null,
-  botSettings: BotSettings
+  botSettings: BotSettings,
+  tailoredResume?: any | null  // TailoredResumeData — if provided, upload tailored PDF
 ): Promise<EasyApplyResult> {
   const allQuestions: QuestionAnswer[] = [];
   let resume = 'Previous resume';

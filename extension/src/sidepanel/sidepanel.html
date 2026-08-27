@@ -235,6 +235,88 @@
       </div>
     </div>
 
+    <!-- ============ PRE-APPLY REVIEW PANEL ============ -->
+    <div class="review-overlay" id="pre-apply-review" style="display:none;">
+      <div class="review-panel glass-card animate-scale-in">
+        <div class="review-panel__header">
+          <h2 class="review-panel__title">🔍 Pre-Apply Review</h2>
+          <div class="review-panel__job-info">
+            <span class="review-panel__job-title" id="review-title"></span>
+            <span class="review-panel__at">@</span>
+            <span class="review-panel__company" id="review-company"></span>
+          </div>
+          <span class="review-panel__badge" id="review-apply-type"></span>
+        </div>
+
+        <!-- Match Score -->
+        <div class="review-card" id="review-match-card">
+          <div class="review-card__header">📊 Match Score</div>
+          <div class="review-match">
+            <div class="review-match__score" id="review-match-score">--</div>
+            <div class="review-match__details">
+              <div class="review-match__headline" id="review-match-headline"></div>
+              <div class="review-match__quals" id="review-match-quals"></div>
+            </div>
+          </div>
+          <div class="review-match__strengths" id="review-strengths"></div>
+          <div class="review-match__gaps" id="review-gaps"></div>
+        </div>
+
+        <!-- Tailored Resume -->
+        <div class="review-card" id="review-resume-card">
+          <div class="review-card__header">📝 Tailored Resume</div>
+          <div class="review-resume">
+            <div class="review-resume__ats">
+              ATS Score: <strong id="review-ats-score">--</strong>/100
+            </div>
+            <div class="review-resume__keywords" id="review-keywords"></div>
+            <div class="review-resume__actions">
+              <button class="btn btn-ghost btn-sm" id="review-download-resume">📥 Download PDF</button>
+              <button class="btn btn-ghost btn-sm" id="review-copy-resume">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cover Letter (On-Demand) -->
+        <div class="review-card" id="review-cl-card">
+          <div class="review-card__header">📧 Cover Letter</div>
+          <div class="review-cl" id="review-cl-content">
+            <button class="btn btn-outline btn-sm" id="review-gen-cl">🔄 Generate Cover Letter</button>
+          </div>
+        </div>
+
+        <!-- Stand-Out Tips (On-Demand) -->
+        <div class="review-card" id="review-so-card">
+          <div class="review-card__header">💡 Stand-Out Tips</div>
+          <div class="review-so" id="review-so-content">
+            <button class="btn btn-outline btn-sm" id="review-gen-so">🔄 Generate Stand-Out Tips</button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="review-actions">
+          <button class="btn btn-primary" id="review-apply-tailored">
+            ✅ Apply with Tailored Resume
+          </button>
+          <button class="btn btn-secondary" id="review-apply-default">
+            📄 Apply with Default Resume
+          </button>
+          <button class="btn btn-ghost" id="review-skip">
+            ⏭ Skip This Job
+          </button>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="review-timer">
+          <span>⏱ Auto-applying with tailored resume in </span>
+          <strong id="review-seconds">30</strong><span>s</span>
+          <div class="review-timer__bar">
+            <div class="review-timer__fill" id="review-timer-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ============ JOB DETAIL MODAL ============ -->
     <div class="modal-overlay" id="job-modal" style="display:none;">
       <div class="modal glass-card animate-scale-in">

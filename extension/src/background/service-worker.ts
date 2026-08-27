@@ -121,6 +121,12 @@ chrome.runtime.onMessage.addListener(
         getUsageState().then(sendResponse);
         return true; // async
 
+      case 'PRE_APPLY_REVIEW':
+        // Relay to sidepanel/popup (broadcast to all extension pages)
+        chrome.runtime.sendMessage(message).catch(() => {});
+        sendResponse({ success: true });
+        break;
+
       default:
         sendResponse({ error: 'Unknown message type' });
     }

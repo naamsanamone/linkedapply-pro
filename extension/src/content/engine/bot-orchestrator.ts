@@ -6,7 +6,7 @@
 
 import { createLogger } from '../../shared/logger';
 import { getStorage, setStorage, updateStorage } from '../../shared/storage';
-import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS } from '../../shared/constants';
+import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS, DEFAULT_PRE_APPLY_SETTINGS } from '../../shared/constants';
 import type { TailoredResume } from '../../services/ai/resume-tailor';
 import type {
   BotStatus,
@@ -19,6 +19,9 @@ import type {
   MatchDetails,
   CoverLetterData,
   StandOutTips,
+  PreApplyReviewData,
+  PreApplyDecision,
+  PreApplySettings,
 } from '../../shared/types';
 
 import { navigateToSearch, applyFilters, getPageInfo, goToNextPage, getJobListings, isDailyLimitReached } from './job-search';
@@ -277,54 +280,41 @@ async function processJob(
     }
   }
 
-  // Step 6c: Cover Letter Generation (for jobs with score >= 60) — routed through background worker
+  // Step 6c & 6d: Cover Letter + Stand-Out Tips — ON-DEMAND (generated in review panel)
   let coverLetterResult: CoverLetterData | null = null;
-  if (computedMatchScore !== null && computedMatchScore >= 60 && jd.description !== 'Unknown') {
-    try {
-      const clResponse = await chrome.runtime.sendMessage({
-        type: 'AI_COVER_LETTER',
-        payload: {
-          jobTitle: details.title,
-          company: details.company,
-          jobDescription: jd.description,
-        },
-        timestamp: Date.now(),
-      });
-
-      if (clResponse?.result) {
-        coverLetterResult = clResponse.result;
-        log.info(`📧 Cover letter generated for "${details.title}" at ${details.company}`);
-      } else if (clResponse?.error) {
-        log.warn(`Cover letter: ${clResponse.error}`);
-      }
-    } catch (error) {
-      log.warn('Cover letter generation failed, continuing without', error);
-    }
-  }
-
-  // Step 6d: Stand Out Tips (for jobs with score >= 50) — routed through background worker
   let standOutResult: StandOutTips | null = null;
-  if (computedMatchScore !== null && computedMatchScore >= 50 && jd.description !== 'Unknown') {
-    try {
-      const soResponse = await chrome.runtime.sendMessage({
-        type: 'AI_STANDOUT_TIPS',
-        payload: {
-          jobTitle: details.title,
-          company: details.company,
-          jobDescription: jd.description,
-        },
-        timestamp: Date.now(),
-      });
 
-      if (soResponse?.result) {
-        standOutResult = soResponse.result;
-        log.info(`💡 Stand-out tips generated for "${details.title}"`);
-      } else if (soResponse?.error) {
-        log.warn(`Stand-out tips: ${soResponse.error}`);
-      }
-    } catch (error) {
-      log.warn('Stand-out tips generation failed, continuing without', error);
+  // Step 6e: Pre-Apply Review — pause for user decision
+  const preApplySettings = await getStorage<PreApplySettings>(STORAGE_KEYS.PRE_APPLY_SETTINGS) || DEFAULT_PRE_APPLY_SETTINGS;
+  let useTailoredResume = true; // default: apply with tailored
+
+  if (preApplySettings.enabled && (computedMatchScore !== null || tailoredResult !== null)) {
+    const reviewData: PreApplyReviewData = {
+      jobId: details.jobId,
+      title: details.title,
+      company: details.company,
+      location: details.workLocation,
+      matchScore: computedMatchScore,
+      matchDetails: computedMatchDetails,
+      tailoredResume: tailoredResult,
+      coverLetter: null,
+      standOutTips: null,
+      jobDescription: jd.description,
+      isEasyApply: !!isEasyApplyJob(),
+    };
+
+    const decision = await requestPreApplyReview(reviewData, preApplySettings);
+
+    if (decision.action === 'skip') {
+      log.info(`⏭ User skipped "${details.title}" from pre-apply review`);
+      await incrementSession('skipped');
+      return;
     }
+
+    useTailoredResume = decision.action === 'apply_tailored';
+    coverLetterResult = decision.coverLetter || null;
+    standOutResult = decision.standOutTips || null;
+    log.info(`📋 Pre-apply decision: ${decision.action} for "${details.title}"`);
   }
 
   // Step 7: Check if Easy Apply or External
@@ -336,7 +326,8 @@ async function processJob(
       easyApplyBtn,
       details.workLocation,
       jd.description !== 'Unknown' ? jd.description : null,
-      settings
+      settings,
+      useTailoredResume ? tailoredResult : null
     );
 
     if (result.success) {
@@ -586,4 +577,66 @@ async function saveFailedJob(
   // Keep only last 100 failures
   if (failed.length > 100) failed.splice(0, failed.length - 100);
   await setStorage(STORAGE_KEYS.FAILED_JOBS, failed);
+}
+
+// ---- Pre-Apply Review ----
+
+/**
+ * Pause the bot and wait for user decision in the sidepanel.
+ * Writes review data to storage → sidepanel picks it up and shows review panel.
+ * Polls for decision in storage. Times out after configured seconds.
+ */
+async function requestPreApplyReview(
+  reviewData: PreApplyReviewData,
+  settings: PreApplySettings
+): Promise<PreApplyDecision> {
+  // Clear any previous decision
+  await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, null);
+
+  // Write review data for sidepanel to pick up
+  await setStorage(STORAGE_KEYS.PRE_APPLY_REVIEW, reviewData);
+
+  // Notify sidepanel via message
+  chrome.runtime.sendMessage({
+    type: 'PRE_APPLY_REVIEW',
+    payload: reviewData,
+    timestamp: Date.now(),
+  } as ExtensionMessage).catch(() => {});
+
+  log.info(`⏸ Waiting for pre-apply review decision (${settings.timeoutSeconds}s timeout)...`);
+  sendStatusUpdate('paused');
+
+  // Poll for decision
+  const startTime = Date.now();
+  const timeoutMs = settings.timeoutSeconds * 1000;
+
+  while (Date.now() - startTime < timeoutMs) {
+    // Check if bot was stopped while waiting
+    if (shouldStop) {
+      return { action: 'skip', jobId: reviewData.jobId, timestamp: Date.now() };
+    }
+
+    const decision = await getStorage<PreApplyDecision>(STORAGE_KEYS.PRE_APPLY_DECISION);
+    if (decision && decision.jobId === reviewData.jobId) {
+      // Clear review data
+      await setStorage(STORAGE_KEYS.PRE_APPLY_REVIEW, null);
+      await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, null);
+      sendStatusUpdate('applying');
+      return decision;
+    }
+
+    await humanDelay(500, 600); // Poll every ~500ms
+  }
+
+  // Timeout — use default action
+  log.info(`⏱ Pre-apply review timed out, using default action: ${settings.defaultAction}`);
+  await setStorage(STORAGE_KEYS.PRE_APPLY_REVIEW, null);
+  await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, null);
+  sendStatusUpdate('applying');
+
+  return {
+    action: settings.defaultAction,
+    jobId: reviewData.jobId,
+    timestamp: Date.now(),
+  };
 }
