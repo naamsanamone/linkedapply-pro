@@ -1187,15 +1187,28 @@ async function generateStandOutOnDemand(): Promise<void> {
   }
 }
 
-function downloadTailoredResume(): void {
+async function downloadTailoredResume(): Promise<void> {
   if (!currentReviewData?.tailoredResume) return;
   try {
-    const { generateTailoredResumePDF } = require('../services/resume-pdf-generator');
-    const blob = generateTailoredResumePDF(
-      currentReviewData.tailoredResume,
-      1 // default 1 page for now
-    );
+    const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
+    const resume = currentReviewData.tailoredResume;
+    // Convert TailoredResumeData → ResumeSections for PDF generator
+    const sections = {
+      contactInfo: { name: '', email: '', phone: '', location: '' }, // filled from profile at runtime
+      summary: resume.summary,
+      skills: resume.skills,
+      experience: resume.experience.map(e => ({
+        company: e.company,
+        title: e.title,
+        dateRange: e.duration,
+        bullets: e.bullets,
+      })),
+      education: [],
+      certifications: [],
+    };
+    const blob = generateTailoredResumePDF(sections, 1);
     downloadBlob(blob, `tailored-resume-${currentReviewData.company}.pdf`);
+    log.info(`📥 Tailored resume PDF downloaded for ${currentReviewData.company}`);
   } catch (e) {
     log.warn('Failed to generate resume PDF', e);
   }
