@@ -81,6 +81,38 @@ export async function executeEasyApply(
     const MAX_PAGES = 15;
     const MAX_STUCK_RETRIES = 3;
 
+    // Generate tailored PDF blob if we have tailored resume data
+    let tailoredPdfBlob: Blob | null = null;
+    if (tailoredResume) {
+      try {
+        const { generateTailoredResumePDF } = await import('../../services/resume-pdf-generator');
+        const sections = {
+          contactInfo: {
+            name: `${profile.firstName} ${profile.lastName}`.trim(),
+            email: profile.email,
+            phone: profile.phoneNumber,
+            location: profile.currentCity || profile.state || '',
+            linkedin: questionDefaults.linkedIn || undefined,
+          },
+          summary: tailoredResume.summary || '',
+          skills: tailoredResume.skills || [],
+          experience: (tailoredResume.experience || []).map((e: any) => ({
+            company: e.company,
+            title: e.title,
+            dateRange: e.duration,
+            bullets: e.bullets,
+          })),
+          education: [],
+          certifications: [],
+        };
+        tailoredPdfBlob = generateTailoredResumePDF(sections, 1);
+        resume = 'Tailored resume (AI)';
+        log.info(`📄 Tailored PDF generated: ${(tailoredPdfBlob.size / 1024).toFixed(1)} KB`);
+      } catch (e) {
+        log.warn('Failed to generate tailored PDF, will use default resume', e);
+      }
+    }
+
     do {
       pageCount++;
       if (pageCount > MAX_PAGES) {
@@ -105,9 +137,9 @@ export async function executeEasyApply(
       const pageAnswers = await answerQuestions(modal, context);
       allQuestions.push(...pageAnswers);
 
-      // Try to upload resume (if upload field exists and we have a resume)
-      if (questionDefaults.defaultResumePath) {
-        await tryUploadResume(modal, questionDefaults.defaultResumePath);
+      // Try to upload resume (tailored PDF if available, otherwise default)
+      if (questionDefaults.defaultResumePath || tailoredPdfBlob) {
+        await tryUploadResume(modal, questionDefaults.defaultResumePath || '', tailoredPdfBlob);
       }
 
       // Look for the "Review" or "Next" button
@@ -532,15 +564,44 @@ function isReviewPage(modal: Element): boolean {
   return submitBtn !== null;
 }
 
-async function tryUploadResume(modal: Element, resumePath: string): Promise<boolean> {
+async function tryUploadResume(modal: Element, resumePath: string, tailoredPdfBlob?: Blob | null): Promise<boolean> {
   try {
     const fileInput = modal.querySelector("input[name='file']") as HTMLInputElement;
-    if (fileInput) {
-      // In Chrome extensions, we can't directly set file inputs due to security
-      // The resume from LinkedIn's previous upload will be used
-      log.debug('Resume upload field found — using LinkedIn\'s saved resume');
-      return true;
+    if (!fileInput) {
+      log.debug('No resume upload field found');
+      return false;
     }
+
+    // If we have a tailored PDF, upload it via DataTransfer API
+    if (tailoredPdfBlob) {
+      try {
+        const fileName = resumePath
+          ? resumePath.replace(/\.[^.]+$/, '_tailored.pdf')
+          : 'tailored_resume.pdf';
+
+        const tailoredFile = new File([tailoredPdfBlob], fileName, {
+          type: 'application/pdf',
+          lastModified: Date.now(),
+        });
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(tailoredFile);
+        fileInput.files = dataTransfer.files;
+
+        // Dispatch change event so LinkedIn picks up the new file
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        fileInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+        log.info(`📄 Tailored resume uploaded: ${fileName} (${(tailoredPdfBlob.size / 1024).toFixed(1)} KB)`);
+        return true;
+      } catch (e) {
+        log.warn('Failed to upload tailored PDF, falling back to saved resume', e);
+      }
+    }
+
+    // Fallback: use LinkedIn's previously saved resume
+    log.debug('Resume upload field found — using LinkedIn\'s saved resume');
+    return true;
   } catch {
     log.debug('No resume upload field found');
   }
