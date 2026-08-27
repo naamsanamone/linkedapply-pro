@@ -987,7 +987,7 @@ function showPreApplyReview(data: PreApplyReviewData): void {
   const panel = document.getElementById('pre-apply-review');
   if (!panel) return;
 
-  log.info(`Showing pre-apply review for "${data.title}" at ${data.company}`);
+  log.info(`🔍 Showing pre-apply review for "${data.title}" at ${data.company} | Match: ${data.matchScore ?? 'N/A'}% | ATS: ${data.tailoredResume?.atsScore ?? 'N/A'} | Type: ${data.isEasyApply ? 'Easy Apply' : 'External'}`);
   panel.style.display = 'flex';
 
   // Populate header
@@ -1059,6 +1059,7 @@ function showPreApplyReview(data: PreApplyReviewData): void {
   document.getElementById('review-copy-resume')?.addEventListener('click', copyTailoredResume);
 
   // Start countdown timer
+  log.info(`⏱ Pre-apply countdown started: ${30}s`);
   startReviewCountdown(30);
 }
 
@@ -1103,8 +1104,9 @@ async function submitReviewDecision(action: 'apply_tailored' | 'apply_default' |
     timestamp: Date.now(),
   };
 
-  log.info(`Pre-apply decision: ${action} for "${currentReviewData.title}"`);
+  log.info(`✅ Pre-apply decision: ${action} for "${currentReviewData.title}" — writing to storage`);
   await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, decision);
+  log.info(`📝 Decision written to storage: ${JSON.stringify(decision)}`);
   hidePreApplyReview();
 }
 
@@ -1112,6 +1114,7 @@ async function generateCoverLetterOnDemand(): Promise<void> {
   if (!currentReviewData) return;
   const btn = document.getElementById('review-gen-cl');
   if (btn) btn.textContent = '⏳ Generating...';
+  log.info(`📧 On-demand: Generating cover letter for "${currentReviewData.title}"...`);
 
   try {
     const response = await chrome.runtime.sendMessage({
@@ -1126,6 +1129,7 @@ async function generateCoverLetterOnDemand(): Promise<void> {
 
     if (response?.result) {
       const cl = response.result as CoverLetterData;
+      log.info(`📧 Cover letter generated successfully (${cl.plainText.length} chars)`);
       const clContent = document.getElementById('review-cl-content');
       if (clContent) {
         clContent.innerHTML = `
@@ -1150,6 +1154,7 @@ async function generateStandOutOnDemand(): Promise<void> {
   if (!currentReviewData) return;
   const btn = document.getElementById('review-gen-so');
   if (btn) btn.textContent = '⏳ Generating...';
+  log.info(`💡 On-demand: Generating stand-out tips for "${currentReviewData.title}"...`);
 
   try {
     const response = await chrome.runtime.sendMessage({
@@ -1164,6 +1169,7 @@ async function generateStandOutOnDemand(): Promise<void> {
 
     if (response?.result) {
       const tips = response.result;
+      log.info(`💡 Stand-out tips generated: ${tips.highlightSkills?.length || 0} skills, ${tips.highlightAchievements?.length || 0} achievements`);
       const soContent = document.getElementById('review-so-content');
       if (soContent) {
         const items = [

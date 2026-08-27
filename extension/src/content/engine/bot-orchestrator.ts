@@ -595,6 +595,7 @@ async function requestPreApplyReview(
 
   // Write review data for sidepanel to pick up
   await setStorage(STORAGE_KEYS.PRE_APPLY_REVIEW, reviewData);
+  log.info(`📝 Review data written to storage for jobId: ${reviewData.jobId}`);
 
   // Notify sidepanel via message
   chrome.runtime.sendMessage({
@@ -619,6 +620,7 @@ async function requestPreApplyReview(
     const decision = await getStorage<PreApplyDecision>(STORAGE_KEYS.PRE_APPLY_DECISION);
     if (decision && decision.jobId === reviewData.jobId) {
       // Clear review data
+      log.info(`📥 Decision received from sidepanel: ${decision.action} (after ${Math.round((Date.now() - startTime) / 1000)}s)`);
       await setStorage(STORAGE_KEYS.PRE_APPLY_REVIEW, null);
       await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, null);
       sendStatusUpdate('applying');
