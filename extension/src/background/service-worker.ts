@@ -545,9 +545,14 @@ async function handleAIMatchJob(payload: any): Promise<any> {
     await recordAICall();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('daily quota')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
+    // 503/UNAVAILABLE = temporary server issue, just return error (will retry next job)
+    if (error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
+      log.warn('⏳ Gemini server temporarily unavailable, will retry on next job');
+      return { error: 'AI server temporarily busy — will retry' };
     }
     log.error('AI match job failed in service worker', error);
     return { error: error.message || 'AI match failed' };
@@ -579,9 +584,13 @@ async function handleAITailorResume(payload: any): Promise<any> {
     await recordAICall();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('daily quota')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
+    if (error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
+      log.warn('⏳ Gemini server temporarily unavailable, will retry on next job');
+      return { error: 'AI server temporarily busy — will retry' };
     }
     log.error('AI tailor resume failed in service worker', error);
     return { error: error.message || 'AI tailor failed' };
@@ -611,9 +620,13 @@ async function handleAICoverLetter(payload: any): Promise<any> {
     await recordAICall();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('daily quota')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
+    if (error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
+      log.warn('⏳ Gemini server temporarily unavailable, will retry on next job');
+      return { error: 'AI server temporarily busy — will retry' };
     }
     log.error('AI cover letter failed in service worker', error);
     return { error: error.message || 'AI cover letter failed' };
@@ -643,9 +656,13 @@ async function handleAIStandOutTips(payload: any): Promise<any> {
     await recordAICall();
     return { success: true, result };
   } catch (error: any) {
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('daily quota')) {
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('daily quota')) {
       handleRateLimitError(error);
       return { error: 'AI quota exceeded — will retry after cooldown' };
+    }
+    if (error.message?.includes('503') || error.message?.includes('UNAVAILABLE')) {
+      log.warn('⏳ Gemini server temporarily unavailable, will retry on next job');
+      return { error: 'AI server temporarily busy — will retry' };
     }
     log.error('AI stand-out tips failed in service worker', error);
     return { error: error.message || 'AI stand-out tips failed' };
