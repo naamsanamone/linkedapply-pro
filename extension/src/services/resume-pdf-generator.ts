@@ -140,21 +140,20 @@ function renderJake(s: ResumeSections, c: JakeLayout): jsPDF {
 
   // ---- \section{Title} with \titlerule ----
   const sectionHead = (title: string): void => {
-    y += 0.12; // \vspace{-4pt} equivalent gap
-    needSpace(lh(c.headPt) + 0.06);
+    y += 0.12;
+    needSpace(lh(c.headPt) + 0.1);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(c.headPt);
-    // Jake uses \scshape (small caps) — we approximate with uppercase
     doc.text(title.toUpperCase(), c.mX, y);
 
-    // \titlerule — full width line under heading
-    const ruleY = y + 0.04;
-    doc.setLineWidth(0.6 / 72);
+    // \titlerule — full width line BELOW heading (not through it)
+    const ruleY = y + 0.07; // enough clearance below text baseline
+    doc.setLineWidth(0.7 / 72);
     doc.setDrawColor(0, 0, 0);
     doc.line(c.mX, ruleY, c.pageW - c.mX, ruleY);
 
-    y = ruleY + 0.07;
+    y = ruleY + 0.06;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(c.bodyPt);
   };
