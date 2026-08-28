@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "@types/pdfmake": "^0.3.3",
     "docx": "^9.7.1",
     "jspdf": "^4.2.1",
-    "pdfjs-dist": "^6.0.227"
+    "pdfjs-dist": "^6.0.227",
+    "pdfmake": "^0.3.11"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",

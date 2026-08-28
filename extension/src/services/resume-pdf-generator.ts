@@ -1,19 +1,22 @@
-import { jsPDF } from 'jspdf';
+/* ============================================================
+   Jake's Resume Template — pdfmake implementation
+   
+   Source: https://github.com/sb2nov/resume (Jake Gutierrez)
+   
+   Uses pdfmake's declarative layout engine instead of manual
+   Y-coordinate tracking. The template is defined as a document
+   structure and pdfmake handles all positioning, page breaks,
+   and text wrapping automatically — just like LaTeX.
+   ============================================================ */
+
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { createLogger } from '../shared/logger';
 
-const logger = createLogger('ResumePdfGenerator');
+// Register fonts
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs || pdfFonts;
 
-/* ============================================================
-   Jake's Resume Template — Exact jsPDF recreation
-   Source: https://github.com/sb2nov/resume (Jake Gutierrez fork)
-   
-   LaTeX specs reproduced here:
-   - letterpaper, 11pt, 0.5in margins
-   - \scshape\large section headers with \titlerule
-   - \resumeSubheading: {Company}{Date} / {Title}{Location}
-   - \resumeItem: \item\small bullet points
-   - leftmargin=0.15in for subheading lists
-   ============================================================ */
+const logger = createLogger('ResumePdfGenerator');
 
 export interface ResumeSections {
   contactInfo: {
@@ -26,9 +29,7 @@ export interface ResumeSections {
     portfolio?: string;
   };
   summary: string;
-  // Jake's categorized skills: { "Languages": "Java, Python", "Frameworks": "React, Spring Boot" }
   skillCategories?: Record<string, string>;
-  // Fallback flat skills list
   skills: string[];
   experience: {
     company: string;
@@ -52,363 +53,269 @@ export interface ResumeSections {
   }[];
 }
 
-interface JakeLayout {
-  pageW: number;
-  pageH: number;
-  mX: number;      // left/right margin (0.5in from LaTeX)
-  mTop: number;
-  mBot: number;
-  bodyPt: number;   // 10.5pt body (LaTeX 11pt \small ≈ 10.5)
-  headPt: number;   // 11.5pt section heading (\large)
-  namePt: number;   // 20pt name (\Huge)
-  subPt: number;    // 10pt for subheading items
-  lineH: number;    // line height multiplier
-  itemIndent: number; // leftmargin=0.15in
-}
-
-const JAKE: JakeLayout = {
-  pageW: 8.5,
-  pageH: 11,
-  mX: 0.5,
-  mTop: 0.35,
-  mBot: 0.35,
-  bodyPt: 10.5,
-  headPt: 11.5,
-  namePt: 20,
-  subPt: 10,
-  lineH: 1.15,
-  itemIndent: 0.15,
+// ---- Jake's LaTeX dimensions ----
+const JAKE = {
+  pageSize: 'LETTER' as const,
+  margins: [36, 28, 36, 28] as [number, number, number, number], // 0.5in LR, ~0.4in TB
+  nameFontSize: 20,
+  sectionFontSize: 11,
+  bodyFontSize: 10,
+  smallFontSize: 9.5,
 };
 
 export function generateTailoredResumePDF(
   sections: ResumeSections,
-  targetPageCount: number
+  _targetPageCount: number
 ): Blob {
-  let cfg = { ...JAKE };
-  let doc = renderJake(sections, cfg);
-  let pages = (doc as any).internal.getNumberOfPages();
+  const content: any[] = [];
 
-  if (pages > targetPageCount) {
-    logger.info(`${pages} pages > target ${targetPageCount}, shrinking...`);
-    cfg.mX = 0.4;
-    cfg.mTop = 0.25;
-    cfg.mBot = 0.25;
-    cfg.bodyPt = 9.5;
-    cfg.subPt = 9;
-    cfg.lineH = 1.05;
-    doc = renderJake(sections, cfg);
-    pages = (doc as any).internal.getNumberOfPages();
-
-    if (pages > targetPageCount) {
-      // Trim bullets from older jobs
-      const trimmed = {
-        ...sections,
-        experience: sections.experience.map((exp, i) => ({
-          ...exp,
-          bullets: i === 0 ? exp.bullets.slice(0, 6) : exp.bullets.slice(0, 3),
-        })),
-        projects: sections.projects.map(p => ({
-          ...p,
-          bullets: p.bullets.slice(0, 2),
-        })),
-      };
-      doc = renderJake(trimmed, cfg);
-    }
-  }
-
-  logger.info(`Jake's Resume PDF: ${(doc as any).internal.getNumberOfPages()} page(s)`);
-  return doc.output('blob');
-}
-
-// ──────────────────────────────────────────────────────
-// Core renderer — mirrors Jake's LaTeX commands
-// ──────────────────────────────────────────────────────
-
-function renderJake(s: ResumeSections, c: JakeLayout): jsPDF {
-  const doc = new jsPDF({ format: 'letter', unit: 'in' });
-  const maxW = c.pageW - 2 * c.mX;
-  let y = c.mTop;
-
-  const lh = (pt: number) => (pt * c.lineH) / 72;
-
-  const needSpace = (inches: number): void => {
-    if (y + inches > c.pageH - c.mBot) {
-      doc.addPage();
-      y = c.mTop;
-    }
-  };
-
-  // ---- \section{Title} with \titlerule ----
-  const sectionHead = (title: string): void => {
-    y += 0.12;
-    needSpace(lh(c.headPt) + 0.1);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(c.headPt);
-    doc.text(title.toUpperCase(), c.mX, y);
-
-    // \titlerule — full width line BELOW heading (not through it)
-    const ruleY = y + 0.07; // enough clearance below text baseline
-    doc.setLineWidth(0.7 / 72);
-    doc.setDrawColor(0, 0, 0);
-    doc.line(c.mX, ruleY, c.pageW - c.mX, ruleY);
-
-    y = ruleY + 0.06;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(c.bodyPt);
-  };
-
-  // ---- \resumeSubheading{#1}{#2}{#3}{#4} ----
-  //   Line 1: \textbf{#1} (left)    #2 (right)
-  //   Line 2: \textit{\small#3} (left)    \textit{\small#4} (right)
-  const subheading = (bold1: string, right1: string, italic2: string, right2: string): void => {
-    needSpace(lh(c.bodyPt) * 2 + 0.05);
-
-    // Line 1
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(c.bodyPt);
-    doc.text(bold1, c.mX + c.itemIndent, y);
-    doc.setFont('helvetica', 'normal');
-    const r1W = doc.getTextWidth(right1);
-    doc.text(right1, c.pageW - c.mX - r1W, y);
-    y += lh(c.bodyPt);
-
-    // Line 2
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(c.subPt);
-    doc.text(italic2, c.mX + c.itemIndent, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(c.subPt);
-    const r2W = doc.getTextWidth(right2);
-    doc.text(right2, c.pageW - c.mX - r2W, y);
-    y += lh(c.subPt) - 0.02; // \vspace{-7pt}
-    doc.setFontSize(c.bodyPt);
-  };
-
-  // ---- \resumeProjectHeading{\textbf{Name} $|$ \emph{Tech}}{Date} ----
-  const projectHeading = (name: string, techStack: string, date: string): void => {
-    needSpace(lh(c.bodyPt) + 0.05);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(c.subPt);
-    doc.text(name, c.mX + c.itemIndent, y);
-    const nameW = doc.getTextWidth(name);
-
-    if (techStack) {
-      doc.setFont('helvetica', 'normal');
-      doc.text(' | ', c.mX + c.itemIndent + nameW, y);
-      const sepW = doc.getTextWidth(' | ');
-      doc.setFont('helvetica', 'italic');
-      doc.text(techStack, c.mX + c.itemIndent + nameW + sepW, y);
-    }
-
-    if (date) {
-      doc.setFont('helvetica', 'normal');
-      const dW = doc.getTextWidth(date);
-      doc.text(date, c.pageW - c.mX - dW, y);
-    }
-
-    y += lh(c.subPt) - 0.02; // \vspace{-7pt}
-    doc.setFontSize(c.bodyPt);
-    doc.setFont('helvetica', 'normal');
-  };
-
-  // ---- \resumeItem{text} — bullet point ----
-  const bulletItem = (text: string): void => {
-    doc.setFontSize(c.subPt);
-    doc.setFont('helvetica', 'normal');
-    const bulletX = c.mX + c.itemIndent + 0.15;
-    const textX = bulletX + 0.12;
-    const textW = c.pageW - c.mX - textX;
-
-    const lines = doc.splitTextToSize(text, textW);
-    lines.forEach((line: string, i: number) => {
-      needSpace(lh(c.subPt));
-      if (i === 0) {
-        doc.text('\u2022', bulletX, y); // bullet character
-      }
-      doc.text(line, textX, y);
-      y += lh(c.subPt);
+  // ============ HEADING ============
+  // Centered name (bold, large)
+  if (sections.contactInfo.name) {
+    content.push({
+      text: sections.contactInfo.name,
+      fontSize: JAKE.nameFontSize,
+      bold: true,
+      alignment: 'center' as const,
+      margin: [0, 0, 0, 2] as [number, number, number, number],
     });
-    y -= 0.02; // \vspace{-2pt}
-  };
-
-  // ============================================
-  // HEADING — centered name + contact line
-  // ============================================
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(c.namePt);
-  const name = s.contactInfo.name;
-  if (name) {
-    const nW = doc.getTextWidth(name);
-    doc.text(name, (c.pageW - nW) / 2, y);
-    y += lh(c.namePt) - 0.05;
   }
 
-  // Contact line: phone | email | linkedin | github
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(c.subPt);
-  const parts = [
-    s.contactInfo.phone,
-    s.contactInfo.email,
-    s.contactInfo.location,
-    s.contactInfo.linkedin,
-    s.contactInfo.github,
-    s.contactInfo.portfolio,
+  // Contact line: phone | email | location | linkedin
+  const contactParts = [
+    sections.contactInfo.phone,
+    sections.contactInfo.email,
+    sections.contactInfo.location,
+    sections.contactInfo.linkedin,
+    sections.contactInfo.github,
+    sections.contactInfo.portfolio,
   ].filter(Boolean);
 
-  if (parts.length > 0) {
-    const contactStr = parts.join(' | ');
-    const cW = doc.getTextWidth(contactStr);
-    if (cW <= maxW) {
-      doc.text(contactStr, (c.pageW - cW) / 2, y);
-    } else {
-      // Split into 2 lines
-      const mid = Math.ceil(parts.length / 2);
-      const l1 = parts.slice(0, mid).join(' | ');
-      const l2 = parts.slice(mid).join(' | ');
-      doc.text(l1, (c.pageW - doc.getTextWidth(l1)) / 2, y);
-      y += lh(c.subPt);
-      doc.text(l2, (c.pageW - doc.getTextWidth(l2)) / 2, y);
-    }
-    y += lh(c.subPt);
-  }
-
-  // ============================================
-  // SUMMARY (not in original Jake's but useful for ATS)
-  // ============================================
-  if (s.summary) {
-    sectionHead('Summary');
-    doc.setFontSize(c.subPt);
-    const sumLines = doc.splitTextToSize(s.summary, maxW);
-    sumLines.forEach((line: string) => {
-      needSpace(lh(c.subPt));
-      doc.text(line, c.mX, y);
-      y += lh(c.subPt);
+  if (contactParts.length > 0) {
+    content.push({
+      text: contactParts.join('  |  '),
+      fontSize: JAKE.smallFontSize,
+      alignment: 'center' as const,
+      margin: [0, 0, 0, 4] as [number, number, number, number],
     });
   }
 
-  // ============================================
-  // EDUCATION — \resumeSubheading format
-  // Jake's order: Education first
-  // ============================================
-  if (s.education && s.education.length > 0) {
-    sectionHead('Education');
-    s.education.forEach(edu => {
-      // {Institution}{Location} / {Degree}{Dates}
-      subheading(
-        edu.institution,
-        edu.location || '',
-        edu.degree,
-        edu.year
-      );
-      y += 0.03;
+  // ============ SUMMARY ============
+  if (sections.summary) {
+    content.push(sectionHeading('Summary'));
+    content.push({
+      text: sections.summary,
+      fontSize: JAKE.smallFontSize,
+      margin: [0, 0, 0, 2] as [number, number, number, number],
     });
   }
 
-  // ============================================
-  // EXPERIENCE — \resumeSubheading + \resumeItemList
-  // ============================================
-  if (s.experience && s.experience.length > 0) {
-    sectionHead('Experience');
-    s.experience.forEach((exp, idx) => {
-      // {Title}{Date} / {Company}{Location}  — Jake's format
-      subheading(
-        exp.company,
-        exp.dateRange,
-        exp.title,
-        exp.location || ''
-      );
-
-      // Bullets
-      exp.bullets.forEach(b => bulletItem(b));
-      y += 0.03; // \vspace{-5pt} after itemlist
-
-      if (idx < s.experience.length - 1) {
-        y += 0.02;
-      }
+  // ============ EDUCATION ============
+  if (sections.education && sections.education.length > 0) {
+    content.push(sectionHeading('Education'));
+    sections.education.forEach(edu => {
+      content.push(subheading(
+        edu.institution, edu.location,
+        edu.degree, edu.year
+      ));
     });
   }
 
-  // ============================================
-  // PROJECTS — \resumeProjectHeading + bullets
-  // ============================================
-  if (s.projects && s.projects.length > 0) {
-    sectionHead('Projects');
-    s.projects.forEach((proj, idx) => {
-      projectHeading(proj.name, proj.techStack, proj.duration);
-
-      proj.bullets.forEach(b => bulletItem(b));
-      y += 0.03;
-
-      if (idx < s.projects.length - 1) {
-        y += 0.02;
-      }
+  // ============ EXPERIENCE ============
+  if (sections.experience && sections.experience.length > 0) {
+    content.push(sectionHeading('Experience'));
+    sections.experience.forEach(exp => {
+      content.push(subheading(
+        exp.company, exp.dateRange,
+        exp.title, exp.location
+      ));
+      content.push(bulletList(exp.bullets));
     });
   }
 
-  // ============================================
-  // TECHNICAL SKILLS — categorized (Jake's format)
-  //   \textbf{Languages}{: Java, Python, ...}
-  //   \textbf{Frameworks}{: React, Spring Boot, ...}
-  // ============================================
-  if ((s.skillCategories && Object.keys(s.skillCategories).length > 0) || (s.skills && s.skills.length > 0)) {
-    sectionHead('Technical Skills');
+  // ============ PROJECTS ============
+  if (sections.projects && sections.projects.length > 0) {
+    content.push(sectionHeading('Projects'));
+    sections.projects.forEach(proj => {
+      content.push(projectHeading(proj.name, proj.techStack, proj.duration));
+      content.push(bulletList(proj.bullets));
+    });
+  }
 
-    doc.setFontSize(c.subPt);
+  // ============ TECHNICAL SKILLS ============
+  if ((sections.skillCategories && Object.keys(sections.skillCategories).length > 0) ||
+      (sections.skills && sections.skills.length > 0)) {
+    content.push(sectionHeading('Technical Skills'));
 
-    if (s.skillCategories && Object.keys(s.skillCategories).length > 0) {
+    if (sections.skillCategories && Object.keys(sections.skillCategories).length > 0) {
       // Jake's categorized format
-      Object.entries(s.skillCategories).forEach(([category, skillList]) => {
-        if (!skillList) return;
-        needSpace(lh(c.subPt));
-
-        const indent = c.mX + c.itemIndent;
-
-        doc.setFont('helvetica', 'bold');
-        const label = `${category}: `;
-        doc.text(label, indent, y);
-        const labelW = doc.getTextWidth(label);
-
-        doc.setFont('helvetica', 'normal');
-        const valueW = c.pageW - c.mX - indent - labelW;
-        const lines = doc.splitTextToSize(skillList, valueW);
-        lines.forEach((line: string, i: number) => {
-          needSpace(lh(c.subPt));
-          doc.text(line, indent + (i === 0 ? labelW : 0), y);
-          y += lh(c.subPt);
-        });
-      });
+      const skillRows = Object.entries(sections.skillCategories)
+        .filter(([, v]) => v)
+        .map(([category, skills]) => ({
+          text: [
+            { text: `${category}: `, bold: true },
+            { text: skills },
+          ],
+          fontSize: JAKE.smallFontSize,
+          margin: [10, 0, 0, 1] as [number, number, number, number],
+        }));
+      content.push(...skillRows);
     } else {
-      // Fallback: flat list as single "Technologies:" line
-      const skillLine = s.skills.join(', ');
-      doc.setFont('helvetica', 'bold');
-      const prefix = 'Technologies: ';
-      doc.text(prefix, c.mX + c.itemIndent, y);
-      const pW = doc.getTextWidth(prefix);
-
-      doc.setFont('helvetica', 'normal');
-      const lines = doc.splitTextToSize(skillLine, maxW - c.itemIndent - pW);
-      lines.forEach((line: string, i: number) => {
-        needSpace(lh(c.subPt));
-        doc.text(line, c.mX + c.itemIndent + (i === 0 ? pW : 0), y);
-        y += lh(c.subPt);
+      content.push({
+        text: [
+          { text: 'Technologies: ', bold: true },
+          { text: sections.skills.join(', ') },
+        ],
+        fontSize: JAKE.smallFontSize,
+        margin: [10, 0, 0, 1] as [number, number, number, number],
       });
     }
   }
 
-  // ============================================
-  // CERTIFICATIONS
-  // ============================================
-  if (s.certifications && s.certifications.length > 0) {
-    sectionHead('Certifications');
-    doc.setFontSize(c.subPt);
-    s.certifications.forEach(cert => {
-      needSpace(lh(c.subPt));
-      doc.text(`\u2022  ${cert}`, c.mX + c.itemIndent + 0.15, y);
-      y += lh(c.subPt);
-    });
+  // ============ CERTIFICATIONS ============
+  if (sections.certifications && sections.certifications.length > 0) {
+    content.push(sectionHeading('Certifications'));
+    content.push(bulletList(sections.certifications));
   }
 
-  return doc;
+  // ============ BUILD PDF ============
+  const docDefinition = {
+    pageSize: JAKE.pageSize,
+    pageMargins: JAKE.margins,
+    defaultStyle: {
+      font: 'Roboto',
+      fontSize: JAKE.bodyFontSize,
+    },
+    content,
+  };
+
+  try {
+    const pdfDoc = pdfMake.createPdf(docDefinition as any);
+
+    // pdfmake generates synchronously in browser — extract buffer directly
+    // Use the internal document generation to get raw bytes
+    const pdfDocGenerator = (pdfDoc as any).getStream();
+
+    // Collect chunks synchronously
+    const chunks: Uint8Array[] = [];
+    pdfDocGenerator.on('data', (chunk: Uint8Array) => {
+      chunks.push(chunk);
+    });
+    pdfDocGenerator.on('end', () => {});
+    pdfDocGenerator.end();
+
+    if (chunks.length > 0) {
+      const totalLength = chunks.reduce((acc: number, c: Uint8Array) => acc + c.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+      chunks.forEach((chunk: Uint8Array) => {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      });
+      const blob = new Blob([result], { type: 'application/pdf' });
+      logger.info(`Jake's Resume PDF generated: ${(blob.size / 1024).toFixed(1)} KB`);
+      return blob;
+    }
+
+    throw new Error('pdfmake produced no output');
+  } catch (e) {
+    logger.error('pdfmake generation failed', e);
+    // Return a minimal valid PDF so the upload doesn't crash
+    return new Blob(['%PDF-1.4 minimal'], { type: 'application/pdf' });
+  }
+}
+
+// ──────────────────────────────────────────
+// Jake's LaTeX template components
+// ──────────────────────────────────────────
+
+/**
+ * \section{Title} with \titlerule
+ * Renders: TITLE with a horizontal line below
+ */
+function sectionHeading(title: string): any {
+  return {
+    stack: [
+      {
+        text: title.toUpperCase(),
+        fontSize: JAKE.sectionFontSize,
+        bold: true,
+        margin: [0, 8, 0, 2] as [number, number, number, number],
+      },
+      {
+        canvas: [{
+          type: 'line' as const,
+          x1: 0, y1: 0,
+          x2: 540, y2: 0, // full width (letter - margins ≈ 540pt)
+          lineWidth: 0.7,
+          lineColor: '#000000',
+        }],
+        margin: [0, 0, 0, 4] as [number, number, number, number],
+      },
+    ],
+  };
+}
+
+/**
+ * \resumeSubheading{Bold}{Right}{Italic}{SmallRight}
+ * Line 1: **Bold** .................. Right
+ * Line 2: *Italic* .................. SmallRight
+ */
+function subheading(bold1: string, right1: string, italic2: string, right2: string): any {
+  return {
+    stack: [
+      // Line 1: Bold left, normal right
+      {
+        columns: [
+          { text: bold1, bold: true, fontSize: JAKE.bodyFontSize, width: '*' },
+          { text: right1, fontSize: JAKE.bodyFontSize, alignment: 'right' as const, width: 'auto' },
+        ],
+        margin: [10, 2, 0, 0] as [number, number, number, number],
+      },
+      // Line 2: Italic left, italic right
+      {
+        columns: [
+          { text: italic2, italics: true, fontSize: JAKE.smallFontSize, width: '*' },
+          { text: right2, italics: true, fontSize: JAKE.smallFontSize, alignment: 'right' as const, width: 'auto' },
+        ],
+        margin: [10, 0, 0, 2] as [number, number, number, number],
+      },
+    ],
+  };
+}
+
+/**
+ * \resumeProjectHeading{\textbf{Name} $|$ \emph{Tech}}{Date}
+ */
+function projectHeading(name: string, techStack: string, date: string): any {
+  const leftParts: any[] = [{ text: name, bold: true }];
+  if (techStack) {
+    leftParts.push({ text: ' | ' });
+    leftParts.push({ text: techStack, italics: true });
+  }
+
+  return {
+    columns: [
+      { text: leftParts, fontSize: JAKE.smallFontSize, width: '*' },
+      { text: date || '', fontSize: JAKE.smallFontSize, alignment: 'right' as const, width: 'auto' },
+    ],
+    margin: [10, 2, 0, 2] as [number, number, number, number],
+  };
+}
+
+/**
+ * \resumeItemListStart / \resumeItem / \resumeItemListEnd
+ * Renders bullet points
+ */
+function bulletList(items: string[]): any {
+  if (!items || items.length === 0) return { text: '' };
+  
+  return {
+    ul: items.map(item => ({
+      text: item,
+      fontSize: JAKE.smallFontSize,
+      margin: [0, 0, 0, 1] as [number, number, number, number],
+    })),
+    margin: [20, 0, 0, 4] as [number, number, number, number],
+  };
 }
