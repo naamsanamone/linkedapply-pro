@@ -10,6 +10,8 @@ export interface ResumeSections {
     phone: string;
     location: string;
     linkedin?: string;
+    github?: string;
+    portfolio?: string;
   };
   summary: string;
   skills: string[];
@@ -31,232 +33,339 @@ export interface ResumeSections {
   }[];
 }
 
-interface LayoutConfig {
-  margin: number;
-  lineHeight: number;
-  fontSizeBody: number;
-  fontSizeHeading: number;
-  fontSizeName: number;
+/* ============================================================
+   Jake's Resume Template — jsPDF Recreation
+   
+   The most popular tech resume template (90%+ of FAANG applicants).
+   - Letter size, tight 0.5" margins
+   - 11pt body, section headers in UPPERCASE BOLD with horizontal rule
+   - Company name BOLD left-aligned, dates right-aligned
+   - Job title in italic below company
+   - Tight bullet spacing for maximum content density
+   ============================================================ */
+
+interface JakeConfig {
+  // Page
+  pageWidth: number;      // inches
+  pageHeight: number;     // inches
+  marginX: number;        // left/right margin
+  marginTop: number;      // top margin
+  marginBottom: number;   // bottom margin
+  
+  // Fonts (in points)
+  nameSize: number;
+  sectionSize: number;
+  bodySize: number;
+  
+  // Spacing (in inches)
+  lineSpacing: number;    // body text line height multiplier
+  sectionGap: number;     // space before section heading
+  subSectionGap: number;  // space between items within a section
+  bulletIndent: number;   // indent for bullet text
 }
+
+const JAKE_CONFIG: JakeConfig = {
+  pageWidth: 8.5,
+  pageHeight: 11,
+  marginX: 0.5,
+  marginTop: 0.4,
+  marginBottom: 0.4,
+  nameSize: 18,
+  sectionSize: 11,
+  bodySize: 10.5,
+  lineSpacing: 1.15,
+  sectionGap: 0.15,
+  subSectionGap: 0.08,
+  bulletIndent: 0.2,
+};
 
 export function generateTailoredResumePDF(
   sections: ResumeSections,
   targetPageCount: number
 ): Blob {
-  let doc = new jsPDF({ format: 'letter', unit: 'in' });
+  // Try with default config first
+  let config = { ...JAKE_CONFIG };
+  let doc = renderJakeResume(sections, config);
+  let pages = (doc as any).internal.getNumberOfPages();
 
-  let config: LayoutConfig = {
-    margin: 0.6,
-    lineHeight: 1.1,
-    fontSizeBody: 10,
-    fontSizeHeading: 11,
-    fontSizeName: 14,
-  };
+  if (pages > targetPageCount) {
+    // Shrink: tighter margins, smaller font
+    logger.info(`Page count ${pages} > target ${targetPageCount}, shrinking...`);
+    config.marginX = 0.4;
+    config.marginTop = 0.3;
+    config.marginBottom = 0.3;
+    config.bodySize = 10;
+    config.lineSpacing = 1.05;
+    config.sectionGap = 0.1;
+    config.subSectionGap = 0.05;
+    doc = renderJakeResume(sections, config);
+    pages = (doc as any).internal.getNumberOfPages();
 
-  let maxIterations = 3;
-  let currentIteration = 0;
-  let finalDoc = doc;
-
-  // Deep copy experience to allow modification (trimming bullets)
-  const modifiedSections = {
-    ...sections,
-    experience: sections.experience.map(exp => ({ ...exp, bullets: [...exp.bullets] }))
-  };
-
-  while (currentIteration < maxIterations) {
-    logger.info(`Generating PDF - Iteration ${currentIteration + 1}`);
-    finalDoc = new jsPDF({ format: 'letter', unit: 'in' });
-    const pageCount = renderResumeContent(finalDoc, modifiedSections, config);
-
-    if (pageCount === targetPageCount) {
-      logger.info(`Target page count ${targetPageCount} reached.`);
-      break;
-    } else if (pageCount > targetPageCount) {
-      logger.info(`Page count ${pageCount} exceeds target ${targetPageCount}. Attempting to shrink.`);
-      if (currentIteration === 0) {
-        config.margin = 0.5;
-        config.fontSizeBody = 9.5;
-        config.lineHeight = 1.0;
-      } else {
-        let trimCount = 0;
-        for (let i = modifiedSections.experience.length - 1; i >= 0; i--) {
-          if (modifiedSections.experience[i].bullets.length > 2) {
-            modifiedSections.experience[i].bullets.pop();
-            trimCount++;
-          }
-        }
-        if (trimCount === 0) {
-          logger.info(`Cannot shrink further. Final page count: ${pageCount}`);
-          break; 
-        }
-      }
-    } else {
-      logger.info(`Page count ${pageCount} under target ${targetPageCount}. Attempting to expand.`);
-      config.margin = 0.8;
-      config.lineHeight = 1.2;
-      // Only try to expand once
-      if (currentIteration > 0) {
-         break;
-      }
+    if (pages > targetPageCount) {
+      // Still too big — trim bullets from oldest jobs
+      logger.info(`Still ${pages} pages, trimming bullets...`);
+      const trimmed = {
+        ...sections,
+        experience: sections.experience.map((exp, i) => ({
+          ...exp,
+          bullets: i === 0 ? exp.bullets.slice(0, 6) : exp.bullets.slice(0, 3),
+        })),
+      };
+      doc = renderJakeResume(trimmed, config);
     }
-
-    currentIteration++;
+  } else if (pages < targetPageCount && targetPageCount > 1) {
+    // Expand: looser margins
+    config.marginX = 0.7;
+    config.lineSpacing = 1.3;
+    config.sectionGap = 0.2;
+    doc = renderJakeResume(sections, config);
   }
 
-  return finalDoc.output('blob');
+  logger.info(`Jake's Resume PDF generated: ${(doc as any).internal.getNumberOfPages()} page(s)`);
+  return doc.output('blob');
 }
 
-function renderResumeContent(doc: jsPDF, sections: ResumeSections, config: LayoutConfig): number {
-  let currentY = config.margin;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const maxContentWidth = pageWidth - 2 * config.margin;
 
-  doc.setFont('helvetica');
+function renderJakeResume(sections: ResumeSections, cfg: JakeConfig): jsPDF {
+  const doc = new jsPDF({ format: 'letter', unit: 'in' });
+  const maxW = cfg.pageWidth - 2 * cfg.marginX;
+  let y = cfg.marginTop;
 
-  const addWrappedText = (text: string, x: number, y: number, maxWidth: number): number => {
-    const lines = doc.splitTextToSize(text, maxWidth);
-    doc.text(lines, x, y);
-    return y + (lines.length * config.fontSizeBody * config.lineHeight) / 72;
-  };
+  // Helper: line height for a given font size
+  const lh = (fontSize: number) => (fontSize * cfg.lineSpacing) / 72;
 
-  const checkPageBreak = (y: number, needed: number): number => {
-    if (y + needed > doc.internal.pageSize.getHeight() - config.margin) {
+  // Helper: check page break
+  const pageBreak = (needed: number): void => {
+    if (y + needed > cfg.pageHeight - cfg.marginBottom) {
       doc.addPage();
-      return config.margin + needed; // Start slightly below margin to accommodate the needed space if it was a heading
+      y = cfg.marginTop;
     }
-    return y;
   };
 
-  const addSectionHeading = (title: string, y: number): number => {
-    y = checkPageBreak(y, (config.fontSizeHeading * 2) / 72 + 0.1);
+  // Helper: wrapped text
+  const wrappedText = (text: string, x: number, width: number): void => {
+    const lines = doc.splitTextToSize(text, width);
+    lines.forEach((line: string) => {
+      pageBreak(lh(cfg.bodySize));
+      doc.text(line, x, y);
+      y += lh(cfg.bodySize);
+    });
+  };
+
+  // Helper: section heading — UPPERCASE BOLD with full-width horizontal rule
+  const sectionHeading = (title: string): void => {
+    y += cfg.sectionGap;
+    pageBreak(lh(cfg.sectionSize) + 0.05);
+    
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(config.fontSizeHeading);
-    doc.text(title, config.margin, y);
-
-    const textWidth = doc.getTextWidth(title);
-    y += 0.05; // Gap before underline
-    doc.setLineWidth(0.5 / 72); 
-    doc.line(config.margin, y, pageWidth - config.margin, y);
-
+    doc.setFontSize(cfg.sectionSize);
+    doc.text(title.toUpperCase(), cfg.marginX, y);
+    
+    // Full-width horizontal rule under heading
+    const ruleY = y + 0.03;
+    doc.setLineWidth(0.5 / 72);
+    doc.setDrawColor(0, 0, 0);
+    doc.line(cfg.marginX, ruleY, cfg.pageWidth - cfg.marginX, ruleY);
+    
+    y = ruleY + 0.08;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(config.fontSizeBody);
-    return y + (config.fontSizeBody * config.lineHeight) / 72 + 0.05;
+    doc.setFontSize(cfg.bodySize);
   };
 
-  // Contact Info
-  doc.setFontSize(config.fontSizeName);
+  // ========================================
+  // NAME — centered, large, bold
+  // ========================================
   doc.setFont('helvetica', 'bold');
-  const nameWidth = doc.getTextWidth(sections.contactInfo.name);
-  doc.text(sections.contactInfo.name, (pageWidth - nameWidth) / 2, currentY);
-  currentY += (config.fontSizeName * config.lineHeight) / 72 + 0.05;
+  doc.setFontSize(cfg.nameSize);
+  const name = sections.contactInfo.name;
+  if (name) {
+    const nameW = doc.getTextWidth(name);
+    doc.text(name, (cfg.pageWidth - nameW) / 2, y);
+    y += lh(cfg.nameSize);
+  }
 
-  doc.setFontSize(config.fontSizeBody);
+  // ========================================
+  // CONTACT LINE — centered, separated by " | "
+  // ========================================
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(cfg.bodySize);
   const contactParts = [
-    sections.contactInfo.email,
-    sections.contactInfo.phone,
     sections.contactInfo.location,
-  ];
-  if (sections.contactInfo.linkedin) {
-    contactParts.push(sections.contactInfo.linkedin);
+    sections.contactInfo.phone,
+    sections.contactInfo.email,
+    sections.contactInfo.linkedin,
+    sections.contactInfo.github,
+    sections.contactInfo.portfolio,
+  ].filter(Boolean);
+  
+  if (contactParts.length > 0) {
+    // Use " · " as separator (Jake's style)
+    const contactLine = contactParts.join('  ·  ');
+    const contactW = doc.getTextWidth(contactLine);
+    if (contactW <= maxW) {
+      doc.text(contactLine, (cfg.pageWidth - contactW) / 2, y);
+    } else {
+      // Split into two lines if too long
+      const mid = Math.ceil(contactParts.length / 2);
+      const line1 = contactParts.slice(0, mid).join('  ·  ');
+      const line2 = contactParts.slice(mid).join('  ·  ');
+      doc.text(line1, (cfg.pageWidth - doc.getTextWidth(line1)) / 2, y);
+      y += lh(cfg.bodySize);
+      doc.text(line2, (cfg.pageWidth - doc.getTextWidth(line2)) / 2, y);
+    }
+    y += lh(cfg.bodySize) + 0.05;
   }
-  const contactLine = contactParts.filter(Boolean).join(' | ');
-  const contactWidth = doc.getTextWidth(contactLine);
-  doc.text(contactLine, (pageWidth - contactWidth) / 2, currentY);
-  currentY += (config.fontSizeBody * config.lineHeight) / 72 + 0.2;
 
-  // Professional Summary
+  // ========================================
+  // PROFESSIONAL SUMMARY
+  // ========================================
   if (sections.summary) {
-    currentY = addSectionHeading('PROFESSIONAL SUMMARY', currentY);
-    currentY = addWrappedText(sections.summary, config.margin, currentY, maxContentWidth);
-    currentY += 0.1;
+    sectionHeading('Summary');
+    doc.setFontSize(cfg.bodySize);
+    wrappedText(sections.summary, cfg.marginX, maxW);
+    y += cfg.subSectionGap;
   }
 
-  // Skills
-  if (sections.skills && sections.skills.length > 0) {
-    currentY = addSectionHeading('SKILLS', currentY);
-    currentY = addWrappedText(sections.skills.join(', '), config.margin, currentY, maxContentWidth);
-    currentY += 0.1;
-  }
-
-  // Experience
+  // ========================================
+  // EXPERIENCE — Company bold + date right-aligned, title italic, bullets
+  // ========================================
   if (sections.experience && sections.experience.length > 0) {
-    currentY = addSectionHeading('EXPERIENCE', currentY);
-    sections.experience.forEach(exp => {
-      currentY = checkPageBreak(currentY, 0.3);
+    sectionHeading('Experience');
+    
+    sections.experience.forEach((exp, idx) => {
+      pageBreak(lh(cfg.bodySize) * 3); // Need space for at least header + 1 bullet
 
+      // Line 1: Company (bold left) — Date (right)
       doc.setFont('helvetica', 'bold');
-      doc.text(exp.company, config.margin, currentY);
-
+      doc.setFontSize(cfg.bodySize);
+      doc.text(exp.company, cfg.marginX, y);
+      
       doc.setFont('helvetica', 'normal');
-      const dateWidth = doc.getTextWidth(exp.dateRange);
-      doc.text(exp.dateRange, pageWidth - config.margin - dateWidth, currentY);
+      const dateW = doc.getTextWidth(exp.dateRange);
+      doc.text(exp.dateRange, cfg.pageWidth - cfg.marginX - dateW, y);
+      y += lh(cfg.bodySize);
 
-      currentY += (config.fontSizeBody * config.lineHeight) / 72;
-
+      // Line 2: Title (italic)
       doc.setFont('helvetica', 'italic');
-      doc.text(exp.title, config.margin, currentY);
+      doc.text(exp.title, cfg.marginX, y);
       doc.setFont('helvetica', 'normal');
+      y += lh(cfg.bodySize);
 
-      currentY += (config.fontSizeBody * config.lineHeight) / 72 + 0.05;
-
+      // Bullets
       exp.bullets.forEach(bullet => {
-        currentY = checkPageBreak(currentY, (config.fontSizeBody * config.lineHeight) / 72);
-        doc.text('•', config.margin + 0.1, currentY);
-        const bulletIndent = 0.25;
-        const lines = doc.splitTextToSize(bullet, maxContentWidth - bulletIndent);
-        doc.text(lines, config.margin + bulletIndent, currentY);
-        currentY += (lines.length * config.fontSizeBody * config.lineHeight) / 72 + 0.02;
+        pageBreak(lh(cfg.bodySize));
+        const bulletText = `•  ${bullet}`;
+        const lines = doc.splitTextToSize(bulletText, maxW - cfg.bulletIndent);
+        lines.forEach((line: string, lineIdx: number) => {
+          pageBreak(lh(cfg.bodySize));
+          doc.text(line, cfg.marginX + (lineIdx === 0 ? 0 : cfg.bulletIndent), y);
+          y += lh(cfg.bodySize);
+        });
       });
 
-      currentY += 0.1;
+      // Gap between jobs (smaller for last item)
+      if (idx < sections.experience.length - 1) {
+        y += cfg.subSectionGap;
+      }
     });
   }
 
-  // Education
+  // ========================================
+  // EDUCATION — Institution bold + date right, degree below
+  // ========================================
   if (sections.education && sections.education.length > 0) {
-    currentY = addSectionHeading('EDUCATION', currentY);
+    sectionHeading('Education');
+    
     sections.education.forEach(edu => {
-      currentY = checkPageBreak(currentY, (config.fontSizeBody * config.lineHeight * 2) / 72 + 0.1);
+      pageBreak(lh(cfg.bodySize) * 2);
 
+      // Institution (bold) — Year (right)
       doc.setFont('helvetica', 'bold');
-      doc.text(edu.institution, config.margin, currentY);
-
+      doc.setFontSize(cfg.bodySize);
+      doc.text(edu.institution, cfg.marginX, y);
+      
       doc.setFont('helvetica', 'normal');
-      const yearWidth = doc.getTextWidth(edu.year);
-      doc.text(edu.year, pageWidth - config.margin - yearWidth, currentY);
+      const yearW = doc.getTextWidth(edu.year);
+      doc.text(edu.year, cfg.pageWidth - cfg.marginX - yearW, y);
+      y += lh(cfg.bodySize);
 
-      currentY += (config.fontSizeBody * config.lineHeight) / 72;
-
-      doc.text(edu.degree, config.margin, currentY);
-      currentY += (config.fontSizeBody * config.lineHeight) / 72 + 0.05;
-    });
-    currentY += 0.05;
-  }
-
-  // Certifications
-  if (sections.certifications && sections.certifications.length > 0) {
-    currentY = addSectionHeading('CERTIFICATIONS', currentY);
-    sections.certifications.forEach(cert => {
-      currentY = checkPageBreak(currentY, (config.fontSizeBody * config.lineHeight) / 72);
-      doc.text(`• ${cert}`, config.margin, currentY);
-      currentY += (config.fontSizeBody * config.lineHeight) / 72 + 0.02;
+      // Degree (italic)
+      doc.setFont('helvetica', 'italic');
+      doc.text(edu.degree, cfg.marginX, y);
+      doc.setFont('helvetica', 'normal');
+      y += lh(cfg.bodySize) + cfg.subSectionGap;
     });
   }
 
-  // Projects
+  // ========================================
+  // SKILLS — "Category: skill1, skill2" format (Jake's style)
+  // ========================================
+  if (sections.skills && sections.skills.length > 0) {
+    sectionHeading('Technical Skills');
+    
+    // Group skills into a comma-separated line (Jake's format)
+    const skillLine = sections.skills.join(', ');
+    doc.setFontSize(cfg.bodySize);
+    
+    // Bold "Technologies:" prefix
+    doc.setFont('helvetica', 'bold');
+    const prefix = 'Technologies: ';
+    doc.text(prefix, cfg.marginX, y);
+    const prefixW = doc.getTextWidth(prefix);
+    
+    doc.setFont('helvetica', 'normal');
+    const remaining = doc.splitTextToSize(skillLine, maxW - prefixW);
+    if (remaining.length > 0) {
+      doc.text(remaining[0], cfg.marginX + prefixW, y);
+      y += lh(cfg.bodySize);
+      // Remaining lines without prefix
+      for (let i = 1; i < remaining.length; i++) {
+        pageBreak(lh(cfg.bodySize));
+        doc.text(remaining[i], cfg.marginX, y);
+        y += lh(cfg.bodySize);
+      }
+    }
+    y += cfg.subSectionGap;
+  }
+
+  // ========================================
+  // PROJECTS — Name bold, description as bullet
+  // ========================================
   if (sections.projects && sections.projects.length > 0) {
-    currentY = addSectionHeading('PROJECTS', currentY);
+    sectionHeading('Projects');
+    
     sections.projects.forEach(proj => {
-      currentY = checkPageBreak(currentY, (config.fontSizeBody * config.lineHeight * 2) / 72);
+      pageBreak(lh(cfg.bodySize) * 2);
+
       doc.setFont('helvetica', 'bold');
-      doc.text(proj.name, config.margin, currentY);
+      doc.setFontSize(cfg.bodySize);
+      doc.text(proj.name, cfg.marginX, y);
       doc.setFont('helvetica', 'normal');
-      currentY += (config.fontSizeBody * config.lineHeight) / 72;
-      currentY = addWrappedText(proj.description, config.margin + 0.1, currentY, maxContentWidth - 0.1);
-      currentY += 0.05;
+      y += lh(cfg.bodySize);
+
+      const descLines = doc.splitTextToSize(`•  ${proj.description}`, maxW - cfg.bulletIndent);
+      descLines.forEach((line: string, i: number) => {
+        pageBreak(lh(cfg.bodySize));
+        doc.text(line, cfg.marginX + (i === 0 ? 0 : cfg.bulletIndent), y);
+        y += lh(cfg.bodySize);
+      });
+      y += cfg.subSectionGap;
     });
   }
 
-  return (doc as any).internal.getNumberOfPages();
+  // ========================================
+  // CERTIFICATIONS — bullet list
+  // ========================================
+  if (sections.certifications && sections.certifications.length > 0) {
+    sectionHeading('Certifications');
+    
+    sections.certifications.forEach(cert => {
+      pageBreak(lh(cfg.bodySize));
+      doc.setFontSize(cfg.bodySize);
+      doc.text(`•  ${cert}`, cfg.marginX, y);
+      y += lh(cfg.bodySize);
+    });
+  }
+
+  return doc;
 }
