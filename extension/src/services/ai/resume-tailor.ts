@@ -1,6 +1,7 @@
 /* ============================================================
    LinkedApply Pro — Resume Tailor
    AI-powered resume optimization per job description
+   Output format: Jake's Resume template
    ============================================================ */
 
 import { createLogger } from '../../shared/logger';
@@ -10,9 +11,12 @@ import { fillPrompt, RESUME_TAILOR_PROMPT } from './prompts';
 
 const log = createLogger('AI:Resume');
 
+// ---- Jake's Resume output format ----
+
 export interface TailoredResume {
   summary: string;
-  skills: string[];
+  skillCategories: Record<string, string>;  // { "Languages": "Java, Python", "Frameworks": "..." }
+  skills: string[];                          // Fallback flat list
   experience: TailoredExperience[];
   education: TailoredEducation[];
   certifications: string[];
@@ -23,18 +27,24 @@ export interface TailoredResume {
 
 export interface TailoredEducation {
   institution: string;
+  location: string;
   degree: string;
   year: string;
 }
 
 export interface TailoredProject {
   name: string;
-  description: string;
+  techStack: string;
+  duration: string;
+  bullets: string[];
+  // Legacy fallback
+  description?: string;
 }
 
 export interface TailoredExperience {
-  title: string;
   company: string;
+  location: string;
+  title: string;
   duration: string;
   bullets: string[];
 }
@@ -73,14 +83,35 @@ export async function aiTailorResume(
     // Validate score
     result.atsScore = Math.max(0, Math.min(100, result.atsScore || 0));
 
-    // Ensure arrays exist (truncated responses may omit them)
+    // Ensure all fields exist (truncated responses may omit them)
     result.keywordsAdded = result.keywordsAdded || [];
+    result.skillCategories = result.skillCategories || {};
     result.skills = result.skills || [];
     result.experience = result.experience || [];
     result.education = result.education || [];
     result.certifications = result.certifications || [];
     result.projects = result.projects || [];
     result.summary = result.summary || '';
+
+    // Normalize experience: ensure location field exists
+    result.experience = result.experience.map(e => ({
+      ...e,
+      location: e.location || '',
+    }));
+
+    // Normalize education: ensure location field exists
+    result.education = result.education.map(e => ({
+      ...e,
+      location: e.location || '',
+    }));
+
+    // Normalize projects: ensure bullets/techStack exist
+    result.projects = result.projects.map(p => ({
+      ...p,
+      techStack: p.techStack || '',
+      duration: p.duration || '',
+      bullets: p.bullets || (p.description ? [p.description] : []),
+    }));
 
     log.info(`Resume tailored — ATS score: ${result.atsScore}/100, ${result.keywordsAdded.length} keywords added`);
     return result;

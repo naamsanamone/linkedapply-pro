@@ -3,6 +3,18 @@ import { createLogger } from '../shared/logger';
 
 const logger = createLogger('ResumePdfGenerator');
 
+/* ============================================================
+   Jake's Resume Template — Exact jsPDF recreation
+   Source: https://github.com/sb2nov/resume (Jake Gutierrez fork)
+   
+   LaTeX specs reproduced here:
+   - letterpaper, 11pt, 0.5in margins
+   - \scshape\large section headers with \titlerule
+   - \resumeSubheading: {Company}{Date} / {Title}{Location}
+   - \resumeItem: \item\small bullet points
+   - leftmargin=0.15in for subheading lists
+   ============================================================ */
+
 export interface ResumeSections {
   contactInfo: {
     name: string;
@@ -14,356 +26,388 @@ export interface ResumeSections {
     portfolio?: string;
   };
   summary: string;
+  // Jake's categorized skills: { "Languages": "Java, Python", "Frameworks": "React, Spring Boot" }
+  skillCategories?: Record<string, string>;
+  // Fallback flat skills list
   skills: string[];
   experience: {
     company: string;
+    location: string;
     title: string;
     dateRange: string;
     bullets: string[];
   }[];
   education: {
     institution: string;
+    location: string;
     degree: string;
     year: string;
   }[];
   certifications: string[];
   projects: {
     name: string;
-    description: string;
+    techStack: string;
+    duration: string;
+    bullets: string[];
   }[];
 }
 
-/* ============================================================
-   Jake's Resume Template — jsPDF Recreation
-   
-   The most popular tech resume template (90%+ of FAANG applicants).
-   - Letter size, tight 0.5" margins
-   - 11pt body, section headers in UPPERCASE BOLD with horizontal rule
-   - Company name BOLD left-aligned, dates right-aligned
-   - Job title in italic below company
-   - Tight bullet spacing for maximum content density
-   ============================================================ */
-
-interface JakeConfig {
-  // Page
-  pageWidth: number;      // inches
-  pageHeight: number;     // inches
-  marginX: number;        // left/right margin
-  marginTop: number;      // top margin
-  marginBottom: number;   // bottom margin
-  
-  // Fonts (in points)
-  nameSize: number;
-  sectionSize: number;
-  bodySize: number;
-  
-  // Spacing (in inches)
-  lineSpacing: number;    // body text line height multiplier
-  sectionGap: number;     // space before section heading
-  subSectionGap: number;  // space between items within a section
-  bulletIndent: number;   // indent for bullet text
+interface JakeLayout {
+  pageW: number;
+  pageH: number;
+  mX: number;      // left/right margin (0.5in from LaTeX)
+  mTop: number;
+  mBot: number;
+  bodyPt: number;   // 10.5pt body (LaTeX 11pt \small ≈ 10.5)
+  headPt: number;   // 11.5pt section heading (\large)
+  namePt: number;   // 20pt name (\Huge)
+  subPt: number;    // 10pt for subheading items
+  lineH: number;    // line height multiplier
+  itemIndent: number; // leftmargin=0.15in
 }
 
-const JAKE_CONFIG: JakeConfig = {
-  pageWidth: 8.5,
-  pageHeight: 11,
-  marginX: 0.5,
-  marginTop: 0.4,
-  marginBottom: 0.4,
-  nameSize: 18,
-  sectionSize: 11,
-  bodySize: 10.5,
-  lineSpacing: 1.15,
-  sectionGap: 0.15,
-  subSectionGap: 0.08,
-  bulletIndent: 0.2,
+const JAKE: JakeLayout = {
+  pageW: 8.5,
+  pageH: 11,
+  mX: 0.5,
+  mTop: 0.35,
+  mBot: 0.35,
+  bodyPt: 10.5,
+  headPt: 11.5,
+  namePt: 20,
+  subPt: 10,
+  lineH: 1.15,
+  itemIndent: 0.15,
 };
 
 export function generateTailoredResumePDF(
   sections: ResumeSections,
   targetPageCount: number
 ): Blob {
-  // Try with default config first
-  let config = { ...JAKE_CONFIG };
-  let doc = renderJakeResume(sections, config);
+  let cfg = { ...JAKE };
+  let doc = renderJake(sections, cfg);
   let pages = (doc as any).internal.getNumberOfPages();
 
   if (pages > targetPageCount) {
-    // Shrink: tighter margins, smaller font
-    logger.info(`Page count ${pages} > target ${targetPageCount}, shrinking...`);
-    config.marginX = 0.4;
-    config.marginTop = 0.3;
-    config.marginBottom = 0.3;
-    config.bodySize = 10;
-    config.lineSpacing = 1.05;
-    config.sectionGap = 0.1;
-    config.subSectionGap = 0.05;
-    doc = renderJakeResume(sections, config);
+    logger.info(`${pages} pages > target ${targetPageCount}, shrinking...`);
+    cfg.mX = 0.4;
+    cfg.mTop = 0.25;
+    cfg.mBot = 0.25;
+    cfg.bodyPt = 9.5;
+    cfg.subPt = 9;
+    cfg.lineH = 1.05;
+    doc = renderJake(sections, cfg);
     pages = (doc as any).internal.getNumberOfPages();
 
     if (pages > targetPageCount) {
-      // Still too big — trim bullets from oldest jobs
-      logger.info(`Still ${pages} pages, trimming bullets...`);
+      // Trim bullets from older jobs
       const trimmed = {
         ...sections,
         experience: sections.experience.map((exp, i) => ({
           ...exp,
           bullets: i === 0 ? exp.bullets.slice(0, 6) : exp.bullets.slice(0, 3),
         })),
+        projects: sections.projects.map(p => ({
+          ...p,
+          bullets: p.bullets.slice(0, 2),
+        })),
       };
-      doc = renderJakeResume(trimmed, config);
+      doc = renderJake(trimmed, cfg);
     }
-  } else if (pages < targetPageCount && targetPageCount > 1) {
-    // Expand: looser margins
-    config.marginX = 0.7;
-    config.lineSpacing = 1.3;
-    config.sectionGap = 0.2;
-    doc = renderJakeResume(sections, config);
   }
 
-  logger.info(`Jake's Resume PDF generated: ${(doc as any).internal.getNumberOfPages()} page(s)`);
+  logger.info(`Jake's Resume PDF: ${(doc as any).internal.getNumberOfPages()} page(s)`);
   return doc.output('blob');
 }
 
+// ──────────────────────────────────────────────────────
+// Core renderer — mirrors Jake's LaTeX commands
+// ──────────────────────────────────────────────────────
 
-function renderJakeResume(sections: ResumeSections, cfg: JakeConfig): jsPDF {
+function renderJake(s: ResumeSections, c: JakeLayout): jsPDF {
   const doc = new jsPDF({ format: 'letter', unit: 'in' });
-  const maxW = cfg.pageWidth - 2 * cfg.marginX;
-  let y = cfg.marginTop;
+  const maxW = c.pageW - 2 * c.mX;
+  let y = c.mTop;
 
-  // Helper: line height for a given font size
-  const lh = (fontSize: number) => (fontSize * cfg.lineSpacing) / 72;
+  const lh = (pt: number) => (pt * c.lineH) / 72;
 
-  // Helper: check page break
-  const pageBreak = (needed: number): void => {
-    if (y + needed > cfg.pageHeight - cfg.marginBottom) {
+  const needSpace = (inches: number): void => {
+    if (y + inches > c.pageH - c.mBot) {
       doc.addPage();
-      y = cfg.marginTop;
+      y = c.mTop;
     }
   };
 
-  // Helper: wrapped text
-  const wrappedText = (text: string, x: number, width: number): void => {
-    const lines = doc.splitTextToSize(text, width);
-    lines.forEach((line: string) => {
-      pageBreak(lh(cfg.bodySize));
-      doc.text(line, x, y);
-      y += lh(cfg.bodySize);
-    });
-  };
+  // ---- \section{Title} with \titlerule ----
+  const sectionHead = (title: string): void => {
+    y += 0.12; // \vspace{-4pt} equivalent gap
+    needSpace(lh(c.headPt) + 0.06);
 
-  // Helper: section heading — UPPERCASE BOLD with full-width horizontal rule
-  const sectionHeading = (title: string): void => {
-    y += cfg.sectionGap;
-    pageBreak(lh(cfg.sectionSize) + 0.05);
-    
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(cfg.sectionSize);
-    doc.text(title.toUpperCase(), cfg.marginX, y);
-    
-    // Full-width horizontal rule under heading
-    const ruleY = y + 0.03;
-    doc.setLineWidth(0.5 / 72);
+    doc.setFontSize(c.headPt);
+    // Jake uses \scshape (small caps) — we approximate with uppercase
+    doc.text(title.toUpperCase(), c.mX, y);
+
+    // \titlerule — full width line under heading
+    const ruleY = y + 0.04;
+    doc.setLineWidth(0.6 / 72);
     doc.setDrawColor(0, 0, 0);
-    doc.line(cfg.marginX, ruleY, cfg.pageWidth - cfg.marginX, ruleY);
-    
-    y = ruleY + 0.08;
+    doc.line(c.mX, ruleY, c.pageW - c.mX, ruleY);
+
+    y = ruleY + 0.07;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(cfg.bodySize);
+    doc.setFontSize(c.bodyPt);
   };
 
-  // ========================================
-  // NAME — centered, large, bold
-  // ========================================
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(cfg.nameSize);
-  const name = sections.contactInfo.name;
-  if (name) {
+  // ---- \resumeSubheading{#1}{#2}{#3}{#4} ----
+  //   Line 1: \textbf{#1} (left)    #2 (right)
+  //   Line 2: \textit{\small#3} (left)    \textit{\small#4} (right)
+  const subheading = (bold1: string, right1: string, italic2: string, right2: string): void => {
+    needSpace(lh(c.bodyPt) * 2 + 0.05);
+
+    // Line 1
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(c.bodyPt);
+    doc.text(bold1, c.mX + c.itemIndent, y);
+    doc.setFont('helvetica', 'normal');
+    const r1W = doc.getTextWidth(right1);
+    doc.text(right1, c.pageW - c.mX - r1W, y);
+    y += lh(c.bodyPt);
+
+    // Line 2
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(c.subPt);
+    doc.text(italic2, c.mX + c.itemIndent, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(c.subPt);
+    const r2W = doc.getTextWidth(right2);
+    doc.text(right2, c.pageW - c.mX - r2W, y);
+    y += lh(c.subPt) - 0.02; // \vspace{-7pt}
+    doc.setFontSize(c.bodyPt);
+  };
+
+  // ---- \resumeProjectHeading{\textbf{Name} $|$ \emph{Tech}}{Date} ----
+  const projectHeading = (name: string, techStack: string, date: string): void => {
+    needSpace(lh(c.bodyPt) + 0.05);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(c.subPt);
+    doc.text(name, c.mX + c.itemIndent, y);
     const nameW = doc.getTextWidth(name);
-    doc.text(name, (cfg.pageWidth - nameW) / 2, y);
-    y += lh(cfg.nameSize);
-  }
 
-  // ========================================
-  // CONTACT LINE — centered, separated by " | "
-  // ========================================
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(cfg.bodySize);
-  const contactParts = [
-    sections.contactInfo.location,
-    sections.contactInfo.phone,
-    sections.contactInfo.email,
-    sections.contactInfo.linkedin,
-    sections.contactInfo.github,
-    sections.contactInfo.portfolio,
-  ].filter(Boolean);
-  
-  if (contactParts.length > 0) {
-    // Use " · " as separator (Jake's style)
-    const contactLine = contactParts.join('  ·  ');
-    const contactW = doc.getTextWidth(contactLine);
-    if (contactW <= maxW) {
-      doc.text(contactLine, (cfg.pageWidth - contactW) / 2, y);
-    } else {
-      // Split into two lines if too long
-      const mid = Math.ceil(contactParts.length / 2);
-      const line1 = contactParts.slice(0, mid).join('  ·  ');
-      const line2 = contactParts.slice(mid).join('  ·  ');
-      doc.text(line1, (cfg.pageWidth - doc.getTextWidth(line1)) / 2, y);
-      y += lh(cfg.bodySize);
-      doc.text(line2, (cfg.pageWidth - doc.getTextWidth(line2)) / 2, y);
-    }
-    y += lh(cfg.bodySize) + 0.05;
-  }
-
-  // ========================================
-  // PROFESSIONAL SUMMARY
-  // ========================================
-  if (sections.summary) {
-    sectionHeading('Summary');
-    doc.setFontSize(cfg.bodySize);
-    wrappedText(sections.summary, cfg.marginX, maxW);
-    y += cfg.subSectionGap;
-  }
-
-  // ========================================
-  // EXPERIENCE — Company bold + date right-aligned, title italic, bullets
-  // ========================================
-  if (sections.experience && sections.experience.length > 0) {
-    sectionHeading('Experience');
-    
-    sections.experience.forEach((exp, idx) => {
-      pageBreak(lh(cfg.bodySize) * 3); // Need space for at least header + 1 bullet
-
-      // Line 1: Company (bold left) — Date (right)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(cfg.bodySize);
-      doc.text(exp.company, cfg.marginX, y);
-      
+    if (techStack) {
       doc.setFont('helvetica', 'normal');
-      const dateW = doc.getTextWidth(exp.dateRange);
-      doc.text(exp.dateRange, cfg.pageWidth - cfg.marginX - dateW, y);
-      y += lh(cfg.bodySize);
-
-      // Line 2: Title (italic)
+      doc.text(' | ', c.mX + c.itemIndent + nameW, y);
+      const sepW = doc.getTextWidth(' | ');
       doc.setFont('helvetica', 'italic');
-      doc.text(exp.title, cfg.marginX, y);
+      doc.text(techStack, c.mX + c.itemIndent + nameW + sepW, y);
+    }
+
+    if (date) {
       doc.setFont('helvetica', 'normal');
-      y += lh(cfg.bodySize);
+      const dW = doc.getTextWidth(date);
+      doc.text(date, c.pageW - c.mX - dW, y);
+    }
+
+    y += lh(c.subPt) - 0.02; // \vspace{-7pt}
+    doc.setFontSize(c.bodyPt);
+    doc.setFont('helvetica', 'normal');
+  };
+
+  // ---- \resumeItem{text} — bullet point ----
+  const bulletItem = (text: string): void => {
+    doc.setFontSize(c.subPt);
+    doc.setFont('helvetica', 'normal');
+    const bulletX = c.mX + c.itemIndent + 0.15;
+    const textX = bulletX + 0.12;
+    const textW = c.pageW - c.mX - textX;
+
+    const lines = doc.splitTextToSize(text, textW);
+    lines.forEach((line: string, i: number) => {
+      needSpace(lh(c.subPt));
+      if (i === 0) {
+        doc.text('\u2022', bulletX, y); // bullet character
+      }
+      doc.text(line, textX, y);
+      y += lh(c.subPt);
+    });
+    y -= 0.02; // \vspace{-2pt}
+  };
+
+  // ============================================
+  // HEADING — centered name + contact line
+  // ============================================
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(c.namePt);
+  const name = s.contactInfo.name;
+  if (name) {
+    const nW = doc.getTextWidth(name);
+    doc.text(name, (c.pageW - nW) / 2, y);
+    y += lh(c.namePt) - 0.05;
+  }
+
+  // Contact line: phone | email | linkedin | github
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(c.subPt);
+  const parts = [
+    s.contactInfo.phone,
+    s.contactInfo.email,
+    s.contactInfo.location,
+    s.contactInfo.linkedin,
+    s.contactInfo.github,
+    s.contactInfo.portfolio,
+  ].filter(Boolean);
+
+  if (parts.length > 0) {
+    const contactStr = parts.join(' | ');
+    const cW = doc.getTextWidth(contactStr);
+    if (cW <= maxW) {
+      doc.text(contactStr, (c.pageW - cW) / 2, y);
+    } else {
+      // Split into 2 lines
+      const mid = Math.ceil(parts.length / 2);
+      const l1 = parts.slice(0, mid).join(' | ');
+      const l2 = parts.slice(mid).join(' | ');
+      doc.text(l1, (c.pageW - doc.getTextWidth(l1)) / 2, y);
+      y += lh(c.subPt);
+      doc.text(l2, (c.pageW - doc.getTextWidth(l2)) / 2, y);
+    }
+    y += lh(c.subPt);
+  }
+
+  // ============================================
+  // SUMMARY (not in original Jake's but useful for ATS)
+  // ============================================
+  if (s.summary) {
+    sectionHead('Summary');
+    doc.setFontSize(c.subPt);
+    const sumLines = doc.splitTextToSize(s.summary, maxW);
+    sumLines.forEach((line: string) => {
+      needSpace(lh(c.subPt));
+      doc.text(line, c.mX, y);
+      y += lh(c.subPt);
+    });
+  }
+
+  // ============================================
+  // EDUCATION — \resumeSubheading format
+  // Jake's order: Education first
+  // ============================================
+  if (s.education && s.education.length > 0) {
+    sectionHead('Education');
+    s.education.forEach(edu => {
+      // {Institution}{Location} / {Degree}{Dates}
+      subheading(
+        edu.institution,
+        edu.location || '',
+        edu.degree,
+        edu.year
+      );
+      y += 0.03;
+    });
+  }
+
+  // ============================================
+  // EXPERIENCE — \resumeSubheading + \resumeItemList
+  // ============================================
+  if (s.experience && s.experience.length > 0) {
+    sectionHead('Experience');
+    s.experience.forEach((exp, idx) => {
+      // {Title}{Date} / {Company}{Location}  — Jake's format
+      subheading(
+        exp.company,
+        exp.dateRange,
+        exp.title,
+        exp.location || ''
+      );
 
       // Bullets
-      exp.bullets.forEach(bullet => {
-        pageBreak(lh(cfg.bodySize));
-        const bulletText = `•  ${bullet}`;
-        const lines = doc.splitTextToSize(bulletText, maxW - cfg.bulletIndent);
-        lines.forEach((line: string, lineIdx: number) => {
-          pageBreak(lh(cfg.bodySize));
-          doc.text(line, cfg.marginX + (lineIdx === 0 ? 0 : cfg.bulletIndent), y);
-          y += lh(cfg.bodySize);
+      exp.bullets.forEach(b => bulletItem(b));
+      y += 0.03; // \vspace{-5pt} after itemlist
+
+      if (idx < s.experience.length - 1) {
+        y += 0.02;
+      }
+    });
+  }
+
+  // ============================================
+  // PROJECTS — \resumeProjectHeading + bullets
+  // ============================================
+  if (s.projects && s.projects.length > 0) {
+    sectionHead('Projects');
+    s.projects.forEach((proj, idx) => {
+      projectHeading(proj.name, proj.techStack, proj.duration);
+
+      proj.bullets.forEach(b => bulletItem(b));
+      y += 0.03;
+
+      if (idx < s.projects.length - 1) {
+        y += 0.02;
+      }
+    });
+  }
+
+  // ============================================
+  // TECHNICAL SKILLS — categorized (Jake's format)
+  //   \textbf{Languages}{: Java, Python, ...}
+  //   \textbf{Frameworks}{: React, Spring Boot, ...}
+  // ============================================
+  if ((s.skillCategories && Object.keys(s.skillCategories).length > 0) || (s.skills && s.skills.length > 0)) {
+    sectionHead('Technical Skills');
+
+    doc.setFontSize(c.subPt);
+
+    if (s.skillCategories && Object.keys(s.skillCategories).length > 0) {
+      // Jake's categorized format
+      Object.entries(s.skillCategories).forEach(([category, skillList]) => {
+        if (!skillList) return;
+        needSpace(lh(c.subPt));
+
+        const indent = c.mX + c.itemIndent;
+
+        doc.setFont('helvetica', 'bold');
+        const label = `${category}: `;
+        doc.text(label, indent, y);
+        const labelW = doc.getTextWidth(label);
+
+        doc.setFont('helvetica', 'normal');
+        const valueW = c.pageW - c.mX - indent - labelW;
+        const lines = doc.splitTextToSize(skillList, valueW);
+        lines.forEach((line: string, i: number) => {
+          needSpace(lh(c.subPt));
+          doc.text(line, indent + (i === 0 ? labelW : 0), y);
+          y += lh(c.subPt);
         });
       });
-
-      // Gap between jobs (smaller for last item)
-      if (idx < sections.experience.length - 1) {
-        y += cfg.subSectionGap;
-      }
-    });
-  }
-
-  // ========================================
-  // EDUCATION — Institution bold + date right, degree below
-  // ========================================
-  if (sections.education && sections.education.length > 0) {
-    sectionHeading('Education');
-    
-    sections.education.forEach(edu => {
-      pageBreak(lh(cfg.bodySize) * 2);
-
-      // Institution (bold) — Year (right)
+    } else {
+      // Fallback: flat list as single "Technologies:" line
+      const skillLine = s.skills.join(', ');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(cfg.bodySize);
-      doc.text(edu.institution, cfg.marginX, y);
-      
+      const prefix = 'Technologies: ';
+      doc.text(prefix, c.mX + c.itemIndent, y);
+      const pW = doc.getTextWidth(prefix);
+
       doc.setFont('helvetica', 'normal');
-      const yearW = doc.getTextWidth(edu.year);
-      doc.text(edu.year, cfg.pageWidth - cfg.marginX - yearW, y);
-      y += lh(cfg.bodySize);
-
-      // Degree (italic)
-      doc.setFont('helvetica', 'italic');
-      doc.text(edu.degree, cfg.marginX, y);
-      doc.setFont('helvetica', 'normal');
-      y += lh(cfg.bodySize) + cfg.subSectionGap;
-    });
-  }
-
-  // ========================================
-  // SKILLS — "Category: skill1, skill2" format (Jake's style)
-  // ========================================
-  if (sections.skills && sections.skills.length > 0) {
-    sectionHeading('Technical Skills');
-    
-    // Group skills into a comma-separated line (Jake's format)
-    const skillLine = sections.skills.join(', ');
-    doc.setFontSize(cfg.bodySize);
-    
-    // Bold "Technologies:" prefix
-    doc.setFont('helvetica', 'bold');
-    const prefix = 'Technologies: ';
-    doc.text(prefix, cfg.marginX, y);
-    const prefixW = doc.getTextWidth(prefix);
-    
-    doc.setFont('helvetica', 'normal');
-    const remaining = doc.splitTextToSize(skillLine, maxW - prefixW);
-    if (remaining.length > 0) {
-      doc.text(remaining[0], cfg.marginX + prefixW, y);
-      y += lh(cfg.bodySize);
-      // Remaining lines without prefix
-      for (let i = 1; i < remaining.length; i++) {
-        pageBreak(lh(cfg.bodySize));
-        doc.text(remaining[i], cfg.marginX, y);
-        y += lh(cfg.bodySize);
-      }
-    }
-    y += cfg.subSectionGap;
-  }
-
-  // ========================================
-  // PROJECTS — Name bold, description as bullet
-  // ========================================
-  if (sections.projects && sections.projects.length > 0) {
-    sectionHeading('Projects');
-    
-    sections.projects.forEach(proj => {
-      pageBreak(lh(cfg.bodySize) * 2);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(cfg.bodySize);
-      doc.text(proj.name, cfg.marginX, y);
-      doc.setFont('helvetica', 'normal');
-      y += lh(cfg.bodySize);
-
-      const descLines = doc.splitTextToSize(`•  ${proj.description}`, maxW - cfg.bulletIndent);
-      descLines.forEach((line: string, i: number) => {
-        pageBreak(lh(cfg.bodySize));
-        doc.text(line, cfg.marginX + (i === 0 ? 0 : cfg.bulletIndent), y);
-        y += lh(cfg.bodySize);
+      const lines = doc.splitTextToSize(skillLine, maxW - c.itemIndent - pW);
+      lines.forEach((line: string, i: number) => {
+        needSpace(lh(c.subPt));
+        doc.text(line, c.mX + c.itemIndent + (i === 0 ? pW : 0), y);
+        y += lh(c.subPt);
       });
-      y += cfg.subSectionGap;
-    });
+    }
   }
 
-  // ========================================
-  // CERTIFICATIONS — bullet list
-  // ========================================
-  if (sections.certifications && sections.certifications.length > 0) {
-    sectionHeading('Certifications');
-    
-    sections.certifications.forEach(cert => {
-      pageBreak(lh(cfg.bodySize));
-      doc.setFontSize(cfg.bodySize);
-      doc.text(`•  ${cert}`, cfg.marginX, y);
-      y += lh(cfg.bodySize);
+  // ============================================
+  // CERTIFICATIONS
+  // ============================================
+  if (s.certifications && s.certifications.length > 0) {
+    sectionHead('Certifications');
+    doc.setFontSize(c.subPt);
+    s.certifications.forEach(cert => {
+      needSpace(lh(c.subPt));
+      doc.text(`\u2022  ${cert}`, c.mX + c.itemIndent + 0.15, y);
+      y += lh(c.subPt);
     });
   }
 

@@ -95,29 +95,34 @@ export async function executeEasyApply(
             linkedin: questionDefaults.linkedIn || undefined,
           },
           summary: tailoredResume.summary || '',
+          skillCategories: tailoredResume.skillCategories || {},
           skills: tailoredResume.skills || [],
           experience: (tailoredResume.experience || []).map((e: any) => ({
             company: e.company,
+            location: e.location || '',
             title: e.title,
             dateRange: e.duration,
-            bullets: e.bullets,
+            bullets: e.bullets || [],
           })),
           education: (tailoredResume.education || []).map((e: any) => ({
             institution: e.institution,
+            location: e.location || '',
             degree: e.degree,
             year: e.year,
           })),
           certifications: tailoredResume.certifications || [],
           projects: (tailoredResume.projects || []).map((p: any) => ({
             name: p.name,
-            description: p.description,
+            techStack: p.techStack || '',
+            duration: p.duration || '',
+            bullets: p.bullets || (p.description ? [p.description] : []),
           })),
         };
         tailoredPdfBlob = generateTailoredResumePDF(sections, 1);
         resume = 'Tailored resume (AI)';
         log.info(`📄 Tailored PDF generated: ${(tailoredPdfBlob.size / 1024).toFixed(1)} KB | ` +
           `Exp: ${sections.experience.length} | Edu: ${sections.education.length} | ` +
-          `Certs: ${sections.certifications.length} | Projects: ${sections.projects.length}`);
+          `Skills: ${Object.keys(sections.skillCategories).length} categories | Projects: ${sections.projects.length}`);
       } catch (e) {
         log.warn('Failed to generate tailored PDF, will use default resume', e);
       }

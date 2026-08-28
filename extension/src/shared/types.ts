@@ -79,11 +79,12 @@ export interface StandOutTips {
 
 export interface TailoredResumeData {
   summary: string;
-  skills: string[];
-  experience: { title: string; company: string; duration: string; bullets: string[] }[];
-  education: { institution: string; degree: string; year: string }[];
+  skillCategories: Record<string, string>;  // { "Languages": "Java, Python", ... }
+  skills: string[];                          // Fallback flat list
+  experience: { company: string; location: string; title: string; duration: string; bullets: string[] }[];
+  education: { institution: string; location: string; degree: string; year: string }[];
   certifications: string[];
-  projects: { name: string; description: string }[];
+  projects: { name: string; techStack: string; duration: string; bullets: string[]; description?: string }[];
   atsScore: number;
   keywordsAdded: string[];
 }

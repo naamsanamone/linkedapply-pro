@@ -1192,26 +1192,31 @@ async function downloadTailoredResume(): Promise<void> {
   try {
     const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
     const resume = currentReviewData.tailoredResume;
-    // Convert TailoredResumeData → ResumeSections for PDF generator
+    // Convert TailoredResumeData → ResumeSections (Jake's format)
     const sections = {
       contactInfo: { name: '', email: '', phone: '', location: '' }, // filled from profile at runtime
       summary: resume.summary,
-      skills: resume.skills,
+      skillCategories: resume.skillCategories || {},
+      skills: resume.skills || [],
       experience: (resume.experience || []).map((e: any) => ({
         company: e.company,
+        location: e.location || '',
         title: e.title,
         dateRange: e.duration,
-        bullets: e.bullets,
+        bullets: e.bullets || [],
       })),
       education: (resume.education || []).map((e: any) => ({
         institution: e.institution,
+        location: e.location || '',
         degree: e.degree,
         year: e.year,
       })),
       certifications: resume.certifications || [],
       projects: (resume.projects || []).map((p: any) => ({
         name: p.name,
-        description: p.description,
+        techStack: p.techStack || '',
+        duration: p.duration || '',
+        bullets: p.bullets || (p.description ? [p.description] : []),
       })),
     };
     const blob = generateTailoredResumePDF(sections, 1);
