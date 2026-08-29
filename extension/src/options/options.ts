@@ -438,6 +438,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const text = await extractTextFromPDF(file);
       await setStorage(STORAGE_KEYS.RESUME_TEXT, text);
+      await chrome.storage.local.remove(STORAGE_KEYS.RESUME_STRUCTURED); // re-parse on next tailor
       const wordCount = text.split(/\s+/).filter(Boolean).length;
       if (statusEl) {
         statusEl.textContent = `✓ Resume parsed: ${wordCount} words. JD matching enabled.`;

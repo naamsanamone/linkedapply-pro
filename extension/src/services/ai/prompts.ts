@@ -116,6 +116,52 @@ Return ONLY valid JSON:
 // Legacy prompt kept for optional "full AI rewrite" mode
 export const RESUME_TAILOR_PROMPT = JD_KEYWORDS_PROMPT;
 
+// ======== RESUME STRUCTURE PARSING (one-time on upload) ========
+
+export const PARSE_RESUME_PROMPT = `
+Parse this resume text into structured JSON. Extract ALL sections exactly as written — do NOT modify, rewrite, or improve any content. Copy text verbatim.
+
+RESUME TEXT:
+{resumeText}
+
+Return ONLY valid JSON:
+{
+  "skills": ["Java", "Python", "Spring Boot", "Docker"],
+  "experience": [
+    {
+      "company": "Company Name",
+      "location": "City, State",
+      "title": "Job Title",
+      "duration": "Mon YYYY -- Mon YYYY or Present",
+      "bullets": ["exact bullet text from resume", "another bullet"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University Name",
+      "location": "City, State",
+      "degree": "Degree Name",
+      "year": "YYYY or date range"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Name",
+      "techStack": "tech1, tech2",
+      "duration": "Mon YYYY -- Mon YYYY",
+      "bullets": ["exact bullet text"]
+    }
+  ],
+  "certifications": ["Cert name 1"]
+}
+
+RULES:
+1. Copy ALL bullet points EXACTLY as written — do not rephrase
+2. Include ALL experience entries, ALL education, ALL projects
+3. If a section is missing from the resume, return an empty array
+4. For skills: extract every technology, tool, language, framework mentioned anywhere
+`;
+
 // ======== COVER LETTER (Premium) ========
 
 export const COVER_LETTER_PROMPT = `

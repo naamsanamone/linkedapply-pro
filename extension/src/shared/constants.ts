@@ -57,6 +57,7 @@ export const STORAGE_KEYS = {
   USER_SKILLS_MAP: 'user_skills_map',
   ANSWER_MEMORY: 'answer_memory',
   RESUME_TEXT: 'resume_text',
+  RESUME_STRUCTURED: 'resume_structured',
   MATCH_FILTER: 'match_filter',
   USAGE_STATE: 'linkedapply_usage_state',
   PRE_APPLY_REVIEW: 'pre_apply_review',
