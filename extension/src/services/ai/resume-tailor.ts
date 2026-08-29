@@ -87,7 +87,7 @@ export async function aiTailorResume(
 
     const jdKeywords = await client.completeJSON<JDKeywords>(prompt, {
       temperature: 0.1,
-      maxTokens: 500, // Tiny — just keyword extraction
+      maxTokens: 2000,
     });
 
     const allJdKeywords = [

@@ -203,6 +203,10 @@ class GeminiProvider implements AIProviderClient {
         if (options?.maxTokens) {
           body.generationConfig = { ...body.generationConfig, maxOutputTokens: options.maxTokens };
         }
+        // Force JSON output for completeJSON calls (signaled by low maxTokens or explicitly)
+        if (options?.responseFormat === 'json') {
+          body.generationConfig = { ...body.generationConfig, responseMimeType: 'application/json' };
+        }
 
         const url = `${this.baseUrl}:generateContent?key=${this.apiKey}`;
         const response = await fetch(url, {
@@ -263,7 +267,7 @@ class GeminiProvider implements AIProviderClient {
 
   async completeJSON<T = any>(prompt: string, options?: CompletionOptions): Promise<T> {
     const enrichedPrompt = prompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no explanations. Ensure JSON is complete and properly closed.';
-    const raw = await this.complete(enrichedPrompt, options);
+    const raw = await this.complete(enrichedPrompt, { ...options, responseFormat: 'json' });
 
     // Clean markdown code blocks (aggressive — handle all variations)
     let cleaned = raw.trim();
