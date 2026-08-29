@@ -571,8 +571,14 @@ async function handleAITailorResume(payload: any): Promise<any> {
     const profile = await getStorage<UserProfile>(STORAGE_KEYS.USER_PROFILE);
     if (!profile) return { error: 'No user profile found' };
 
-    const resumeText = await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
+    // Use uploaded resume if provided, otherwise use saved resume
+    const resumeText = payload.resumeOverride || await getStorage<string>(STORAGE_KEYS.RESUME_TEXT);
     const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP);
+
+    // If custom resume uploaded, clear cached structure to force re-parse
+    if (payload.resumeOverride) {
+      await chrome.storage.local.remove(STORAGE_KEYS.RESUME_STRUCTURED);
+    }
 
     const result = await aiTailorResume(
       aiClient, profile, payload.jobDescription, null,

@@ -245,6 +245,24 @@
         </p>
 
         <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 6px;">Resume (optional — uses saved resume if not provided)</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="file" id="tailor-resume-upload" accept=".pdf,.txt" style="display: none;" />
+            <button class="btn btn-outline btn-sm" id="tailor-resume-upload-btn" style="flex: 1;">📄 Upload Resume (PDF/TXT)</button>
+            <span id="tailor-resume-status" style="font-size: 11px; color: var(--color-text-secondary);">Using saved resume</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 6px;">Resume (optional — uses saved resume if not provided)</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="file" id="tailor-resume-upload" accept=".pdf,.txt" style="display: none;" />
+            <button class="btn btn-outline btn-sm" id="tailor-resume-upload-btn" style="flex: 0 0 auto;">📄 Upload Resume</button>
+            <span id="tailor-resume-status" style="font-size: 11px; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Using saved resume</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
           <label style="font-size: 12px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 6px;">Job Description</label>
           <textarea id="tailor-jd-input" placeholder="Paste the full job description here..." 
             style="width: 100%; min-height: 150px; max-height: 300px; padding: 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); font-size: 13px; font-family: inherit; resize: vertical;"></textarea>

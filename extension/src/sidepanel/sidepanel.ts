@@ -1504,15 +1504,50 @@ function hidePauseBanner(): void {
 
 // ---- On-Demand Resume Tailor Tab ----
 let lastTailoredData: any = null;
+let tailorResumeText: string | null = null;
 
 function initTailorTab(): void {
   const generateBtn = document.getElementById('tailor-generate-btn');
   const downloadBtn = document.getElementById('tailor-download-btn');
   const copyBtn = document.getElementById('tailor-copy-btn');
+  const uploadBtn = document.getElementById('tailor-resume-upload-btn');
+  const fileInput = document.getElementById('tailor-resume-upload') as HTMLInputElement;
 
   generateBtn?.addEventListener('click', handleTailorGenerate);
   downloadBtn?.addEventListener('click', handleTailorDownload);
   copyBtn?.addEventListener('click', handleTailorCopy);
+  uploadBtn?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', handleTailorResumeUpload);
+}
+
+async function handleTailorResumeUpload(): Promise<void> {
+  const fileInput = document.getElementById('tailor-resume-upload') as HTMLInputElement;
+  const statusEl = document.getElementById('tailor-resume-status')!;
+  const file = fileInput?.files?.[0];
+  if (!file) return;
+
+  try {
+    statusEl.textContent = '⏳ Parsing...';
+
+    if (file.name.endsWith('.txt')) {
+      tailorResumeText = await file.text();
+    } else if (file.name.endsWith('.pdf')) {
+      const { extractTextFromPDF } = await import('../services/resume-parser');
+      tailorResumeText = await extractTextFromPDF(file);
+    } else {
+      statusEl.textContent = '❌ Only PDF or TXT files';
+      return;
+    }
+
+    const wordCount = tailorResumeText.split(/\s+/).filter(Boolean).length;
+    statusEl.textContent = `✅ ${file.name} (${wordCount} words)`;
+    statusEl.style.color = 'var(--color-success, #22c55e)';
+    log.info(`Tailor tab: uploaded ${file.name} — ${wordCount} words`);
+  } catch (err: any) {
+    statusEl.textContent = `❌ Parse failed: ${err.message}`;
+    statusEl.style.color = 'var(--color-danger, #ef4444)';
+    tailorResumeText = null;
+  }
 }
 
 async function handleTailorGenerate(): Promise<void> {
@@ -1540,7 +1575,10 @@ async function handleTailorGenerate(): Promise<void> {
   try {
     const response = await chrome.runtime.sendMessage({
       type: 'AI_TAILOR_RESUME',
-      payload: { jobDescription: jd },
+      payload: { 
+        jobDescription: jd,
+        resumeOverride: tailorResumeText || undefined,
+      },
       timestamp: Date.now(),
     });
 

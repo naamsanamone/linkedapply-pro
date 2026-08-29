@@ -55,11 +55,11 @@ const J = {
   MX: 0.5,            // left/right margin (LaTeX: -0.5in offset)
   MT: 0.35,           // top margin
   MB: 0.35,           // bottom margin
-  NAME: 20,           // \Huge = ~20pt
-  HEAD: 11.5,         // \large section heading
-  BODY: 10.5,         // body text
-  SM: 10,             // \small items
-  LH: 1.15,           // line height multiplier
+  NAME: 16,           // \Huge = ~16pt
+  HEAD: 10,           // \large section heading
+  BODY: 9.5,          // body text
+  SM: 9,              // \small items
+  LH: 1.25,           // line height multiplier
   INDENT: 0.15,       // leftmargin=0.15in
 };
 
@@ -85,7 +85,7 @@ export function generateTailoredResumePDF(
   // ─── SECTION HEADING with horizontal rule ───
   // Draw text FIRST, advance y PAST the text, THEN draw rule
   const sectionHead = (title: string) => {
-    y += 0.14; // gap before section
+    y += 0.10; // gap before section
     checkPage(lineH(J.HEAD) + 0.08);
 
     doc.setFont('helvetica', 'bold');
@@ -97,7 +97,7 @@ export function generateTailoredResumePDF(
     doc.setLineWidth(0.7 / 72);
     doc.setDrawColor(0, 0, 0);
     doc.line(J.MX, y, J.W - J.MX, y);
-    y += 0.06; // gap after rule
+    y += 0.08; // gap after rule
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(J.BODY);
