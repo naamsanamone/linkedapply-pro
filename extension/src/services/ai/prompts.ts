@@ -119,18 +119,24 @@ export const RESUME_TAILOR_PROMPT = JD_KEYWORDS_PROMPT;
 // ======== RESUME STRUCTURE PARSING (one-time on upload) ========
 
 export const PARSE_RESUME_PROMPT = `
-Parse this resume text into structured JSON. Extract ALL sections exactly as written — do NOT modify, rewrite, or improve any content. Copy text verbatim.
+Parse this resume text into structured JSON. Extract ALL sections exactly as written — do NOT modify, rewrite, or improve any content. Copy text VERBATIM.
 
 RESUME TEXT:
 {resumeText}
 
 Return ONLY valid JSON:
 {
+  "skillCategories": {
+    "Languages": "Java, Python, SQL, JavaScript",
+    "Frameworks": "Spring Boot, React, Angular",
+    "Developer Tools": "Git, Docker, AWS, Jenkins",
+    "Libraries": "JUnit, Mockito, pandas"
+  },
   "skills": ["Java", "Python", "Spring Boot", "Docker"],
   "experience": [
     {
       "company": "Company Name",
-      "location": "City, State",
+      "location": "City, State/Country",
       "title": "Job Title",
       "duration": "Mon YYYY -- Mon YYYY or Present",
       "bullets": ["exact bullet text from resume", "another bullet"]
@@ -140,7 +146,7 @@ Return ONLY valid JSON:
     {
       "institution": "University Name",
       "location": "City, State",
-      "degree": "Degree Name",
+      "degree": "Degree Name and Major",
       "year": "YYYY or date range"
     }
   ],
@@ -155,11 +161,13 @@ Return ONLY valid JSON:
   "certifications": ["Cert name 1"]
 }
 
-RULES:
-1. Copy ALL bullet points EXACTLY as written — do not rephrase
-2. Include ALL experience entries, ALL education, ALL projects
-3. If a section is missing from the resume, return an empty array
-4. For skills: extract every technology, tool, language, framework mentioned anywhere
+CRITICAL RULES:
+1. Copy ALL bullet points EXACTLY as written — do not rephrase, summarize, or improve
+2. Include EVERY experience entry, EVERY education entry, EVERY project, EVERY certification
+3. If the resume has skill categories (Languages, Frameworks, etc), preserve them in skillCategories
+4. Also list all skills as a flat array in the skills field
+5. If a section is missing from the resume, return an empty array for it
+6. Do NOT skip any section — extract everything
 `;
 
 // ======== COVER LETTER (Premium) ========

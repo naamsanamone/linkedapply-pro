@@ -82,22 +82,16 @@ export function generateTailoredResumePDF(
     }
   };
 
-  // ─── SECTION HEADING with horizontal rule ───
-  // Draw text FIRST, advance y PAST the text, THEN draw rule
+  // ─── SECTION HEADING (bold, uppercase, no rule) ───
   const sectionHead = (title: string) => {
     y += 0.10; // gap before section
-    checkPage(lineH(J.HEAD) + 0.08);
+    checkPage(lineH(J.HEAD) + 0.04);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(J.HEAD);
     doc.text(title.toUpperCase(), J.MX, y);
-    y += lineH(J.HEAD); // advance PAST the text
-
-    // Draw rule at current y (guaranteed below text)
-    doc.setLineWidth(0.7 / 72);
-    doc.setDrawColor(0, 0, 0);
-    doc.line(J.MX, y, J.W - J.MX, y);
-    y += 0.08; // gap after rule
+    y += lineH(J.HEAD);
+    y += 0.03; // gap after heading
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(J.BODY);

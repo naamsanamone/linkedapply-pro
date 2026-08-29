@@ -56,6 +56,7 @@ export interface TailoredExperience {
 
 // ---- Structured resume (cached after first AI parse) ----
 interface StructuredResume {
+  skillCategories?: Record<string, string>;
   skills: string[];
   experience: { company: string; location: string; title: string; duration: string; bullets: string[] }[];
   education: { institution: string; location: string; degree: string; year: string }[];
@@ -94,16 +95,17 @@ export async function aiTailorResume(
     if (!structured && resumeText) {
       log.info('First-time resume parsing with AI (will be cached)...');
       const parsePrompt = fillPrompt(PARSE_RESUME_PROMPT, {
-        resumeText: resumeText.substring(0, 5000),
+        resumeText: resumeText.substring(0, 8000),
       });
 
       structured = await client.completeJSON<StructuredResume>(parsePrompt, {
         temperature: 0.1,
-        maxTokens: 4000,
+        maxTokens: 8000,
       });
 
       // Validate and normalize
       structured = {
+        skillCategories: structured.skillCategories || {},
         skills: structured.skills || [],
         experience: (structured.experience || []).map(e => ({
           ...e, location: e.location || '', bullets: e.bullets || [],
@@ -184,8 +186,10 @@ function buildTailoredResume(
   // Reorder: matched skills first
   const orderedSkills = [...matchedSkills, ...unmatchedSkills];
 
-  // ── Categorize skills (Jake's format) ──
-  const skillCategories = categorizeSkills(orderedSkills);
+  // ── Use AI-parsed skill categories if available, otherwise categorize ──
+  const skillCategories = (structured.skillCategories && Object.keys(structured.skillCategories).length > 0)
+    ? structured.skillCategories
+    : categorizeSkills(orderedSkills);
 
   // ── Reorder experience bullets (JD-matching first) ──
   const reorderedExperience = structured.experience.map(exp => ({
