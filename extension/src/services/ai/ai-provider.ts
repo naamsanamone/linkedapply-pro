@@ -265,11 +265,16 @@ class GeminiProvider implements AIProviderClient {
     const enrichedPrompt = prompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no explanations. Ensure JSON is complete and properly closed.';
     const raw = await this.complete(enrichedPrompt, options);
 
-    // Clean markdown code blocks
+    // Clean markdown code blocks (aggressive — handle all variations)
     let cleaned = raw.trim();
-    if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
-    else if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
-    if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
+    // Strip opening fence: ```json, ```JSON, ``` etc.
+    cleaned = cleaned.replace(/^```(?:json|JSON)?\s*\n?/m, '');
+    // Strip closing fence
+    cleaned = cleaned.replace(/\n?\s*```\s*$/m, '');
+    // Also handle inline fences
+    if (cleaned.startsWith('`') && cleaned.endsWith('`')) {
+      cleaned = cleaned.slice(1, -1);
+    }
     cleaned = cleaned.trim();
 
     try {
