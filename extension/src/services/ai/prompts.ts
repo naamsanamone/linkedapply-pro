@@ -94,72 +94,27 @@ Return ONLY valid JSON:
 }
 `;
 
-// ======== RESUME TAILORING (Premium) ========
+// ======== JD KEYWORD EXTRACTION (Hybrid Tailoring — AI only touches the JD) ========
 
-export const RESUME_TAILOR_PROMPT = `
-You are an expert ATS resume optimizer using Jake's Resume format (the most popular tech resume template).
-Take the candidate's FULL resume and rewrite it to achieve 90+ ATS score for this specific job.
+export const JD_KEYWORDS_PROMPT = `
+Extract the top keywords from this job description. Categorize them.
 
-CANDIDATE RESUME:
-{userProfile}
-
-TARGET JOB:
+JOB DESCRIPTION:
 {jobDescription}
 
-REQUIRED SKILLS:
-{requiredSkills}
-
-STRICT RULES:
-1. KEEP ALL FACTS TRUTHFUL — never fabricate experience, degrees, companies, or skills
-2. INCLUDE ALL experience entries from the original resume — not just the most recent one
-3. Each job: 3-6 bullets with action verbs + quantified results (%, numbers, scale)
-4. INCLUDE education — copy EXACTLY from original (institution, location, degree, dates)
-5. INCLUDE projects with tech stack and 2-4 bullets each (from original resume)
-6. CATEGORIZE skills into: Languages, Frameworks, Developer Tools, Libraries (Jake's format)
-7. INCLUDE certifications if present in original resume
-8. Summary: 2-3 sentences directly addressing this job's requirements
-9. Add job description keywords the candidate legitimately possesses
-10. Target ATS score: 90-98 (be realistic)
-
-Return ONLY valid JSON (put atsScore FIRST):
+Return ONLY valid JSON:
 {
-  "atsScore": <90-98>,
-  "keywordsAdded": ["<keyword>"],
-  "summary": "<2-3 sentence tailored professional summary>",
-  "skillCategories": {
-    "Languages": "<Java, Python, SQL, JavaScript, etc>",
-    "Frameworks": "<Spring Boot, React, Flask, etc>",
-    "Developer Tools": "<Git, Docker, AWS, Jenkins, etc>",
-    "Libraries": "<JUnit, Mockito, pandas, etc>"
-  },
-  "experience": [
-    {
-      "company": "<company name>",
-      "location": "<city, state/country>",
-      "title": "<job title>",
-      "duration": "<Mon YYYY -- Mon YYYY or Present>",
-      "bullets": ["<action verb + result + metric>", "...3-6 bullets"]
-    }
-  ],
-  "education": [
-    {
-      "institution": "<university name>",
-      "location": "<city, state>",
-      "degree": "<degree name and major>",
-      "year": "<date range or graduation year>"
-    }
-  ],
-  "projects": [
-    {
-      "name": "<project name>",
-      "techStack": "<Python, Flask, React, Docker>",
-      "duration": "<Mon YYYY -- Mon YYYY>",
-      "bullets": ["<what you built/did>", "...2-4 bullets"]
-    }
-  ],
-  "certifications": ["<cert name>"]
+  "hardSkills": ["Java", "Spring Boot", "PostgreSQL"],
+  "softSkills": ["leadership", "communication"],
+  "tools": ["Docker", "AWS", "Jenkins", "Git"],
+  "domain": ["fintech", "microservices", "REST API"],
+  "seniority": ["senior", "3+ years", "lead"],
+  "jobTitle": "Software Engineer"
 }
 `;
+
+// Legacy prompt kept for optional "full AI rewrite" mode
+export const RESUME_TAILOR_PROMPT = JD_KEYWORDS_PROMPT;
 
 // ======== COVER LETTER (Premium) ========
 

@@ -1534,7 +1534,7 @@ async function handleTailorGenerate(): Promise<void> {
   generateBtn.textContent = '⏳ Generating...';
   statusEl.style.display = 'block';
   statusEl.style.background = 'var(--color-bg-secondary)';
-  statusEl.textContent = '🔄 AI is tailoring your resume... (15-30s)';
+  statusEl.textContent = '🔄 Extracting JD keywords & matching resume... (2-5s)';
   resultEl.style.display = 'none';
 
   try {
