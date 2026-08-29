@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDailyGoal();
   initPauseControls();
   initFailedLogToggle();
+  initTailorTab();
   loadDashboardData();
 });
 
@@ -38,6 +39,7 @@ function initTabs(): void {
   const contents: Record<string, HTMLElement | null> = {
     overview: document.getElementById('tab-overview'),
     jobs: document.getElementById('tab-jobs'),
+    tailor: document.getElementById('tab-tailor'),
     analytics: document.getElementById('tab-analytics'),
   };
 
@@ -1498,4 +1500,160 @@ function showPauseBanner(message?: string): void {
 function hidePauseBanner(): void {
   const banner = document.getElementById('pause-banner');
   if (banner) banner.style.display = 'none';
+}
+
+// ---- On-Demand Resume Tailor Tab ----
+let lastTailoredData: any = null;
+
+function initTailorTab(): void {
+  const generateBtn = document.getElementById('tailor-generate-btn');
+  const downloadBtn = document.getElementById('tailor-download-btn');
+  const copyBtn = document.getElementById('tailor-copy-btn');
+
+  generateBtn?.addEventListener('click', handleTailorGenerate);
+  downloadBtn?.addEventListener('click', handleTailorDownload);
+  copyBtn?.addEventListener('click', handleTailorCopy);
+}
+
+async function handleTailorGenerate(): Promise<void> {
+  const jdInput = document.getElementById('tailor-jd-input') as HTMLTextAreaElement;
+  const statusEl = document.getElementById('tailor-status')!;
+  const resultEl = document.getElementById('tailor-result')!;
+  const generateBtn = document.getElementById('tailor-generate-btn') as HTMLButtonElement;
+
+  const jd = jdInput?.value?.trim();
+  if (!jd || jd.length < 50) {
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'var(--color-bg-warning, #fff3cd)';
+    statusEl.textContent = '⚠ Please paste a full job description (at least 50 characters)';
+    return;
+  }
+
+  // Show loading
+  generateBtn.disabled = true;
+  generateBtn.textContent = '⏳ Generating...';
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'var(--color-bg-secondary)';
+  statusEl.textContent = '🔄 AI is tailoring your resume... (15-30s)';
+  resultEl.style.display = 'none';
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'AI_TAILOR_RESUME',
+      payload: { jobDescription: jd },
+      timestamp: Date.now(),
+    });
+
+    if (response?.error) {
+      statusEl.style.background = 'var(--color-bg-danger, #f8d7da)';
+      statusEl.textContent = `❌ ${response.error}`;
+      return;
+    }
+
+    if (!response?.result) {
+      statusEl.textContent = '❌ No result returned from AI';
+      return;
+    }
+
+    lastTailoredData = response.result;
+    const r = response.result;
+
+    // Show result
+    statusEl.style.display = 'none';
+    resultEl.style.display = 'block';
+
+    // ATS Score
+    const atsEl = document.getElementById('tailor-ats-score')!;
+    atsEl.textContent = `ATS: ${r.atsScore}/100`;
+    atsEl.style.color = r.atsScore >= 80 ? 'var(--color-success)' : 'var(--color-warning)';
+
+    // Keywords
+    const kwEl = document.getElementById('tailor-keywords')!;
+    kwEl.textContent = `Keywords added: ${(r.keywordsAdded || []).join(', ')}`;
+
+    // Skills preview
+    const skillsEl = document.getElementById('tailor-skills-preview')!;
+    if (r.skillCategories && Object.keys(r.skillCategories).length > 0) {
+      skillsEl.innerHTML = Object.entries(r.skillCategories)
+        .map(([cat, skills]) => `<div><strong>${cat}:</strong> ${skills}</div>`)
+        .join('');
+    } else if (r.skills?.length > 0) {
+      skillsEl.textContent = r.skills.join(', ');
+    }
+
+    // Experience preview
+    const expEl = document.getElementById('tailor-experience-preview')!;
+    expEl.innerHTML = (r.experience || []).map((e: any) =>
+      `<div style="margin-bottom: 8px;"><strong>${e.company}</strong> — ${e.title}<br>` +
+      `<em>${e.duration}</em><br>` +
+      `<ul style="margin: 4px 0; padding-left: 16px;">${(e.bullets || []).map((b: string) => `<li>${b}</li>`).join('')}</ul></div>`
+    ).join('');
+
+    log.info(`✨ Resume tailored on-demand — ATS: ${r.atsScore}%, ${(r.keywordsAdded || []).length} keywords`);
+  } catch (err: any) {
+    statusEl.style.background = 'var(--color-bg-danger, #f8d7da)';
+    statusEl.textContent = `❌ ${err.message || 'Failed to tailor resume'}`;
+    log.error('On-demand tailoring failed', err);
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = '🚀 Generate Tailored Resume';
+  }
+}
+
+async function handleTailorDownload(): Promise<void> {
+  if (!lastTailoredData) return;
+  try {
+    const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
+    const r = lastTailoredData;
+    const profile = await getStorage<any>(STORAGE_KEYS.USER_PROFILE);
+    const sections = {
+      contactInfo: {
+        name: profile ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() : '',
+        email: profile?.email || '',
+        phone: profile?.phoneNumber || '',
+        location: [profile?.currentCity, profile?.state].filter(Boolean).join(', ') || '',
+      },
+      summary: r.summary || '',
+      skillCategories: r.skillCategories || {},
+      skills: r.skills || [],
+      experience: (r.experience || []).map((e: any) => ({
+        company: e.company, location: e.location || '',
+        title: e.title, dateRange: e.duration,
+        bullets: e.bullets || [],
+      })),
+      education: (r.education || []).map((e: any) => ({
+        institution: e.institution, location: e.location || '',
+        degree: e.degree, year: e.year,
+      })),
+      certifications: r.certifications || [],
+      projects: (r.projects || []).map((p: any) => ({
+        name: p.name, techStack: p.techStack || '',
+        duration: p.duration || '',
+        bullets: p.bullets || (p.description ? [p.description] : []),
+      })),
+    };
+    const blob = generateTailoredResumePDF(sections, 1);
+    downloadBlob(blob, 'tailored_resume.pdf');
+    log.info('📥 On-demand tailored resume downloaded');
+  } catch (e) {
+    log.error('Failed to download tailored PDF', e);
+  }
+}
+
+function handleTailorCopy(): void {
+  if (!lastTailoredData) return;
+  const r = lastTailoredData;
+  const text = [
+    r.summary || '',
+    '',
+    'SKILLS: ' + (r.skills || []).join(', '),
+    '',
+    ...(r.experience || []).flatMap((e: any) => [
+      `${e.company} — ${e.title} (${e.duration})`,
+      ...(e.bullets || []).map((b: string) => `• ${b}`),
+      '',
+    ]),
+  ].join('\n');
+  navigator.clipboard.writeText(text);
+  log.info('📋 Tailored resume copied to clipboard');
 }

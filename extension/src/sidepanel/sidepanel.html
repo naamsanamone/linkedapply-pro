@@ -26,6 +26,7 @@
     <nav class="sidepanel__tabs" role="tablist">
       <button class="sidepanel__tab sidepanel__tab--active" data-tab="overview" role="tab">Overview</button>
       <button class="sidepanel__tab" data-tab="jobs" role="tab">Jobs</button>
+      <button class="sidepanel__tab" data-tab="tailor" role="tab">✨ Tailor</button>
       <button class="sidepanel__tab" data-tab="analytics" role="tab">Analytics</button>
     </nav>
 
@@ -232,6 +233,55 @@
       <div class="glass-card sidepanel__chart-card animate-fade-in-up">
         <h3 class="sidepanel__section-title">Top Locations</h3>
         <div class="bar-chart" id="locations-chart"></div>
+      </div>
+    </div>
+
+    <!-- ============ TAB: TAILOR RESUME ============ -->
+    <div class="sidepanel__content" id="tab-tailor" style="display: none;">
+      <div class="glass-card animate-fade-in-up" style="padding: 16px;">
+        <h3 class="sidepanel__section-title">✨ Tailor Resume to Job Description</h3>
+        <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 12px;">
+          Paste a job description below and generate an ATS-optimized resume using Jake's Resume template.
+        </p>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 6px;">Job Description</label>
+          <textarea id="tailor-jd-input" placeholder="Paste the full job description here..." 
+            style="width: 100%; min-height: 150px; max-height: 300px; padding: 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); font-size: 13px; font-family: inherit; resize: vertical;"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="tailor-generate-btn" style="width: 100%; margin-bottom: 8px;">
+          🚀 Generate Tailored Resume
+        </button>
+
+        <div id="tailor-status" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;"></div>
+
+        <!-- Result section (hidden until generated) -->
+        <div id="tailor-result" style="display: none;">
+          <div class="glass-card" style="padding: 12px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 600;">📄 Tailored Resume</span>
+              <span id="tailor-ats-score" style="font-weight: 700; color: var(--color-success);"></span>
+            </div>
+            <div id="tailor-keywords" style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 10px;"></div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm" id="tailor-download-btn" style="flex: 1;">📥 Download PDF</button>
+              <button class="btn btn-outline btn-sm" id="tailor-copy-btn" style="flex: 1;">📋 Copy Text</button>
+            </div>
+          </div>
+
+          <!-- Skills Preview -->
+          <details style="margin-bottom: 8px;">
+            <summary style="font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 0;">📊 Skills & Keywords Added</summary>
+            <div id="tailor-skills-preview" style="font-size: 12px; padding: 8px; background: var(--color-bg-secondary); border-radius: 6px;"></div>
+          </details>
+
+          <!-- Experience Preview -->
+          <details>
+            <summary style="font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 0;">💼 Experience Preview</summary>
+            <div id="tailor-experience-preview" style="font-size: 12px; padding: 8px; background: var(--color-bg-secondary); border-radius: 6px;"></div>
+          </details>
+        </div>
       </div>
     </div>
 

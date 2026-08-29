@@ -7,7 +7,7 @@
 import { createLogger } from '../../shared/logger';
 import { getStorage, setStorage, updateStorage } from '../../shared/storage';
 import { STORAGE_KEYS, TIME_SAVED, DEFAULT_SEARCH_PREFS, DEFAULT_BOT_SETTINGS, DEFAULT_PRE_APPLY_SETTINGS } from '../../shared/constants';
-import type { TailoredResume } from '../../services/ai/resume-tailor';
+// Resume tailoring is now on-demand only (sidepanel), not per-job
 import type {
   BotStatus,
   SearchPreferences,
@@ -259,26 +259,7 @@ async function processJob(
     }
   }
 
-  // Step 6b: Resume Tailoring (if match scoring ran successfully) — routed through background worker
-  let tailoredResult: TailoredResume | null = null;
-  if (computedMatchScore !== null && jd.description !== 'Unknown') {
-    try {
-      const tailorResponse = await chrome.runtime.sendMessage({
-        type: 'AI_TAILOR_RESUME',
-        payload: { jobDescription: jd.description },
-        timestamp: Date.now(),
-      });
-
-      if (tailorResponse?.result) {
-        tailoredResult = tailorResponse.result;
-        log.info(`📝 Resume tailored — ATS: ${tailoredResult!.atsScore}%, keywords: ${tailoredResult!.keywordsAdded.join(', ')}`);
-      } else if (tailorResponse?.error) {
-        log.warn(`Resume tailoring: ${tailorResponse.error}`);
-      }
-    } catch (error) {
-      log.warn('Resume tailoring failed, continuing without', error);
-    }
-  }
+  // Resume tailoring removed from auto-apply loop (now on-demand in sidepanel)
 
   // Step 6c & 6d: Cover Letter + Stand-Out Tips — ON-DEMAND (generated in review panel)
   let coverLetterResult: CoverLetterData | null = null;
@@ -286,9 +267,8 @@ async function processJob(
 
   // Step 6e: Pre-Apply Review — pause for user decision
   const preApplySettings = await getStorage<PreApplySettings>(STORAGE_KEYS.PRE_APPLY_SETTINGS) || DEFAULT_PRE_APPLY_SETTINGS;
-  let useTailoredResume = true; // default: apply with tailored
 
-  if (preApplySettings.enabled && (computedMatchScore !== null || tailoredResult !== null)) {
+  if (preApplySettings.enabled && computedMatchScore !== null) {
     const reviewData: PreApplyReviewData = {
       jobId: details.jobId,
       title: details.title,
@@ -296,7 +276,7 @@ async function processJob(
       location: details.workLocation,
       matchScore: computedMatchScore,
       matchDetails: computedMatchDetails,
-      tailoredResume: tailoredResult,
+      tailoredResume: null,
       coverLetter: null,
       standOutTips: null,
       jobDescription: jd.description,
@@ -311,7 +291,7 @@ async function processJob(
       return;
     }
 
-    useTailoredResume = decision.action === 'apply_tailored';
+    // useTailoredResume removed — always use default resume
     coverLetterResult = decision.coverLetter || null;
     standOutResult = decision.standOutTips || null;
     log.info(`📋 Pre-apply decision: ${decision.action} for "${details.title}"`);
@@ -327,7 +307,7 @@ async function processJob(
       details.workLocation,
       jd.description !== 'Unknown' ? jd.description : null,
       settings,
-      useTailoredResume ? tailoredResult : null
+      null // no per-job tailoring — use default resume
     );
 
     if (result.success) {
@@ -335,7 +315,7 @@ async function processJob(
       const job: Job = buildJobRecord(details, jd, hrInfo, dateListed, reposted, jobLink, 'Easy Applied', result.questionsAnswered);
       job.matchScore = computedMatchScore;
       if (computedMatchDetails) job.matchDetails = computedMatchDetails;
-      if (tailoredResult) job.tailoredResume = tailoredResult;
+      // tailoredResume no longer set per-job
       if (coverLetterResult) job.coverLetter = coverLetterResult;
       if (standOutResult) job.standOutTips = standOutResult;
       job.status = 'applied';
@@ -360,7 +340,7 @@ async function processJob(
         job.status = 'external';
         job.matchScore = computedMatchScore;
         if (computedMatchDetails) job.matchDetails = computedMatchDetails;
-        if (tailoredResult) job.tailoredResume = tailoredResult;
+        // tailoredResume no longer set per-job
         if (coverLetterResult) job.coverLetter = coverLetterResult;
         if (standOutResult) job.standOutTips = standOutResult;
         await saveAppliedJob(job);
