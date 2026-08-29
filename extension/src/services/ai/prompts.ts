@@ -119,57 +119,69 @@ export const RESUME_TAILOR_PROMPT = JD_KEYWORDS_PROMPT;
 // ======== RESUME STRUCTURE PARSING (one-time on upload) ========
 
 export const PARSE_RESUME_PROMPT = `
-Parse this resume text into structured JSON. Extract ALL sections exactly as written — do NOT modify, rewrite, or improve any content. Copy text VERBATIM.
+Parse this resume into an ORDERED array of sections. Return EVERY section found in the resume. Copy all text VERBATIM — do NOT modify, rephrase, or improve anything.
 
 RESUME TEXT:
 {resumeText}
 
-Return ONLY valid JSON:
-{
-  "skillCategories": {
-    "Languages": "Java, Python, SQL, JavaScript",
-    "Frameworks": "Spring Boot, React, Angular",
-    "Developer Tools": "Git, Docker, AWS, Jenkins",
-    "Libraries": "JUnit, Mockito, pandas"
+Return ONLY valid JSON — an array of section objects. Each section has "name", "type", and type-specific content:
+
+[
+  {
+    "name": "Professional Summary",
+    "type": "summary",
+    "text": "exact summary paragraph from resume"
   },
-  "skills": ["Java", "Python", "Spring Boot", "Docker"],
-  "experience": [
-    {
-      "company": "Company Name",
-      "location": "City, State/Country",
-      "title": "Job Title",
-      "duration": "Mon YYYY -- Mon YYYY or Present",
-      "bullets": ["exact bullet text from resume", "another bullet"]
-    }
-  ],
-  "education": [
-    {
-      "institution": "University Name",
-      "location": "City, State",
-      "degree": "Degree Name and Major",
-      "year": "YYYY or date range"
-    }
-  ],
-  "projects": [
-    {
-      "name": "Project Name",
-      "techStack": "tech1, tech2",
-      "duration": "Mon YYYY -- Mon YYYY",
-      "bullets": ["exact bullet text"]
-    }
-  ],
-  "certifications": ["Cert name 1"],
-  "achievements": ["Award or achievement text"]
-}
+  {
+    "name": "Technical Skills",
+    "type": "skills",
+    "categories": {"Languages": "Java, Python", "Frameworks": "Spring Boot, React"},
+    "items": ["Java", "Python", "Spring Boot"]
+  },
+  {
+    "name": "Professional Experience",
+    "type": "experience",
+    "entries": [
+      {"company": "Company", "location": "City, State", "title": "Job Title", "duration": "Mon YYYY -- Present", "bullets": ["exact bullet 1", "exact bullet 2"]}
+    ]
+  },
+  {
+    "name": "Personal Projects",
+    "type": "projects",
+    "entries": [
+      {"name": "Project Name", "techStack": "tech1, tech2", "duration": "Mon YYYY -- Mon YYYY", "bullets": ["exact bullet"]}
+    ]
+  },
+  {
+    "name": "Education",
+    "type": "education",
+    "entries": [
+      {"institution": "University", "location": "City, State", "degree": "Degree Name", "year": "YYYY"}
+    ]
+  },
+  {
+    "name": "Certifications",
+    "type": "list",
+    "items": ["Cert name 1"]
+  }
+]
+
+SECTION TYPES:
+- "summary": paragraph text (use for Summary, Objective, Profile)
+- "skills": categorized skills (use for Technical Skills, Core Competencies)
+- "experience": work entries with bullets (use for Experience, Work History)
+- "projects": project entries with bullets (use for Projects)
+- "education": education entries (use for Education)
+- "list": simple bullet items (use for Certifications, Achievements, Awards, Publications, Volunteer, Languages, Interests, Honors, or any other section)
 
 CRITICAL RULES:
-1. Copy ALL bullet points EXACTLY as written — do not rephrase, summarize, or improve
-2. Include EVERY experience entry, EVERY education entry, EVERY project, EVERY certification
-3. If the resume has skill categories (Languages, Frameworks, etc), preserve them in skillCategories
-4. Also list all skills as a flat array in the skills field
-5. If a section is missing from the resume, return an empty array for it
-6. Do NOT skip any section — extract everything
+1. Copy ALL text VERBATIM — do not rephrase, summarize, or improve
+2. Return sections in the SAME ORDER as the resume
+3. Include EVERY section found — do not skip any
+4. Include ALL entries and ALL bullets within each section
+5. Use "list" type for any section not matching the other types
 `;
+
 
 // ======== COVER LETTER (Premium) ========
 

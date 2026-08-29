@@ -78,15 +78,17 @@ export interface StandOutTips {
 }
 
 export interface TailoredResumeData {
+  sections?: any[];                            // Dynamic sections array (new format)
   summary: string;
-  skillCategories: Record<string, string>;  // { "Languages": "Java, Python", ... }
-  skills: string[];                          // Fallback flat list
+  skillCategories: Record<string, string>;     // { "Languages": "Java, Python", ... }
+  skills: string[];                            // Fallback flat list
   experience: { company: string; location: string; title: string; duration: string; bullets: string[] }[];
   education: { institution: string; location: string; degree: string; year: string }[];
   certifications: string[];
   projects: { name: string; techStack: string; duration: string; bullets: string[]; description?: string }[];
   atsScore: number;
   keywordsAdded: string[];
+  allSkills?: string[];
 }
 
 // ---- Pre-Apply Review ----

@@ -1194,34 +1194,8 @@ async function downloadTailoredResume(): Promise<void> {
   try {
     const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
     const resume = currentReviewData.tailoredResume;
-    // Convert TailoredResumeData → ResumeSections (Jake's format)
-    const sections = {
-      contactInfo: { name: '', email: '', phone: '', location: '' }, // filled from profile at runtime
-      summary: resume.summary,
-      skillCategories: resume.skillCategories || {},
-      skills: resume.skills || [],
-      experience: (resume.experience || []).map((e: any) => ({
-        company: e.company,
-        location: e.location || '',
-        title: e.title,
-        dateRange: e.duration,
-        bullets: e.bullets || [],
-      })),
-      education: (resume.education || []).map((e: any) => ({
-        institution: e.institution,
-        location: e.location || '',
-        degree: e.degree,
-        year: e.year,
-      })),
-      certifications: resume.certifications || [],
-      projects: (resume.projects || []).map((p: any) => ({
-        name: p.name,
-        techStack: p.techStack || '',
-        duration: p.duration || '',
-        bullets: p.bullets || (p.description ? [p.description] : []),
-      })),
-    };
-    const blob = generateTailoredResumePDF(sections, 1);
+    const contactInfo = { name: '', email: '', phone: '', location: '' };
+    const blob = generateTailoredResumePDF(contactInfo, resume.sections || [], 1);
     downloadBlob(blob, `tailored-resume-${currentReviewData.company}.pdf`);
     log.info(`📥 Tailored resume PDF downloaded for ${currentReviewData.company}`);
   } catch (e) {
@@ -1232,14 +1206,28 @@ async function downloadTailoredResume(): Promise<void> {
 function copyTailoredResume(): void {
   if (!currentReviewData?.tailoredResume) return;
   const resume = currentReviewData.tailoredResume;
-  const text = [
-    resume.summary,
-    '',
-    'SKILLS: ' + resume.skills.join(', '),
-    '',
-    ...resume.experience.map(e => `${e.title} at ${e.company} (${e.duration})\n${e.bullets.map(b => `• ${b}`).join('\n')}`),
-  ].join('\n');
-  navigator.clipboard.writeText(text);
+  const lines: string[] = [];
+  (resume.sections || []).forEach((s: any) => {
+    lines.push(s.name.toUpperCase());
+    if (s.type === 'summary' && s.text) lines.push(s.text);
+    if (s.type === 'skills' && s.categories) {
+      Object.entries(s.categories).forEach(([cat, val]) => lines.push(`${cat}: ${val}`));
+    }
+    if (s.type === 'experience' || s.type === 'projects') {
+      (s.entries || []).forEach((e: any) => {
+        lines.push(`${e.company || e.name} — ${e.title || e.techStack || ''} (${e.duration})`);
+        (e.bullets || []).forEach((b: string) => lines.push(`• ${b}`));
+      });
+    }
+    if (s.type === 'education') {
+      (s.entries || []).forEach((e: any) => lines.push(`${e.institution} — ${e.degree} (${e.year})`));
+    }
+    if (s.type === 'list') {
+      (s.items || []).forEach((item: string) => lines.push(`• ${item}`));
+    }
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n'));
 }
 
 // ================================================
@@ -1609,19 +1597,21 @@ async function handleTailorGenerate(): Promise<void> {
     const kwEl = document.getElementById('tailor-keywords')!;
     kwEl.textContent = `Keywords added: ${(r.keywordsAdded || []).join(', ')}`;
 
-    // Skills preview
+    // Skills preview (find skills section)
     const skillsEl = document.getElementById('tailor-skills-preview')!;
-    if (r.skillCategories && Object.keys(r.skillCategories).length > 0) {
-      skillsEl.innerHTML = Object.entries(r.skillCategories)
+    const skillsSection = (r.sections || []).find((s: any) => s.type === 'skills');
+    if (skillsSection?.categories && Object.keys(skillsSection.categories).length > 0) {
+      skillsEl.innerHTML = Object.entries(skillsSection.categories)
         .map(([cat, skills]) => `<div><strong>${cat}:</strong> ${skills}</div>`)
         .join('');
-    } else if (r.skills?.length > 0) {
-      skillsEl.textContent = r.skills.join(', ');
+    } else if (r.allSkills?.length > 0) {
+      skillsEl.textContent = r.allSkills.join(', ');
     }
 
-    // Experience preview
+    // Experience preview (find experience section)
     const expEl = document.getElementById('tailor-experience-preview')!;
-    expEl.innerHTML = (r.experience || []).map((e: any) =>
+    const expSection = (r.sections || []).find((s: any) => s.type === 'experience');
+    expEl.innerHTML = (expSection?.entries || []).map((e: any) =>
       `<div style="margin-bottom: 8px;"><strong>${e.company}</strong> — ${e.title}<br>` +
       `<em>${e.duration}</em><br>` +
       `<ul style="margin: 4px 0; padding-left: 16px;">${(e.bullets || []).map((b: string) => `<li>${b}</li>`).join('')}</ul></div>`
@@ -1644,34 +1634,13 @@ async function handleTailorDownload(): Promise<void> {
     const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
     const r = lastTailoredData;
     const profile = await getStorage<any>(STORAGE_KEYS.USER_PROFILE);
-    const sections = {
-      contactInfo: {
-        name: profile ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() : '',
-        email: profile?.email || '',
-        phone: profile?.phoneNumber || '',
-        location: [profile?.currentCity, profile?.state].filter(Boolean).join(', ') || '',
-      },
-      summary: r.summary || '',
-      skillCategories: r.skillCategories || {},
-      skills: r.skills || [],
-      experience: (r.experience || []).map((e: any) => ({
-        company: e.company, location: e.location || '',
-        title: e.title, dateRange: e.duration,
-        bullets: e.bullets || [],
-      })),
-      education: (r.education || []).map((e: any) => ({
-        institution: e.institution, location: e.location || '',
-        degree: e.degree, year: e.year,
-      })),
-      certifications: r.certifications || [],
-      achievements: r.achievements || [],
-      projects: (r.projects || []).map((p: any) => ({
-        name: p.name, techStack: p.techStack || '',
-        duration: p.duration || '',
-        bullets: p.bullets || (p.description ? [p.description] : []),
-      })),
+    const contactInfo = {
+      name: profile ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() : '',
+      email: profile?.email || '',
+      phone: profile?.phoneNumber || '',
+      location: [profile?.currentCity, profile?.state].filter(Boolean).join(', ') || '',
     };
-    const blob = generateTailoredResumePDF(sections, 1);
+    const blob = generateTailoredResumePDF(contactInfo, r.sections || [], 1);
     downloadBlob(blob, 'tailored_resume.pdf');
     log.info('📥 On-demand tailored resume downloaded');
   } catch (e) {
@@ -1682,17 +1651,27 @@ async function handleTailorDownload(): Promise<void> {
 function handleTailorCopy(): void {
   if (!lastTailoredData) return;
   const r = lastTailoredData;
-  const text = [
-    r.summary || '',
-    '',
-    'SKILLS: ' + (r.skills || []).join(', '),
-    '',
-    ...(r.experience || []).flatMap((e: any) => [
-      `${e.company} — ${e.title} (${e.duration})`,
-      ...(e.bullets || []).map((b: string) => `• ${b}`),
-      '',
-    ]),
-  ].join('\n');
-  navigator.clipboard.writeText(text);
+  const lines: string[] = [];
+  (r.sections || []).forEach((s: any) => {
+    lines.push(s.name.toUpperCase());
+    if (s.type === 'summary' && s.text) lines.push(s.text);
+    if (s.type === 'skills' && s.categories) {
+      Object.entries(s.categories).forEach(([cat, val]) => lines.push(`${cat}: ${val}`));
+    }
+    if (s.type === 'experience' || s.type === 'projects') {
+      (s.entries || []).forEach((e: any) => {
+        lines.push(`${e.company || e.name} — ${e.title || e.techStack || ''} (${e.duration})`);
+        (e.bullets || []).forEach((b: string) => lines.push(`• ${b}`));
+      });
+    }
+    if (s.type === 'education') {
+      (s.entries || []).forEach((e: any) => lines.push(`${e.institution} — ${e.degree} (${e.year})`));
+    }
+    if (s.type === 'list') {
+      (s.items || []).forEach((item: string) => lines.push(`• ${item}`));
+    }
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n'));
   log.info('📋 Tailored resume copied to clipboard');
 }
