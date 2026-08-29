@@ -40,6 +40,7 @@ export interface ResumeSections {
     year: string;
   }[];
   certifications: string[];
+  achievements?: string[];
   projects: {
     name: string;
     techStack: string;
@@ -221,42 +222,13 @@ export function generateTailoredResumePDF(
     y += lineH(J.SM);
   }
 
-  // ── SUMMARY ──
+  // ── 1. PROFESSIONAL SUMMARY ──
   if (sections.summary) {
-    sectionHead('Summary');
+    sectionHead('Professional Summary');
     wrapText(sections.summary, J.MX, contentW);
   }
 
-  // ── EDUCATION ──
-  if (sections.education?.length > 0) {
-    sectionHead('Education');
-    sections.education.forEach(edu => {
-      subheading(edu.institution, edu.location, edu.degree, edu.year);
-      y += 0.02;
-    });
-  }
-
-  // ── EXPERIENCE ──
-  if (sections.experience?.length > 0) {
-    sectionHead('Experience');
-    sections.experience.forEach((exp, i) => {
-      subheading(exp.company, exp.dateRange, exp.title, exp.location);
-      exp.bullets.forEach(b => bullet(b));
-      if (i < sections.experience.length - 1) y += 0.03;
-    });
-  }
-
-  // ── PROJECTS ──
-  if (sections.projects?.length > 0) {
-    sectionHead('Projects');
-    sections.projects.forEach((p, i) => {
-      projHead(p.name, p.techStack, p.duration);
-      p.bullets.forEach(b => bullet(b));
-      if (i < sections.projects.length - 1) y += 0.03;
-    });
-  }
-
-  // ── TECHNICAL SKILLS ──
+  // ── 2. TECHNICAL SKILLS ──
   if ((sections.skillCategories && Object.keys(sections.skillCategories).length > 0) ||
       sections.skills?.length > 0) {
     sectionHead('Technical Skills');
@@ -297,7 +269,47 @@ export function generateTailoredResumePDF(
     }
   }
 
-  // ── CERTIFICATIONS ──
+  // ── 3. PROFESSIONAL EXPERIENCE ──
+  if (sections.experience?.length > 0) {
+    sectionHead('Professional Experience');
+    sections.experience.forEach((exp, i) => {
+      subheading(exp.company, exp.dateRange, exp.title, exp.location);
+      exp.bullets.forEach(b => bullet(b));
+      if (i < sections.experience.length - 1) y += 0.03;
+    });
+  }
+
+  // ── 4. PERSONAL PROJECTS ──
+  if (sections.projects?.length > 0) {
+    sectionHead('Personal Projects');
+    sections.projects.forEach((p, i) => {
+      projHead(p.name, p.techStack, p.duration);
+      p.bullets.forEach(b => bullet(b));
+      if (i < sections.projects.length - 1) y += 0.03;
+    });
+  }
+
+  // ── 5. ACHIEVEMENTS ──
+  if (sections.achievements?.length) {
+    sectionHead('Achievements');
+    sections.achievements.forEach(a => {
+      checkPage(lineH(J.SM));
+      doc.setFontSize(J.SM);
+      doc.text(`\u2022  ${a}`, J.MX + J.INDENT + 0.12, y);
+      y += lineH(J.SM);
+    });
+  }
+
+  // ── 6. EDUCATION ──
+  if (sections.education?.length > 0) {
+    sectionHead('Education');
+    sections.education.forEach(edu => {
+      subheading(edu.institution, edu.location, edu.degree, edu.year);
+      y += 0.02;
+    });
+  }
+
+  // ── 7. CERTIFICATIONS ──
   if (sections.certifications?.length > 0) {
     sectionHead('Certifications');
     sections.certifications.forEach(c => {

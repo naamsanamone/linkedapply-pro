@@ -158,7 +158,8 @@ Return ONLY valid JSON:
       "bullets": ["exact bullet text"]
     }
   ],
-  "certifications": ["Cert name 1"]
+  "certifications": ["Cert name 1"],
+  "achievements": ["Award or achievement text"]
 }
 
 CRITICAL RULES:

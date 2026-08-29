@@ -1664,6 +1664,7 @@ async function handleTailorDownload(): Promise<void> {
         degree: e.degree, year: e.year,
       })),
       certifications: r.certifications || [],
+      achievements: r.achievements || [],
       projects: (r.projects || []).map((p: any) => ({
         name: p.name, techStack: p.techStack || '',
         duration: p.duration || '',

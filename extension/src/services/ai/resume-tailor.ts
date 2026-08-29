@@ -26,6 +26,7 @@ export interface TailoredResume {
   experience: TailoredExperience[];
   education: TailoredEducation[];
   certifications: string[];
+  achievements: string[];
   projects: TailoredProject[];
   atsScore: number;
   keywordsAdded: string[];
@@ -62,6 +63,7 @@ interface StructuredResume {
   education: { institution: string; location: string; degree: string; year: string }[];
   projects: { name: string; techStack: string; duration: string; bullets: string[] }[];
   certifications: string[];
+  achievements: string[];
 }
 
 // ---- JD keywords (from AI per-job) ----
@@ -117,6 +119,7 @@ export async function aiTailorResume(
           ...p, techStack: p.techStack || '', duration: p.duration || '', bullets: p.bullets || [],
         })),
         certifications: structured.certifications || [],
+        achievements: structured.achievements || [],
       };
 
       // Cache it — won't parse again until user uploads a new resume
@@ -227,6 +230,7 @@ function buildTailoredResume(
     experience: reorderedExperience,
     education: structured.education.map(e => ({ ...e, location: e.location || '' })),
     certifications: structured.certifications,
+    achievements: structured.achievements || [],
     projects: reorderedProjects,
     atsScore,
     keywordsAdded: matchedSkills,
