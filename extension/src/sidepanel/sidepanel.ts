@@ -1194,8 +1194,7 @@ async function downloadTailoredResume(): Promise<void> {
   try {
     const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
     const resume = currentReviewData.tailoredResume;
-    const contactInfo = { name: '', email: '', phone: '', location: '' };
-    const blob = generateTailoredResumePDF(contactInfo, resume.sections || [], 1);
+    const blob = generateTailoredResumePDF(resume.sections || [], 1);
     downloadBlob(blob, `tailored-resume-${currentReviewData.company}.pdf`);
     log.info(`📥 Tailored resume PDF downloaded for ${currentReviewData.company}`);
   } catch (e) {
@@ -1632,15 +1631,7 @@ async function handleTailorDownload(): Promise<void> {
   if (!lastTailoredData) return;
   try {
     const { generateTailoredResumePDF } = await import('../services/resume-pdf-generator');
-    const r = lastTailoredData;
-    const profile = await getStorage<any>(STORAGE_KEYS.USER_PROFILE);
-    const contactInfo = {
-      name: profile ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() : '',
-      email: profile?.email || '',
-      phone: profile?.phoneNumber || '',
-      location: [profile?.currentCity, profile?.state].filter(Boolean).join(', ') || '',
-    };
-    const blob = generateTailoredResumePDF(contactInfo, r.sections || [], 1);
+    const blob = generateTailoredResumePDF(lastTailoredData.sections || [], 1);
     downloadBlob(blob, 'tailored_resume.pdf');
     log.info('📥 On-demand tailored resume downloaded');
   } catch (e) {

@@ -11,16 +11,6 @@ import type { ResumeSection, ExperienceEntry, ProjectEntry, EducationEntry } fro
 
 const logger = createLogger('ResumePdfGenerator');
 
-export interface ContactInfo {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  linkedin?: string;
-  github?: string;
-  portfolio?: string;
-}
-
 // Jake's LaTeX dimensions
 const J = {
   W: 8.5,             // letter width
@@ -37,7 +27,6 @@ const J = {
 };
 
 export function generateTailoredResumePDF(
-  contactInfo: ContactInfo,
   sections: ResumeSection[],
   targetPageCount: number
 ): Blob {
@@ -65,6 +54,46 @@ export function generateTailoredResumePDF(
     y += 0.03;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(J.BODY);
+  };
+
+  // ─── RENDER HEADER (name + contact line) ───
+  const renderHeader = (section: ResumeSection) => {
+    // Name (centered, bold, large)
+    if (section.fullName) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(J.NAME);
+      const nw = doc.getTextWidth(section.fullName);
+      doc.text(section.fullName, (J.W - nw) / 2, y);
+      y += lineH(J.NAME);
+    }
+
+    // Contact line (centered, | separated)
+    const contact = [
+      section.phone,
+      section.email,
+      section.location,
+      section.linkedin,
+      section.github,
+      section.portfolio,
+    ].filter(Boolean);
+
+    if (contact.length > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(J.SM);
+      const str = contact.join('  |  ');
+      const sw = doc.getTextWidth(str);
+      if (sw <= contentW) {
+        doc.text(str, (J.W - sw) / 2, y);
+      } else {
+        const mid = Math.ceil(contact.length / 2);
+        const l1 = contact.slice(0, mid).join('  |  ');
+        doc.text(l1, (J.W - doc.getTextWidth(l1)) / 2, y);
+        y += lineH(J.SM);
+        const l2 = contact.slice(mid).join('  |  ');
+        doc.text(l2, (J.W - doc.getTextWidth(l2)) / 2, y);
+      }
+      y += lineH(J.SM);
+    }
   };
 
   // ─── SUBHEADING: Bold Left + Right / Italic Left + Right ───
@@ -143,49 +172,14 @@ export function generateTailoredResumePDF(
   };
 
   // ═══════════════════════════════════════════
-  // RENDER RESUME
+  // RENDER DYNAMIC SECTIONS
   // ═══════════════════════════════════════════
-
-  // ── NAME ──
-  if (contactInfo.name) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(J.NAME);
-    const nw = doc.getTextWidth(contactInfo.name);
-    doc.text(contactInfo.name, (J.W - nw) / 2, y);
-    y += lineH(J.NAME);
-  }
-
-  // ── CONTACT LINE ──
-  const contact = [
-    contactInfo.phone,
-    contactInfo.email,
-    contactInfo.location,
-    contactInfo.linkedin,
-    contactInfo.github,
-    contactInfo.portfolio,
-  ].filter(Boolean);
-
-  if (contact.length > 0) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(J.SM);
-    const str = contact.join('  |  ');
-    const sw = doc.getTextWidth(str);
-    if (sw <= contentW) {
-      doc.text(str, (J.W - sw) / 2, y);
-    } else {
-      const mid = Math.ceil(contact.length / 2);
-      const l1 = contact.slice(0, mid).join('  |  ');
-      doc.text(l1, (J.W - doc.getTextWidth(l1)) / 2, y);
-      y += lineH(J.SM);
-      const l2 = contact.slice(mid).join('  |  ');
-      doc.text(l2, (J.W - doc.getTextWidth(l2)) / 2, y);
-    }
-    y += lineH(J.SM);
-  }
-
-  // ── DYNAMIC SECTIONS ──
   sections.forEach(section => {
     switch (section.type) {
+      case 'header':
+        renderHeader(section);
+        break;
+
       case 'summary':
         if (section.text) {
           sectionHead(section.name);

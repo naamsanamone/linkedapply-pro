@@ -17,11 +17,19 @@ import { STORAGE_KEYS } from '../../shared/constants';
 const log = createLogger('AI:Resume');
 
 // ── Section types (dynamic) ──
-export type SectionType = 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'list';
+export type SectionType = 'header' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'list';
 
 export interface ResumeSection {
   name: string;
   type: SectionType;
+  // Header fields:
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
   // Type-specific content:
   text?: string;                                     // summary
   categories?: Record<string, string>;               // skills

@@ -124,9 +124,20 @@ Parse this resume into an ORDERED array of sections. Return EVERY section found 
 RESUME TEXT:
 {resumeText}
 
-Return ONLY valid JSON — an array of section objects. Each section has "name", "type", and type-specific content:
+Return ONLY valid JSON — an array of section objects. The FIRST section MUST be "header" with contact info. Each section has "name", "type", and type-specific content:
 
 [
+  {
+    "name": "Header",
+    "type": "header",
+    "fullName": "John Doe",
+    "email": "john@email.com",
+    "phone": "123-456-7890",
+    "location": "City, State",
+    "linkedin": "linkedin.com/in/johndoe",
+    "github": "github.com/johndoe",
+    "portfolio": "johndoe.com"
+  },
   {
     "name": "Professional Summary",
     "type": "summary",
@@ -167,6 +178,7 @@ Return ONLY valid JSON — an array of section objects. Each section has "name",
 ]
 
 SECTION TYPES:
+- "header": contact info (MUST be first — extract name, email, phone, location, and any links like LinkedIn/GitHub/Portfolio from the resume header)
 - "summary": paragraph text (use for Summary, Objective, Profile)
 - "skills": categorized skills (use for Technical Skills, Core Competencies)
 - "experience": work entries with bullets (use for Experience, Work History)
@@ -176,10 +188,12 @@ SECTION TYPES:
 
 CRITICAL RULES:
 1. Copy ALL text VERBATIM — do not rephrase, summarize, or improve
-2. Return sections in the SAME ORDER as the resume
-3. Include EVERY section found — do not skip any
-4. Include ALL entries and ALL bullets within each section
-5. Use "list" type for any section not matching the other types
+2. The FIRST section MUST be "header" with the person's name and contact details
+3. Return remaining sections in the SAME ORDER as the resume
+4. Include EVERY section found — do not skip any
+5. Include ALL entries and ALL bullets within each section
+6. Use "list" type for any section not matching the other types
+7. If a contact field (email, phone, etc.) is not in the resume, omit it
 `;
 
 
