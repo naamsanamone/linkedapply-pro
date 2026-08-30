@@ -169,13 +169,27 @@ function updateBotStatus(status: BotStatus, session?: SessionSummary | null): vo
 
 // ---- Bot Controls ----
 function initBotControls(): void {
-  document.getElementById('sp-start-btn')?.addEventListener('click', () => {
-    const btn = document.getElementById('sp-start-btn');
-    const isRunning = btn?.textContent?.includes('Stop');
-    chrome.runtime.sendMessage({
-      type: isRunning ? 'STOP_BOT' : 'START_BOT',
-      timestamp: Date.now(),
-    } as ExtensionMessage);
+  let isToggling = false;
+  document.getElementById('sp-start-btn')?.addEventListener('click', async () => {
+    if (isToggling) return;
+    isToggling = true;
+    const btn = document.getElementById('sp-start-btn') as HTMLButtonElement | null;
+    if (btn) btn.disabled = true;
+
+    try {
+      const isRunning = btn?.textContent?.includes('Stop');
+      await chrome.runtime.sendMessage({
+        type: isRunning ? 'STOP_BOT' : 'START_BOT',
+        timestamp: Date.now(),
+      } as ExtensionMessage);
+    } catch (err) {
+      log.error('Failed to toggle bot from sidepanel', err);
+    } finally {
+      setTimeout(() => {
+        if (btn) btn.disabled = false;
+        isToggling = false;
+      }, 600);
+    }
   });
 
   document.getElementById('sp-pause-btn')?.addEventListener('click', () => {

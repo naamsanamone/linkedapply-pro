@@ -62,13 +62,27 @@ async function init(): Promise<void> {
 }
 
 // ---- Event Handlers ----
-function handleStartStop(): void {
-  if (currentStatus === 'idle' || currentStatus === 'stopped' || currentStatus === 'paused') {
-    sendMessage({ type: 'START_BOT', timestamp: Date.now() });
-    updateStatusUI('searching');
-  } else {
-    sendMessage({ type: 'STOP_BOT', timestamp: Date.now() });
-    updateStatusUI('stopped');
+let isHandlingStartStop = false;
+async function handleStartStop(): Promise<void> {
+  if (isHandlingStartStop) return;
+  isHandlingStartStop = true;
+  startBtn.setAttribute('disabled', 'true');
+
+  try {
+    if (currentStatus === 'idle' || currentStatus === 'stopped' || currentStatus === 'paused') {
+      await chrome.runtime.sendMessage({ type: 'START_BOT', timestamp: Date.now() });
+      updateStatusUI('searching');
+    } else {
+      await chrome.runtime.sendMessage({ type: 'STOP_BOT', timestamp: Date.now() });
+      updateStatusUI('stopped');
+    }
+  } catch (err) {
+    log.error('Failed to toggle bot', err);
+  } finally {
+    setTimeout(() => {
+      startBtn.removeAttribute('disabled');
+      isHandlingStartStop = false;
+    }, 600);
   }
 }
 

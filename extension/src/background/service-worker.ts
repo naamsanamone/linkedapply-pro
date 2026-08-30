@@ -147,26 +147,10 @@ async function handleStartBot(tabId?: number): Promise<void> {
   await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
   updateBadge(session.easyApplied, 'running');
 
-  // Send to the currently active tab
-  const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (activeTabs.length > 0 && activeTabs[0].id) {
-    chrome.tabs.sendMessage(activeTabs[0].id, {
-      type: 'START_BOT',
-      timestamp: Date.now(),
-    } as ExtensionMessage);
-  } else {
-    // Open LinkedIn jobs page
-    const newTab = await chrome.tabs.create({ url: 'https://www.linkedin.com/jobs/search/' });
-    // Wait for content script to load then send start
-    setTimeout(() => {
-      if (newTab.id) {
-        chrome.tabs.sendMessage(newTab.id, {
-          type: 'START_BOT',
-          timestamp: Date.now(),
-        } as ExtensionMessage);
-      }
-    }, 3000);
-  }
+  await sendToLinkedInTab({
+    type: 'START_BOT',
+    timestamp: Date.now(),
+  } as ExtensionMessage);
 }
 
 async function handleStopBot(tabId?: number): Promise<void> {
@@ -179,19 +163,93 @@ async function handleStopBot(tabId?: number): Promise<void> {
     await setStorage(STORAGE_KEYS.SESSION_SUMMARY, session);
   }
 
-  // Forward to content script
+  // Forward to content script safely
   const tabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/*' });
   tabs.forEach((tab) => {
     if (tab.id) {
       chrome.tabs.sendMessage(tab.id, {
         type: 'STOP_BOT',
         timestamp: Date.now(),
-      } as ExtensionMessage);
+      } as ExtensionMessage).catch(() => {
+        // Tab not listening or closed - safe to ignore
+      });
     }
   });
 
   broadcastUpdate();
   updateBadge(0, 'stopped');
+}
+
+async function sendToLinkedInTab(message: ExtensionMessage): Promise<boolean> {
+  // 1. Check if active tab in current window is a LinkedIn page
+  try {
+    const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const activeTab = activeTabs[0];
+
+    if (activeTab?.id && activeTab.url && activeTab.url.includes('linkedin.com')) {
+      try {
+        await chrome.tabs.sendMessage(activeTab.id, message);
+        log.info(`Message ${message.type} sent to active LinkedIn tab ${activeTab.id}`);
+        return true;
+      } catch (err) {
+        log.warn('Active LinkedIn tab did not respond (content script may need reload). Reloading tab...', err);
+        await chrome.tabs.reload(activeTab.id);
+        waitForTabAndSend(activeTab.id, message);
+        return true;
+      }
+    }
+  } catch (err) {
+    log.warn('Error checking active tab', err);
+  }
+
+  // 2. Look for any other open LinkedIn tab
+  try {
+    const linkedInTabs = await chrome.tabs.query({ url: 'https://www.linkedin.com/*' });
+    for (const tab of linkedInTabs) {
+      if (tab.id) {
+        try {
+          await chrome.tabs.update(tab.id, { active: true });
+          await chrome.tabs.sendMessage(tab.id, message);
+          log.info(`Message ${message.type} sent to existing LinkedIn tab ${tab.id}`);
+          return true;
+        } catch (err) {
+          log.warn(`LinkedIn tab ${tab.id} not responding, checking next...`, err);
+        }
+      }
+    }
+  } catch (err) {
+    log.warn('Error querying LinkedIn tabs', err);
+  }
+
+  // 3. No responsive LinkedIn tab found — open a new LinkedIn Jobs search tab
+  try {
+    log.info('Opening new LinkedIn tab at https://www.linkedin.com/jobs/search/...');
+    const newTab = await chrome.tabs.create({ url: 'https://www.linkedin.com/jobs/search/', active: true });
+    if (newTab.id) {
+      waitForTabAndSend(newTab.id, message);
+      return true;
+    }
+  } catch (err) {
+    log.error('Failed to create new LinkedIn tab', err);
+  }
+
+  return false;
+}
+
+function waitForTabAndSend(tabId: number, message: ExtensionMessage): void {
+  const listener = (id: number, changeInfo: chrome.tabs.TabChangeInfo) => {
+    if (id === tabId && changeInfo.status === 'complete') {
+      chrome.tabs.onUpdated.removeListener(listener);
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tabId, message).catch((err) => {
+          log.warn(`Failed to send ${message.type} to loaded tab ${tabId}`, err);
+        });
+      }, 2500);
+    }
+  };
+  chrome.tabs.onUpdated.addListener(listener);
+  // Safety cleanup after 30s
+  setTimeout(() => chrome.tabs.onUpdated.removeListener(listener), 30000);
 }
 
 // ---- Event Handlers ----
