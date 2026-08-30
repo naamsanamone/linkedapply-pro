@@ -316,6 +316,7 @@ async function processJob(
           const { generateTailoredResumePDF } = await import('../../services/resume-pdf-generator');
           tailoredResumeBlob = generateTailoredResumePDF(tailorResponse.result.sections, 1);
           log.info(`✅ Tailored resume generated (${(tailoredResumeBlob.size / 1024).toFixed(1)} KB)`);
+          await incrementSession('tailoredCount');
         } else {
           log.warn('⚠️ Tailored resume generation returned no sections, using default resume');
         }
@@ -522,7 +523,7 @@ async function saveAppliedJob(job: Job): Promise<void> {
 }
 
 async function incrementSession(
-  field: 'easyApplied' | 'externalCollected' | 'skipped' | 'failed'
+  field: 'easyApplied' | 'externalCollected' | 'skipped' | 'failed' | 'tailoredCount'
 ): Promise<void> {
   const session = await getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY);
   if (!session) return;

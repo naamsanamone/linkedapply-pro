@@ -129,6 +129,7 @@ export const DEFAULT_SESSION = {
   failed: 0,
   skipped: 0,
   randomAnswers: 0,
+  tailoredCount: 0,
   startTime: '',
   endTime: '',
   estimatedTimeSaved: 0,

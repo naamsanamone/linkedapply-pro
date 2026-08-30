@@ -252,6 +252,7 @@ export interface SessionSummary {
   failed: number;
   skipped: number;
   randomAnswers: number;
+  tailoredCount: number;
   startTime: string;
   endTime: string;
   estimatedTimeSaved: number; // seconds

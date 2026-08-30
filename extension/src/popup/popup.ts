@@ -22,7 +22,7 @@ const planBadge = document.getElementById('plan-badge') as HTMLElement;
 
 // Stat elements
 const statApplied = document.getElementById('stat-applied') as HTMLElement;
-const statExternal = document.getElementById('stat-external') as HTMLElement;
+const statTailored = document.getElementById('stat-tailored') as HTMLElement;
 const statSkipped = document.getElementById('stat-skipped') as HTMLElement;
 const statTime = document.getElementById('stat-time') as HTMLElement;
 
@@ -142,7 +142,7 @@ function updateStatusUI(status: BotStatus): void {
 
 function updateStatsUI(session: SessionSummary): void {
   statApplied.textContent = String(session.easyApplied);
-  statExternal.textContent = String(session.externalCollected);
+  statTailored.textContent = String((session as any).tailoredCount || 0);
   statSkipped.textContent = String(session.skipped);
 
   // Format time saved
