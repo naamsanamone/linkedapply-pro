@@ -43,7 +43,7 @@ export async function executeEasyApply(
   workLocation: string,
   jobDescription: string | null,
   botSettings: BotSettings,
-  tailoredResume?: any | null  // TailoredResumeData — if provided, upload tailored PDF
+  tailoredResumeBlob?: Blob | null  // If provided, upload this PDF instead of using LinkedIn's default
 ): Promise<EasyApplyResult> {
   const allQuestions: QuestionAnswer[] = [];
   let resume = 'Previous resume';
@@ -109,8 +109,8 @@ export async function executeEasyApply(
       allQuestions.push(...pageAnswers);
 
       // Try to upload resume (tailored PDF if available, otherwise default)
-      if (questionDefaults.defaultResumePath) {
-        await tryUploadResume(modal, questionDefaults.defaultResumePath || '');
+      if (tailoredResumeBlob || questionDefaults.defaultResumePath) {
+        await tryUploadResume(modal, questionDefaults.defaultResumePath || '', tailoredResumeBlob || undefined);
       }
 
       // Look for the "Review" or "Next" button
@@ -535,12 +535,35 @@ function isReviewPage(modal: Element): boolean {
   return submitBtn !== null;
 }
 
-async function tryUploadResume(modal: Element, resumePath: string): Promise<boolean> {
+async function tryUploadResume(modal: Element, resumePath: string, tailoredBlob?: Blob): Promise<boolean> {
   try {
     const fileInput = modal.querySelector("input[name='file']") as HTMLInputElement;
     if (!fileInput) {
       log.debug('No resume upload field found');
       return false;
+    }
+
+    // If we have a tailored resume blob, upload it
+    if (tailoredBlob) {
+      try {
+        const file = new File([tailoredBlob], 'tailored_resume.pdf', {
+          type: 'application/pdf',
+          lastModified: Date.now(),
+        });
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+
+        // Dispatch change event so LinkedIn picks up the file
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        fileInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+        log.info(`📄 Tailored resume uploaded (${(tailoredBlob.size / 1024).toFixed(1)} KB)`);
+        return true;
+      } catch (uploadErr) {
+        log.warn('Failed to upload tailored resume, using default', uploadErr);
+      }
     }
 
     // Use LinkedIn's previously saved/uploaded resume

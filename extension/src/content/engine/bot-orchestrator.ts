@@ -301,13 +301,36 @@ async function processJob(
   const easyApplyBtn = isEasyApplyJob();
 
   if (easyApplyBtn) {
+    // Generate tailored resume PDF if enabled
+    let tailoredResumeBlob: Blob | null = null;
+    if (settings.useTailoredResume && jd.description && jd.description !== 'Unknown') {
+      try {
+        log.info('📝 Generating tailored resume for this job...');
+        const tailorResponse = await chrome.runtime.sendMessage({
+          type: 'AI_TAILOR_RESUME',
+          payload: { jobDescription: jd.description },
+          timestamp: Date.now(),
+        });
+
+        if (tailorResponse?.result?.sections?.length > 0) {
+          const { generateTailoredResumePDF } = await import('../../services/resume-pdf-generator');
+          tailoredResumeBlob = generateTailoredResumePDF(tailorResponse.result.sections, 1);
+          log.info(`✅ Tailored resume generated (${(tailoredResumeBlob.size / 1024).toFixed(1)} KB)`);
+        } else {
+          log.warn('⚠️ Tailored resume generation returned no sections, using default resume');
+        }
+      } catch (err) {
+        log.warn('⚠️ Failed to generate tailored resume, using default', err);
+      }
+    }
+
     // Easy Apply
     const result = await executeEasyApply(
       easyApplyBtn,
       details.workLocation,
       jd.description !== 'Unknown' ? jd.description : null,
       settings,
-      null // no per-job tailoring — use default resume
+      tailoredResumeBlob
     );
 
     if (result.success) {

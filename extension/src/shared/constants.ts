@@ -119,6 +119,7 @@ export const DEFAULT_BOT_SETTINGS = {
   customMinDelay: 1000,
   customMaxDelay: 3000,
   smoothScroll: true,
+  useTailoredResume: false,
 };
 
 export const DEFAULT_SESSION = {

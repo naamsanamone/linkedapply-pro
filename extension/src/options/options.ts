@@ -298,6 +298,7 @@ async function loadBot(): Promise<void> {
   setChecked('b-closeTabs', settings.closeTabs);
   setChecked('b-runNonStop', settings.runNonStop);
   setChecked('b-smoothScroll', settings.smoothScroll);
+  setChecked('b-useTailoredResume', settings.useTailoredResume ?? false);
 
   // Show/hide custom delay row
   updateCustomDelayVisibility(settings.speedMode);
@@ -333,6 +334,7 @@ async function saveBot(): Promise<void> {
     closeTabs: getChecked('b-closeTabs'),
     runNonStop: getChecked('b-runNonStop'),
     smoothScroll: getChecked('b-smoothScroll'),
+    useTailoredResume: getChecked('b-useTailoredResume'),
     alternateSortby: false,
     cycleDatePosted: false,
   };

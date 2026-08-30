@@ -241,6 +241,7 @@ export interface BotSettings {
   customMinDelay: number;
   customMaxDelay: number;
   smoothScroll: boolean;
+  useTailoredResume: boolean;
 }
 
 // ---- Session Summary ----
