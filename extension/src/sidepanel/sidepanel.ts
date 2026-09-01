@@ -142,6 +142,7 @@ function updateBotStatus(status: BotStatus, session?: SessionSummary | null): vo
     searching: '🔍 Searching for jobs...',
     filtering: '🎯 Applying filters...',
     applying: '📝 Applying to jobs...',
+    reviewing: '🔍 Reviewing job...',
     paused: '⏸ Paused',
     stopped: '⏹ Stopped',
     error: '⚠️ Error occurred',
@@ -150,7 +151,7 @@ function updateBotStatus(status: BotStatus, session?: SessionSummary | null): vo
   if (dot) { dot.className = `status-dot status-dot--${status}`; }
   if (text) text.textContent = statusLabels[status] || status;
 
-  const isRunning = ['searching', 'filtering', 'applying'].includes(status);
+  const isRunning = ['searching', 'filtering', 'applying', 'reviewing'].includes(status);
   if (startBtn) {
     startBtn.textContent = isRunning ? '⏹ Stop' : '▶ Start';
     startBtn.className = isRunning ? 'btn btn-error btn-sm' : 'btn btn-primary btn-sm';

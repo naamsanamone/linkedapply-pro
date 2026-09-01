@@ -3,7 +3,7 @@
    ============================================================ */
 
 // ---- Bot States ----
-export type BotStatus = 'idle' | 'searching' | 'filtering' | 'applying' | 'paused' | 'error' | 'stopped';
+export type BotStatus = 'idle' | 'searching' | 'filtering' | 'applying' | 'reviewing' | 'paused' | 'error' | 'stopped';
 
 // ---- Plan Types ----
 export type PlanType = 'free';

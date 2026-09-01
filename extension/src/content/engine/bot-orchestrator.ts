@@ -609,7 +609,7 @@ async function requestPreApplyReview(
   } as ExtensionMessage).catch(() => {});
 
   log.info(`⏸ Waiting for pre-apply review decision (${settings.timeoutSeconds}s timeout)...`);
-  sendStatusUpdate('paused');
+  sendStatusUpdate('reviewing');
 
   // Poll for decision
   const startTime = Date.now();

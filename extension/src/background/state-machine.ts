@@ -16,9 +16,10 @@ const log = createLogger('StateMachine');
  */
 const VALID_TRANSITIONS: Record<BotStatus, BotStatus[]> = {
   idle:      ['searching', 'stopped'],
-  searching: ['filtering', 'applying', 'paused', 'stopped', 'error'],
-  filtering: ['searching', 'applying', 'paused', 'stopped', 'error'],
-  applying:  ['searching', 'paused', 'stopped', 'error'],
+  searching: ['filtering', 'applying', 'reviewing', 'paused', 'stopped', 'error'],
+  filtering: ['searching', 'applying', 'reviewing', 'paused', 'stopped', 'error'],
+  applying:  ['searching', 'reviewing', 'paused', 'stopped', 'error'],
+  reviewing: ['searching', 'applying', 'paused', 'stopped', 'idle'],
   paused:    ['searching', 'filtering', 'applying', 'stopped', 'idle'],
   error:     ['searching', 'idle', 'stopped'],
   stopped:   ['idle', 'searching'],

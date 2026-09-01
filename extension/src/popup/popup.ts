@@ -121,6 +121,7 @@ function updateStatusUI(status: BotStatus): void {
     case 'searching':
     case 'filtering':
     case 'applying':
+    case 'reviewing':
       statusDot.classList.add('status-dot--active');
       startBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop`;
       progressBar.style.display = 'block';
@@ -147,6 +148,7 @@ function updateStatusUI(status: BotStatus): void {
     searching: 'Searching jobs...',
     filtering: 'Applying filters...',
     applying: 'Applying to job...',
+    reviewing: 'Reviewing job — open Dashboard',
     paused: 'Paused',
     error: 'Error occurred',
     stopped: 'Stopped',
