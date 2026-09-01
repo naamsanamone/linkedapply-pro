@@ -50,6 +50,9 @@ async function init(): Promise<void> {
   settingsBtn.addEventListener('click', openSettings);
   upgradeBtn.addEventListener('click', openUpgrade);
 
+  const reviewBtn = document.getElementById('review-btn');
+  reviewBtn?.addEventListener('click', openDashboard);
+
   // Listen for status updates from service worker
   chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
     if (message.type === 'STATUS_UPDATE') {
@@ -154,6 +157,10 @@ function updateStatusUI(status: BotStatus): void {
     stopped: 'Stopped',
   };
   statusText.textContent = statusLabels[status] || 'Unknown';
+
+  // Show/hide review button
+  const reviewBtn = document.getElementById('review-btn');
+  if (reviewBtn) reviewBtn.style.display = status === 'reviewing' ? 'block' : 'none';
 }
 
 function updateStatsUI(session: SessionSummary): void {

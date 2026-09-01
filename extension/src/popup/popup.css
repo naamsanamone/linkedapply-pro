@@ -117,3 +117,15 @@
   background: var(--color-error);
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
 }
+
+/* ---- Review Button ---- */
+#review-btn {
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
