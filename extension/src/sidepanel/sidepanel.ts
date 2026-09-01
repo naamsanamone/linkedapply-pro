@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFailedLogToggle();
   initTailorTab();
   loadDashboardData();
+  checkPendingReview();
 });
 
 // ---- Tab Navigation ----
@@ -998,6 +999,15 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
 // ================================================
 let reviewCountdownTimer: ReturnType<typeof setInterval> | null = null;
 let currentReviewData: PreApplyReviewData | null = null;
+
+/** Check if there's a pending pre-apply review in storage (e.g. sidepanel opened after review started) */
+async function checkPendingReview(): Promise<void> {
+  const reviewData = await getStorage<PreApplyReviewData>(STORAGE_KEYS.PRE_APPLY_REVIEW);
+  if (reviewData && reviewData.jobId) {
+    log.info('📋 Found pending pre-apply review in storage, showing overlay');
+    showPreApplyReview(reviewData);
+  }
+}
 
 function showPreApplyReview(data: PreApplyReviewData): void {
   currentReviewData = data;

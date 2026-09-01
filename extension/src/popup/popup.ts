@@ -148,7 +148,7 @@ function updateStatusUI(status: BotStatus): void {
     searching: 'Searching jobs...',
     filtering: 'Applying filters...',
     applying: 'Applying to job...',
-    reviewing: 'Reviewing job — open Dashboard',
+    reviewing: 'Reviewing job...',
     paused: 'Paused',
     error: 'Error occurred',
     stopped: 'Stopped',
