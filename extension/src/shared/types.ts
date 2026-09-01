@@ -107,7 +107,7 @@ export interface PreApplyReviewData {
 }
 
 export interface PreApplyDecision {
-  action: 'apply' | 'skip';
+  action: 'apply_tailored' | 'apply_default' | 'skip';
   jobId: string;
   coverLetter?: CoverLetterData | null;
   standOutTips?: StandOutTips | null;

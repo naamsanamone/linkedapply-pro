@@ -44,11 +44,6 @@
       </div>
     </div>
 
-    <!-- Review Job Button (visible during reviewing state) -->
-    <button class="btn btn-primary btn-block" id="review-btn" style="display:none; margin: 8px 16px; animation: pulse 1.5s ease-in-out infinite;">
-      🔍 Review Job
-    </button>
-
     <!-- Stats Grid -->
     <div class="popup__stats stagger-children">
       <div class="stat-card">
@@ -59,6 +54,12 @@
         <span class="stat-card__value" id="stat-tailored">0</span>
         <span class="stat-card__label">Tailored</span>
       </div>
+
+      <!-- Review Job Button (visible during reviewing state) -->
+      <button class="btn btn-primary btn-block" id="review-btn" style="display:none; grid-column: 1 / -1; animation: pulse 1.5s ease-in-out infinite;">
+        🔍 Review Job
+      </button>
+
       <div class="stat-card">
         <span class="stat-card__value" id="stat-skipped">0</span>
         <span class="stat-card__label">Skipped</span>

@@ -291,10 +291,17 @@ async function processJob(
       return;
     }
 
-    // useTailoredResume removed — always use default resume
+    // Track user's choice: apply_tailored or apply_default
+    if (decision.action === 'apply_default') {
+      settings = { ...settings, useTailoredResume: false };
+      log.info(`📋 Pre-apply decision: apply with DEFAULT resume for "${details.title}"`);
+    } else {
+      settings = { ...settings, useTailoredResume: true };
+      log.info(`📋 Pre-apply decision: apply with TAILORED resume for "${details.title}"`);
+    }
+
     coverLetterResult = decision.coverLetter || null;
     standOutResult = decision.standOutTips || null;
-    log.info(`📋 Pre-apply decision: ${decision.action} for "${details.title}"`);
   }
 
   // Step 7: Check if Easy Apply or External
@@ -640,8 +647,11 @@ async function requestPreApplyReview(
   await setStorage(STORAGE_KEYS.PRE_APPLY_DECISION, null);
   sendStatusUpdate('applying');
 
+  // Map settings default to decision action type
+  const timeoutAction = settings.defaultAction === 'skip' ? 'skip' : 'apply_tailored';
+
   return {
-    action: settings.defaultAction,
+    action: timeoutAction,
     jobId: reviewData.jobId,
     timestamp: Date.now(),
   };
