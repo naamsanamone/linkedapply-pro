@@ -1067,7 +1067,6 @@ function showPreApplyReview(data: PreApplyReviewData): void {
 
   // Wire up action buttons
   document.getElementById('review-apply-tailored')?.addEventListener('click', () => submitReviewDecision('apply'));
-  document.getElementById('review-apply-default')?.addEventListener('click', () => submitReviewDecision('apply'));
   document.getElementById('review-skip')?.addEventListener('click', () => submitReviewDecision('skip'));
 
   // Wire up download/copy buttons
