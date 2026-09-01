@@ -107,7 +107,7 @@ export interface PreApplyReviewData {
 }
 
 export interface PreApplyDecision {
-  action: 'apply_tailored' | 'apply_default' | 'skip';
+  action: 'apply' | 'skip';
   jobId: string;
   coverLetter?: CoverLetterData | null;
   standOutTips?: StandOutTips | null;
@@ -117,7 +117,7 @@ export interface PreApplyDecision {
 export interface PreApplySettings {
   enabled: boolean;
   timeoutSeconds: number;         // default 30
-  defaultAction: 'apply_tailored' | 'apply_default' | 'skip';
+  defaultAction: 'apply' | 'skip';
 }
 
 export type JobStatus = 'bookmarked' | 'applied' | 'external' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';

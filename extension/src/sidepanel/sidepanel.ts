@@ -1066,8 +1066,8 @@ function showPreApplyReview(data: PreApplyReviewData): void {
   document.getElementById('review-gen-so')?.addEventListener('click', generateStandOutOnDemand);
 
   // Wire up action buttons
-  document.getElementById('review-apply-tailored')?.addEventListener('click', () => submitReviewDecision('apply_tailored'));
-  document.getElementById('review-apply-default')?.addEventListener('click', () => submitReviewDecision('apply_default'));
+  document.getElementById('review-apply-tailored')?.addEventListener('click', () => submitReviewDecision('apply'));
+  document.getElementById('review-apply-default')?.addEventListener('click', () => submitReviewDecision('apply'));
   document.getElementById('review-skip')?.addEventListener('click', () => submitReviewDecision('skip'));
 
   // Wire up download/copy buttons
@@ -1105,13 +1105,13 @@ function startReviewCountdown(seconds: number): void {
     if (fillEl) fillEl.style.width = `${(remaining / seconds) * 100}%`;
 
     if (remaining <= 0) {
-      // Timeout — auto-apply with tailored resume
-      submitReviewDecision('apply_tailored');
+      // Timeout — auto-apply
+      submitReviewDecision('apply');
     }
   }, 1000);
 }
 
-async function submitReviewDecision(action: 'apply_tailored' | 'apply_default' | 'skip'): Promise<void> {
+async function submitReviewDecision(action: 'apply' | 'skip'): Promise<void> {
   if (!currentReviewData) return;
 
   const decision: PreApplyDecision = {

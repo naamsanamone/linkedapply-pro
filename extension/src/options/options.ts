@@ -353,7 +353,7 @@ async function saveBot(): Promise<void> {
   const preApplySettings = {
     enabled: getChecked('pa-enabled'),
     timeoutSeconds: parseInt(getVal('pa-timeout')) || 30,
-    defaultAction: getVal('pa-default-action') || 'apply_tailored',
+    defaultAction: getVal('pa-default-action') || 'apply',
   };
   await setStorage(STORAGE_KEYS.PRE_APPLY_SETTINGS, preApplySettings);
 

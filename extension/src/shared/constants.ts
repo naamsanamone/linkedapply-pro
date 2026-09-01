@@ -139,5 +139,5 @@ export const DEFAULT_SESSION = {
 export const DEFAULT_PRE_APPLY_SETTINGS = {
   enabled: true,
   timeoutSeconds: 30,
-  defaultAction: 'apply_tailored' as const,
+  defaultAction: 'apply' as const,
 };
