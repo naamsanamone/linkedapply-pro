@@ -97,11 +97,11 @@ async function loadDashboardData(): Promise<void> {
     updateDailyGoal(session);
   }
   if (status) updateBotStatus(status, session);
+  renderSparkline(allJobs);
+  renderAnalytics(allJobs, session);
   if (allJobs.length > 0) {
     renderRecentJobs(allJobs.slice(-8).reverse());
     renderKanban(allJobs);
-    renderSparkline(allJobs);
-    renderAnalytics(allJobs, session);
   }
   renderFailedJobs(failedJobs || []);
 }
@@ -110,10 +110,10 @@ async function loadDashboardData(): Promise<void> {
 //  OVERVIEW TAB
 // ================================================
 function updateOverviewStats(session: SessionSummary): void {
-  // Total applied from session
-  setText('sp-total-applied', String(session.easyApplied + session.externalCollected));
+  // Total applied from persistent job records (survives session resets)
+  setText('sp-total-applied', String(allJobs.length));
 
-  // Today count: derive from actual job records (more accurate than session counter)
+  // Today count: derive from actual job records
   const today = new Date().toISOString().slice(0, 10); // "2026-06-23"
   const todayJobs = allJobs.filter((j) => j.dateApplied && j.dateApplied.startsWith(today));
   setText('sp-today-applied', String(todayJobs.length));
