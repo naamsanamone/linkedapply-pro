@@ -91,7 +91,6 @@
 .options__main {
   flex: 1;
   padding: var(--space-8);
-  max-width: 800px;
 }
 
 .options__page-title {
