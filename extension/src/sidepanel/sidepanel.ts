@@ -211,7 +211,7 @@ function renderSparkline(jobs: Job[]): void {
   const max = Math.max(...counts, 1);
 
   container.innerHTML = days.map((day, i) => `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
       <div class="sparkline-bar" style="height:${Math.max(4, (counts[i] / max) * 52)}px;" data-tooltip="${day.label}: ${counts[i]} applied"></div>
       <div class="sparkline-label">${day.short}</div>
     </div>
@@ -1010,6 +1010,9 @@ async function checkPendingReview(): Promise<void> {
 }
 
 function showPreApplyReview(data: PreApplyReviewData): void {
+  // Skip if already reviewing the same job
+  if (currentReviewData && currentReviewData.jobId === data.jobId) return;
+
   currentReviewData = data;
   const panel = document.getElementById('pre-apply-review');
   if (!panel) return;
