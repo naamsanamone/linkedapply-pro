@@ -19,6 +19,7 @@ import type {
   SearchPreferences,
   AIConfig,
   BotSettings,
+  CustomQAPair,
 } from '../shared/types';
 import { extractTextFromPDF } from '../services/resume-parser';
 
@@ -82,6 +83,36 @@ async function saveProfile(): Promise<void> {
 // ================================================
 //  QUESTION DEFAULTS
 // ================================================
+// ---- Custom Q&A Helpers ----
+function addQARow(question = '', answer = ''): void {
+  const list = document.getElementById('custom-qa-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  row.innerHTML = `
+    <input class="input qa-question" type="text" placeholder="Question keyword (e.g. github)" value="${escAttr(question)}" style="flex:1;">
+    <input class="input qa-answer" type="text" placeholder="Your answer" value="${escAttr(answer)}" style="flex:1;">
+    <button class="btn btn-ghost btn-sm qa-remove" title="Remove" style="padding:4px 8px;">🗑️</button>
+  `;
+  row.querySelector('.qa-remove')?.addEventListener('click', () => row.remove());
+  list.appendChild(row);
+}
+
+function escAttr(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function getCustomQA(): CustomQAPair[] {
+  const rows = document.querySelectorAll('#custom-qa-list > div');
+  const pairs: CustomQAPair[] = [];
+  rows.forEach((row) => {
+    const q = (row.querySelector('.qa-question') as HTMLInputElement)?.value.trim();
+    const a = (row.querySelector('.qa-answer') as HTMLInputElement)?.value.trim();
+    if (q && a) pairs.push({ question: q, answer: a });
+  });
+  return pairs;
+}
+
 async function loadQuestions(): Promise<void> {
   const defaults = await getStorage<QuestionDefaults>(STORAGE_KEYS.QUESTION_DEFAULTS);
   if (!defaults) return;
@@ -105,6 +136,10 @@ async function loadQuestions(): Promise<void> {
   const skillsMap = await getStorage<Record<string, number>>(STORAGE_KEYS.USER_SKILLS_MAP) || {};
   const skillsText = Object.entries(skillsMap).map(([k, v]) => `${k}=${v}`).join('\n');
   setVal('q-skillsMap', skillsText);
+
+  // Load custom Q&A pairs
+  const customQA = await getStorage<CustomQAPair[]>(STORAGE_KEYS.CUSTOM_QA) || [];
+  customQA.forEach((pair) => addQARow(pair.question, pair.answer));
 
   log.info('Question defaults loaded');
 }
@@ -143,8 +178,12 @@ async function saveQuestions(): Promise<void> {
   }
   await setStorage(STORAGE_KEYS.USER_SKILLS_MAP, skillsMap);
 
-  showStatus('questions-status', '✓ Question defaults saved!');
-  log.info('Question defaults saved');
+  // Save custom Q&A pairs
+  const customQA = getCustomQA();
+  await setStorage(STORAGE_KEYS.CUSTOM_QA, customQA);
+
+  showStatus('questions-status', `✓ Question defaults saved! (${customQA.length} custom Q&A)`);
+  log.info(`Question defaults saved with ${customQA.length} custom Q&A pairs`);
 }
 
 // ================================================
@@ -426,6 +465,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Questions
   document.getElementById('save-questions')?.addEventListener('click', saveQuestions);
+  document.getElementById('add-qa-btn')?.addEventListener('click', () => addQARow());
   await loadQuestions();
 
   // Resume upload handler

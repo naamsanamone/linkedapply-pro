@@ -120,6 +120,12 @@ export interface PreApplySettings {
   defaultAction: 'apply' | 'skip';
 }
 
+/** User-defined question-answer pair for auto-filling application forms */
+export interface CustomQAPair {
+  question: string;   // keyword/pattern to match (e.g. "github", "portfolio")
+  answer: string;     // the answer to fill in
+}
+
 export type JobStatus = 'bookmarked' | 'applied' | 'external' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';
 
 export interface FailedJob {

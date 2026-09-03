@@ -7,7 +7,7 @@
 import { createLogger } from '../../shared/logger';
 import { getStorage } from '../../shared/storage';
 import { STORAGE_KEYS } from '../../shared/constants';
-import type { UserProfile, QuestionDefaults, QuestionAnswer, QuestionType } from '../../shared/types';
+import type { UserProfile, QuestionDefaults, QuestionAnswer, QuestionType, CustomQAPair } from '../../shared/types';
 import { scrollToView, humanDelay } from './dom-utils';
 import { createAIProviderFromStorage, type AIProviderClient } from '../../services/ai/ai-provider';
 import { aiAnswerQuestion } from '../../services/ai/ai-question-answerer';
@@ -136,7 +136,7 @@ async function handleSelectQuestion(
 
   // Phone country code — special dropdown
   if (labelLower.includes('country code') || (labelLower.includes('phone') && labelLower.includes('code'))) {
-    const cc = ctx.profile.phoneCountryCode || 'India (+91)';
+    const cc = ctx.profile.phoneCountryCode || 'US (+1)';
     // Try fuzzy matching: search for country name or dial code in options
     for (const opt of selectEl.options) {
       const optText = opt.text.toLowerCase();
@@ -611,7 +611,20 @@ async function handleTextQuestion(
       answer = 'Yes';
     }
 
-    // Fallback chain: Answer Memory → AI → smart default
+    // Fallback chain: Custom Q&A → Answer Memory → AI → smart default
+    if (!answer) {
+      // Tier 1.5: Check user-defined custom Q&A pairs
+      const customQA = await getStorage<CustomQAPair[]>(STORAGE_KEYS.CUSTOM_QA) || [];
+      for (const pair of customQA) {
+        if (labelLower.includes(pair.question.toLowerCase())) {
+          answer = pair.answer;
+          answeredBy = 'pattern';
+          log.info(`Custom Q&A match: "${label}" contains "${pair.question}" → "${answer}"`);
+          break;
+        }
+      }
+    }
+
     if (!answer) {
       // Tier 2: Check answer memory
       const memorized = await findAnswer(label);

@@ -65,6 +65,7 @@ export const STORAGE_KEYS = {
   PRE_APPLY_SETTINGS: 'pre_apply_settings',
   RESUME_TEMPLATES: 'resume_templates',
   DEFAULT_TEMPLATE_ID: 'default_template_id',
+  CUSTOM_QA: 'custom_qa',
 } as const;
 
 // ---- Default Values ----
@@ -74,7 +75,7 @@ export const DEFAULT_PROFILE = {
   lastName: '',
   email: '',
   phoneNumber: '',
-  phoneCountryCode: 'India (+91)',
+  phoneCountryCode: 'US (+1)',
   currentCity: '',
   street: '',
   state: '',
