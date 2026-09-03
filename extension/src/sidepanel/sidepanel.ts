@@ -1379,6 +1379,7 @@ function initDailyGoal(): void {
       session.skipped = 0;
       session.randomAnswers = 0;
       session.estimatedTimeSaved = 0;
+      (session as any).tailoredCount = 0;
       session.startTime = '';
       session.endTime = '';
       session.totalRuns = 0;
