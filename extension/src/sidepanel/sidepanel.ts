@@ -97,7 +97,6 @@ async function loadDashboardData(): Promise<void> {
     updateDailyGoal(session);
   }
   if (status) updateBotStatus(status, session);
-  renderSparkline(allJobs);
   renderAnalytics(allJobs, session);
   if (allJobs.length > 0) {
     renderRecentJobs(allJobs.slice(-8).reverse());
@@ -197,25 +196,6 @@ function initBotControls(): void {
   document.getElementById('sp-pause-btn')?.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'PAUSE_BOT', timestamp: Date.now() } as ExtensionMessage);
   });
-}
-
-// ---- Sparkline (7-day activity) ----
-function renderSparkline(jobs: Job[]): void {
-  const container = document.getElementById('sp-sparkline');
-  if (!container) return;
-
-  const days = getLast7Days();
-  const counts = days.map((day) =>
-    jobs.filter((j) => j.dateApplied?.startsWith(day.iso)).length
-  );
-  const max = Math.max(...counts, 1);
-
-  container.innerHTML = days.map((day, i) => `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
-      <div class="sparkline-bar" style="height:${Math.max(4, (counts[i] / max) * 52)}px;" data-tooltip="${day.label}: ${counts[i]} applied"></div>
-      <div class="sparkline-label">${day.short}</div>
-    </div>
-  `).join('');
 }
 
 // ---- Recent Jobs ----
