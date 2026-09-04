@@ -22,7 +22,7 @@ export default defineConfig({
     },
     target: 'esnext',
     minify: false, // Keep readable for Chrome Web Store review
-    sourcemap: true,
+    sourcemap: false,
   },
   resolve: {
     alias: {

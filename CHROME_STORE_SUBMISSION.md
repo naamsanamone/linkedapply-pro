@@ -64,12 +64,9 @@ LinkedApply Pro automates your LinkedIn job applications with AI-powered intelli
 • DeepSeek
 
 💰 PRICING:
-• Free Trial: 3 days, 5 applications/day
-• Day Pass: $2.99
-• Weekly: $7.99
-• Monthly: $14.99 (most popular)
-• Yearly: $99.99 (save 44%)
-• Lifetime: $199.99
+• Free — Bring Your Own Key (BYOK)
+• Use your own OpenAI, Gemini, or DeepSeek API key
+• No subscriptions, no limits, no hidden fees
 
 ⚡ HOW IT WORKS:
 1. Install the extension

@@ -16,7 +16,7 @@ export default defineConfig({
     },
     target: 'esnext',
     minify: false,
-    sourcemap: true,
+    sourcemap: false,
   },
   resolve: {
     alias: {
