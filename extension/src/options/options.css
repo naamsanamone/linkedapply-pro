@@ -160,20 +160,7 @@ select.input {
   transition: opacity var(--transition-base);
 }
 
-/* ---- Tier Selector ---- */
-.tier-selector { display: flex; flex-direction: column; gap: 8px; }
-.tier-option {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: 10px;
-  border: 2px solid var(--color-border); cursor: pointer;
-  transition: all 0.2s;
-}
-.tier-option:hover { border-color: rgba(99,102,241,0.3); }
-.tier-option--active { border-color: var(--color-primary); background: rgba(99,102,241,0.06); }
-.tier-option input[type="radio"] { accent-color: var(--color-primary); }
-.tier-option__content { display: flex; flex-direction: column; gap: 2px; }
-.tier-option__name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
-.tier-option__desc { font-size: 12px; color: var(--color-text-tertiary); }
+
 
 .options__section-title {
   font-size: 14px; font-weight: 600; color: var(--color-text-primary);

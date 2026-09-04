@@ -1,65 +1,76 @@
 # Privacy Policy — LinkedApply Pro
 
-**Last Updated:** April 2026
+**Last Updated:** September 4, 2026
 
-## What Data We Collect
+## Overview
 
-### Data Stored Locally (Chrome Extension)
-The following data is stored exclusively in your browser's local storage (`chrome.storage.local`) and never leaves your device unless you explicitly enable Cloud Sync:
+LinkedApply Pro is a browser extension that assists with job applications on LinkedIn. This privacy policy explains how the extension handles your data.
 
-- **Profile Information**: Name, email, phone number, location — used to auto-fill job application forms.
-- **Question Defaults**: Pre-configured answers for common application questions (years of experience, salary expectations, etc.).
-- **Search Preferences**: Job search terms, location filters, and blacklisted companies.
-- **Applied Jobs History**: Job titles, companies, application dates, and status — used for the dashboard and analytics.
-- **Session Statistics**: Application counts, time saved estimates.
-- **Bot Settings**: Speed preferences, behavior toggles.
+## Data Collection
 
-### Data Sent to Our Servers (Optional)
-The following data is only transmitted when you have an active paid subscription and enable the corresponding features:
+**LinkedApply Pro does NOT collect, transmit, or store any personal data on external servers.**
 
-- **Cloud Sync**: If enabled, your applied jobs list is encrypted in transit (TLS) and stored in our Supabase database linked to your account. This enables cross-device access.
-- **Usage Analytics**: Daily application counts (no job details) are recorded to enforce plan limits and generate your analytics dashboard.
-- **AI Proxy Requests**: If you use our AI proxy (instead of your own API key), your prompts are forwarded to the configured AI provider (OpenAI/Gemini/DeepSeek) and never stored on our servers.
+All data is stored locally on your device using Chrome's built-in `chrome.storage` API.
 
-### Data We Do NOT Collect
-- ❌ LinkedIn login credentials or passwords
-- ❌ LinkedIn messages or connections
-- ❌ Browsing history outside of LinkedIn
-- ❌ Personal files, photos, or documents
-- ❌ Keystroke or screen recording data
-- ❌ Data from any website other than linkedin.com
+## What Data is Stored Locally
 
-## How We Use Your Data
-1. **Auto-filling applications**: Your profile data is used solely to fill LinkedIn Easy Apply forms.
-2. **Dashboard & Analytics**: Your local job history powers the dashboard charts and Kanban board.
-3. **Plan enforcement**: Application counts are used to enforce daily limits for free trial users.
-4. **Service improvement**: Anonymized, aggregate usage statistics may be used to improve the product.
+The following data is stored **only on your device**:
 
-## Data Security
-- All data in transit uses HTTPS/TLS encryption.
-- Your AI API keys are stored locally and never sent to our servers (unless using the AI proxy feature).
-- Cloud-synced data is stored in Supabase with Row Level Security — only you can access your data.
-- We use Stripe for payment processing. We never see or store your credit card details.
-
-## Data Retention
-- **Local data**: Persists until you uninstall the extension or clear it manually.
-- **Cloud data**: Retained while your account is active. Deleted within 30 days of account closure.
-- **Usage logs**: Retained for 90 days, then automatically purged.
+- **Profile Information** — Name, email, phone number, and address you enter in Settings
+- **Job Application Preferences** — Search terms, filters, question defaults
+- **AI API Keys** — Your own API keys (Bring Your Own Key model)
+- **Applied Job Records** — History of jobs you've applied to
+- **Resume Text** — Parsed text from resumes you upload
 
 ## Third-Party Services
-- **Supabase** (database & auth): [supabase.com/privacy](https://supabase.com/privacy)
-- **Stripe** (payments): [stripe.com/privacy](https://stripe.com/privacy)
-- **OpenAI / Google Gemini / DeepSeek** (AI, if enabled): Governed by their respective privacy policies.
-- **Mailgun** (email): [mailgun.com/privacy-policy](https://www.mailgun.com/privacy-policy)
 
-## Your Rights
-- **Access**: View all your data via Settings → Account.
-- **Export**: Download your data in CSV/JSON/HTML format at any time.
-- **Delete**: Request complete data deletion by contacting support@linkedapplypro.com.
-- **Opt-out**: Disable Cloud Sync at any time; all data remains local.
+LinkedApply Pro connects to the following third-party AI services **only when you provide your own API key**:
 
-## Contact
-For privacy inquiries: **support@linkedapplypro.com**
+| Service | Purpose | Data Sent |
+|---|---|---|
+| Google Gemini API | AI question answering, resume tailoring | Job description text, your profile context |
+| OpenAI API | AI question answering, resume tailoring | Job description text, your profile context |
+| DeepSeek API | AI question answering, resume tailoring | Job description text, your profile context |
+
+**Your API keys are stored locally and sent directly to the respective provider.** They are never transmitted to LinkedApply Pro servers.
+
+## Data Sharing
+
+We do **NOT**:
+- Sell or share your data with third parties
+- Use analytics or tracking services
+- Send your data to any server we operate
+- Access your LinkedIn credentials
+
+## LinkedIn Interaction
+
+The extension interacts with LinkedIn's web interface in your browser to:
+- Read job posting details (title, description, company)
+- Fill in application form fields using your saved settings
+- Navigate job search pages
+
+The extension does **not** access your LinkedIn account credentials or session tokens.
+
+## Data Deletion
+
+All extension data can be deleted by:
+1. Using the **Reset Extension** button in Settings → Account
+2. Uninstalling the extension (all local data is automatically removed)
+
+## Permissions Explained
+
+| Permission | Why It's Needed |
+|---|---|
+| `storage` | Save your settings and job history locally |
+| `activeTab` | Interact with the current LinkedIn tab |
+| `sidePanel` | Display the dashboard side panel |
+| `alarms` | Schedule periodic tasks (daily goal resets) |
+| `tabs` | Open LinkedIn tabs and settings pages |
 
 ## Changes to This Policy
-We may update this policy periodically. Significant changes will be communicated via email and/or an in-extension notification.
+
+We may update this privacy policy from time to time. Changes will be reflected in the "Last Updated" date above.
+
+## Contact
+
+For questions about this privacy policy, please open an issue on our GitHub repository.

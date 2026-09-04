@@ -6,9 +6,9 @@
 export const APP_NAME = 'LinkedApply Pro';
 export const APP_VERSION = '1.0.0';
 
-// ---- Backend URLs ----
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-export const API_BASE = `${BACKEND_URL}/api`;
+// ---- Backend URLs (unused in BYOK mode) ----
+export const BACKEND_URL = '';
+export const API_BASE = '';
 
 // ---- LinkedIn URLs ----
 export const LINKEDIN_BASE = 'https://www.linkedin.com';

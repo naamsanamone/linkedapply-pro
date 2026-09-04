@@ -1299,19 +1299,6 @@ function dateSlug(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getLast7Days(): { iso: string; short: string; label: string }[] {
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    days.push({
-      iso: d.toISOString().slice(0, 10),
-      short: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2),
-      label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    });
-  }
-  return days;
-}
-
 function getLast30Days(): { iso: string; label: string }[] {
   const days = [];
   for (let i = 29; i >= 0; i--) {
@@ -1610,7 +1597,7 @@ async function handleTailorGenerate(): Promise<void> {
     const skillsSection = (r.sections || []).find((s: any) => s.type === 'skills');
     if (skillsSection?.categories && Object.keys(skillsSection.categories).length > 0) {
       skillsEl.innerHTML = Object.entries(skillsSection.categories)
-        .map(([cat, skills]) => `<div><strong>${cat}:</strong> ${skills}</div>`)
+        .map(([cat, skills]) => `<div><strong>${esc(cat)}:</strong> ${esc(String(skills))}</div>`)
         .join('');
     } else if (r.allSkills?.length > 0) {
       skillsEl.textContent = r.allSkills.join(', ');
@@ -1620,9 +1607,9 @@ async function handleTailorGenerate(): Promise<void> {
     const expEl = document.getElementById('tailor-experience-preview')!;
     const expSection = (r.sections || []).find((s: any) => s.type === 'experience');
     expEl.innerHTML = (expSection?.entries || []).map((e: any) =>
-      `<div style="margin-bottom: 8px;"><strong>${e.company}</strong> — ${e.title}<br>` +
-      `<em>${e.duration}</em><br>` +
-      `<ul style="margin: 4px 0; padding-left: 16px;">${(e.bullets || []).map((b: string) => `<li>${b}</li>`).join('')}</ul></div>`
+      `<div style="margin-bottom: 8px;"><strong>${esc(e.company)}</strong> — ${esc(e.title)}<br>` +
+      `<em>${esc(e.duration)}</em><br>` +
+      `<ul style="margin: 4px 0; padding-left: 16px;">${(e.bullets || []).map((b: string) => `<li>${esc(b)}</li>`).join('')}</ul></div>`
     ).join('');
 
     log.info(`✨ Resume tailored on-demand — ATS: ${r.atsScore}%, ${(r.keywordsAdded || []).length} keywords`);

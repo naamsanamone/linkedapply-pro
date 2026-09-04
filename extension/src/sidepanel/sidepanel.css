@@ -148,56 +148,6 @@
   transition: width 0.5s ease;
 }
 
-/* ---- Sparkline ---- */
-.sparkline-container {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 80px;
-  padding: 8px 0;
-}
-
-.sparkline-bar {
-  flex: 1;
-  border-radius: 4px 4px 0 0;
-  background: var(--gradient-primary);
-  opacity: 0.7;
-  transition: opacity 0.2s, height 0.5s ease;
-  position: relative;
-  min-height: 4px;
-}
-
-.sparkline-bar:hover {
-  opacity: 1;
-}
-
-.sparkline-bar::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-primary);
-  font-size: 10px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
-}
-
-.sparkline-bar:hover::after { opacity: 1; }
-
-.sparkline-label {
-  font-size: 9px;
-  color: var(--color-text-tertiary);
-  text-align: center;
-  margin-top: 4px;
-}
-
 /* ---- Section Headers ---- */
 .sidepanel__section-title {
   font-size: 14px;

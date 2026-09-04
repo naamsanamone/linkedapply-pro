@@ -11,7 +11,7 @@ import type { Job } from '../shared/types';
 
 const log = createLogger('API');
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const API_BASE = ''; // No backend in BYOK mode
 
 // ================================================
 //  AUTH HELPERS
