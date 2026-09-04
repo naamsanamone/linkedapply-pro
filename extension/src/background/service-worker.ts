@@ -25,7 +25,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // Initialize default storage values on first install
   if (details.reason === 'install') {
-    initializeDefaults();
+    initializeDefaults().catch(err => log.error('Failed to initialize defaults', err));
   }
 });
 
@@ -34,14 +34,6 @@ async function initializeDefaults(): Promise<void> {
   if (!existing) {
     await setStorage(STORAGE_KEYS.BOT_STATUS, 'idle');
     await setStorage(STORAGE_KEYS.SESSION_SUMMARY, DEFAULT_SESSION);
-    await setStorage(STORAGE_KEYS.SUBSCRIPTION, {
-      plan: 'byok',
-      status: 'active',
-      expiresAt: null,
-      features: [],
-      dailyLimit: 0,
-      trialDaysRemaining: 0,
-    });
     log.info('Default storage values initialized');
   }
 }
@@ -404,16 +396,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   log.info(`Alarm fired: ${alarm.name}`);
 
   switch (alarm.name) {
-    case 'cloud_sync': {
-      // Periodic cloud sync
-      try {
-        const { syncToCloud } = await import('../services/sync-service');
-        await syncToCloud();
-      } catch (e) {
-        log.error('Cloud sync failed', e);
-      }
-      break;
-    }
 
     case 'reminder_cleanup': {
       // Clean up old reminders
@@ -453,7 +435,6 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 });
 
 // ---- Set up periodic alarms ----
-chrome.alarms.create('cloud_sync', { periodInMinutes: 30 });
 chrome.alarms.create('reminder_cleanup', { periodInMinutes: 1440 }); // Once daily
 
 log.info('Service worker initialized');

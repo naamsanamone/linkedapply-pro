@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "tsc && vite build && vite build -c vite.content.config.ts",
+    "package": "npm run build && cd dist && powershell Compress-Archive -Path * -DestinationPath ../linkedapply-pro.zip -Force && cd .. && echo Package created: linkedapply-pro.zip",
     "preview": "vite preview",
     "test": "jest",
     "test:e2e": "jest --config jest.e2e.config.ts"
