@@ -5,7 +5,7 @@
 import { createLogger } from '../shared/logger';
 import { getStorage, setStorage } from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/constants';
-import type { BotStatus, SessionSummary, Subscription, ExtensionMessage } from '../shared/types';
+import type { BotStatus, SessionSummary, ExtensionMessage } from '../shared/types';
 
 const log = createLogger('Popup');
 
@@ -16,9 +16,6 @@ const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
 const progressBar = document.getElementById('progress-bar') as HTMLElement;
 const dashboardBtn = document.getElementById('dashboard-btn') as HTMLButtonElement;
 const settingsBtn = document.getElementById('settings-btn') as HTMLButtonElement;
-const upgradeBtn = document.getElementById('upgrade-btn') as HTMLButtonElement;
-const upgradeCta = document.getElementById('upgrade-cta') as HTMLElement;
-const planBadge = document.getElementById('plan-badge') as HTMLElement;
 
 // Stat elements
 const statApplied = document.getElementById('stat-applied') as HTMLElement;
@@ -34,21 +31,18 @@ async function init(): Promise<void> {
   log.info('Popup opened');
 
   // Load current state
-  const [status, session, subscription] = await Promise.all([
+  const [status, session] = await Promise.all([
     getStorage<BotStatus>(STORAGE_KEYS.BOT_STATUS),
     getStorage<SessionSummary>(STORAGE_KEYS.SESSION_SUMMARY),
-    getStorage<Subscription>(STORAGE_KEYS.SUBSCRIPTION),
   ]);
 
   if (status) updateStatusUI(status);
   if (session) updateStatsUI(session);
-  if (subscription) updatePlanUI(subscription);
 
   // Set up event listeners
   startBtn.addEventListener('click', handleStartStop);
   dashboardBtn.addEventListener('click', openDashboard);
   settingsBtn.addEventListener('click', openSettings);
-  upgradeBtn.addEventListener('click', openUpgrade);
 
   const reviewBtn = document.getElementById('review-btn');
   reviewBtn?.addEventListener('click', openDashboard);
@@ -105,12 +99,6 @@ async function openDashboard(): Promise<void> {
 
 function openSettings(): void {
   chrome.runtime.openOptionsPage();
-  window.close();
-}
-
-function openUpgrade(): void {
-  // Open the ShipFast landing page pricing section
-  chrome.tabs.create({ url: `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/#pricing` });
   window.close();
 }
 
@@ -171,15 +159,6 @@ function updateStatsUI(session: SessionSummary): void {
   // Format time saved
   const minutes = Math.round(session.estimatedTimeSaved / 60);
   statTime.textContent = minutes >= 60 ? `${Math.round(minutes / 60)}h` : `${minutes}m`;
-}
-
-function updatePlanUI(subscription: Subscription): void {
-  const badgeEl = planBadge.querySelector('.badge') as HTMLElement;
-  if (!badgeEl) return;
-
-  badgeEl.className = 'badge badge-primary';
-  badgeEl.textContent = 'Free (BYOK)';
-  upgradeCta.style.display = 'none';
 }
 
 // ---- Helpers ----

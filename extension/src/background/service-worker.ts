@@ -35,12 +35,12 @@ async function initializeDefaults(): Promise<void> {
     await setStorage(STORAGE_KEYS.BOT_STATUS, 'idle');
     await setStorage(STORAGE_KEYS.SESSION_SUMMARY, DEFAULT_SESSION);
     await setStorage(STORAGE_KEYS.SUBSCRIPTION, {
-      plan: 'free_trial',
+      plan: 'byok',
       status: 'active',
-      expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days
+      expiresAt: null,
       features: [],
-      dailyLimit: 5,
-      trialDaysRemaining: 3,
+      dailyLimit: 0,
+      trialDaysRemaining: 0,
     });
     log.info('Default storage values initialized');
   }
