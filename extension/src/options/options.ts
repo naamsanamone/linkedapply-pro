@@ -567,6 +567,10 @@ function initAccountPage(): void {
     const statusEl = document.getElementById('export-status');
     try {
       const allData = await chrome.storage.local.get(null);
+      // Redact API key from backup to prevent credential leaks
+      if (allData.ai_config && typeof allData.ai_config === 'object') {
+        allData.ai_config = { ...allData.ai_config, apiKey: '***REDACTED***' };
+      }
       const json = JSON.stringify(allData, null, 2);
       downloadBlob(json, `linkedapply-backup-${dateSlug()}.json`, 'application/json');
       if (statusEl) { statusEl.textContent = '✓ Exported'; setTimeout(() => statusEl.textContent = '', 3000); }

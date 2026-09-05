@@ -171,7 +171,8 @@ class GeminiProvider implements AIProviderClient {
   async testConnection(): Promise<boolean> {
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`
+        `https://generativelanguage.googleapis.com/v1beta/models`,
+        { headers: { 'x-goog-api-key': this.apiKey } }
       );
       if (!response.ok) {
         log.error(`Gemini connection test failed: ${response.status}`);
