@@ -32,7 +32,7 @@ export async function getUsageState(): Promise<UsageState> {
 
   // Reset daily counter if it's a new day
   const today = new Date().toISOString().slice(0, 10);
-  if (state.dailyCalls.date !== today) {
+  if (!state.dailyCalls || state.dailyCalls.date !== today) {
     state.dailyCalls = { date: today, count: 0 };
     await setStorage(USAGE_KEY, state);
   }
@@ -47,7 +47,7 @@ export async function recordAICall(): Promise<UsageState> {
   const state = await getUsageState();
   const today = new Date().toISOString().slice(0, 10);
 
-  if (state.dailyCalls.date !== today) {
+  if (!state.dailyCalls || state.dailyCalls.date !== today) {
     state.dailyCalls = { date: today, count: 1 };
   } else {
     state.dailyCalls.count++;

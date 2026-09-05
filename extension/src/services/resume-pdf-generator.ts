@@ -203,7 +203,8 @@ export function generateTailoredResumePDF(
               doc.text(label, x, y);
               const lw = doc.getTextWidth(label);
               doc.setFont('helvetica', 'normal');
-              const valW = J.W - J.MX - x - lw;
+              let valW = J.W - J.MX - x - lw;
+              valW = Math.max(1.5, valW);
               const lines = doc.splitTextToSize(skills, valW);
               lines.forEach((line: string, i: number) => {
                 checkPage(lineH(J.SM));

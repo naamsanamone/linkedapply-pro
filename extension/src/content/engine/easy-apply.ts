@@ -153,13 +153,7 @@ export async function executeEasyApply(
       }
     } while (nextButton && !isReviewPage(modal));
 
-    // Step 5: We're on the Review page. Click "Review" one more time if needed.
-    const reviewBtn = findSpanByText('Review', document) as HTMLElement;
-    if (reviewBtn) {
-      scrollToView(reviewBtn, true);
-      await clickElement(reviewBtn);
-      await humanDelay(500, 1000);
-    }
+    // Step 5: We're on the Review page — proceed to submit.
 
     // Step 6: Handle follow company checkbox
     await handleFollowCompany(modal, botSettings);
@@ -191,7 +185,7 @@ export async function executeEasyApply(
     }
 
     // Step 8: Submit the application
-    const submitBtn = findSpanByText('Submit application', document) as HTMLElement;
+    const submitBtn = findSubmitButton(modal);
     if (submitBtn) {
       scrollToView(submitBtn, true);
       await clickElement(submitBtn);
@@ -473,6 +467,38 @@ export async function dismissAnyOverlay(): Promise<void> {
 // ---- Stuck Detection & Pause Helpers ----
 
 /**
+ * Find the submit button using multiple strategies for robustness.
+ * Scoped to modal first, falls back to document. Handles non-English UIs.
+ */
+function findSubmitButton(modal: Element): HTMLElement | null {
+  const SUBMIT_TEXTS = ['submit application', 'submit', 'enviar solicitud', 'bewerbung absenden', 'candidater', 'envoyer'];
+
+  // Strategy 1: Find button/span with submit text inside modal
+  for (const text of SUBMIT_TEXTS) {
+    const btn = findButtonInModal(modal, text.charAt(0).toUpperCase() + text.slice(1));
+    if (btn) return btn;
+    const span = findSpanByText(text.charAt(0).toUpperCase() + text.slice(1), modal as HTMLElement);
+    if (span) return span as HTMLElement;
+  }
+
+  // Strategy 2: Check aria-label on buttons in modal footer
+  const footerBtns = modal.querySelectorAll<HTMLElement>('footer button, .artdeco-modal__actionbar button');
+  for (const btn of footerBtns) {
+    const aria = btn.getAttribute('aria-label')?.toLowerCase() || '';
+    const text = btn.textContent?.toLowerCase() || '';
+    if (SUBMIT_TEXTS.some(t => aria.includes(t) || text.includes(t))) return btn;
+  }
+
+  // Strategy 3: Primary button in modal footer (last resort)
+  const primaryBtn = modal.querySelector<HTMLElement>('footer button.artdeco-button--primary');
+  if (primaryBtn) return primaryBtn;
+
+  // Strategy 4: Fall back to document-wide search
+  const docBtn = findSpanByText('Submit application', document) as HTMLElement;
+  return docBtn || null;
+}
+
+/**
  * Get a signature of the current modal page to detect stuck state.
  * Compares question labels + field content to know if the page changed.
  */
@@ -542,7 +568,7 @@ function isReviewPage(modal: Element): boolean {
 
 async function tryUploadResume(modal: Element, resumePath: string, tailoredBlob?: Blob): Promise<boolean> {
   try {
-    const fileInput = modal.querySelector("input[name='file']") as HTMLInputElement;
+    const fileInput = modal.querySelector("input[type='file']") as HTMLInputElement;
     if (!fileInput) {
       log.debug('No resume upload field found');
       return false;

@@ -67,7 +67,7 @@ export async function startAutomation(): Promise<void> {
 
     // Build applied job IDs set from history
     if (existingJobs) {
-      appliedJobIds = new Set(existingJobs.map((j) => j.id));
+      appliedJobIds = new Set(existingJobs.map((j) => j.id).filter(Boolean));
     }
 
     // Build blacklist sets
@@ -359,7 +359,7 @@ async function processJob(
       if (standOutResult) job.standOutTips = standOutResult;
       job.status = 'applied';
       await saveAppliedJob(job);
-      appliedJobIds.add(details.jobId);
+      if (details.jobId) appliedJobIds.add(details.jobId);
       await incrementSession('easyApplied');
       sendJobApplied(job);
       log.info(`✅ Successfully applied to "${details.title}" at ${details.company}`);
@@ -383,7 +383,7 @@ async function processJob(
         if (coverLetterResult) job.coverLetter = coverLetterResult;
         if (standOutResult) job.standOutTips = standOutResult;
         await saveAppliedJob(job);
-        appliedJobIds.add(details.jobId);
+        if (details.jobId) appliedJobIds.add(details.jobId);
         await incrementSession('externalCollected');
         sendJobApplied(job);
       }

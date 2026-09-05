@@ -277,6 +277,9 @@ async function handleSelectQuestion(
       }
       if (!aiUsed) {
         // Random fallback
+        if (selectEl.options.length <= 1) {
+          return { question: label, answer: '', type: 'select', answeredBy };
+        }
         const randomIdx = Math.floor(Math.random() * (selectEl.options.length - 1)) + 1;
         selectEl.selectedIndex = randomIdx;
         selectEl.dispatchEvent(new Event('change', { bubbles: true }));
@@ -676,6 +679,10 @@ async function handleTextQuestion(
     // Write the answer
     input.focus();
     input.value = '';
+    if (input.type === 'number') {
+      const numMatch = answer.match(/\d+/);
+      answer = numMatch ? numMatch[0] : '0';
+    }
     input.value = answer;
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));

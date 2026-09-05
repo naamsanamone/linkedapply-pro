@@ -83,7 +83,7 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ error: 'Unknown message type' });
     }
 
-    return true;
+    return false; // All responses are synchronous
   }
 );
 

@@ -16,13 +16,24 @@ export async function waitForElement(
   parent: Element | Document = document
 ): Promise<Element | null> {
   return new Promise((resolve) => {
-    const existing = parent.querySelector(selector);
-    if (existing) return resolve(existing);
+    let observer: MutationObserver | null = null;
 
-    const observer = new MutationObserver(() => {
+    const timer = setTimeout(() => {
+      if (observer) observer.disconnect();
+      resolve(null);
+    }, timeout);
+
+    const existing = parent.querySelector(selector);
+    if (existing) {
+      clearTimeout(timer);
+      return resolve(existing);
+    }
+
+    observer = new MutationObserver(() => {
       const el = parent.querySelector(selector);
       if (el) {
-        observer.disconnect();
+        clearTimeout(timer);
+        observer?.disconnect();
         resolve(el);
       }
     });
@@ -31,11 +42,6 @@ export async function waitForElement(
       childList: true,
       subtree: true,
     });
-
-    setTimeout(() => {
-      observer.disconnect();
-      resolve(null);
-    }, timeout);
   });
 }
 
@@ -55,15 +61,18 @@ export async function waitForXPath(
     const existing = check();
     if (existing) return resolve(existing);
 
+    let timer: ReturnType<typeof setTimeout>;
+
     const intervalId = setInterval(() => {
       const el = check();
       if (el) {
         clearInterval(intervalId);
+        clearTimeout(timer);
         resolve(el);
       }
     }, 200);
 
-    setTimeout(() => {
+    timer = setTimeout(() => {
       clearInterval(intervalId);
       resolve(null);
     }, timeout);

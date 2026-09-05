@@ -62,6 +62,7 @@ chrome.runtime.onMessage.addListener(
 
       case 'STATUS_UPDATE':
         handleStatusUpdate(message.payload);
+        sendResponse({ success: true });
         break;
 
       case 'JOB_APPLIED':
@@ -134,6 +135,12 @@ async function handleStartBot(tabId?: number): Promise<void> {
   if (!profile || !searchPrefs) {
     log.warn('Cannot start bot — profile or search preferences not configured');
     broadcastStatus('error', 'Please configure your Profile and Search Preferences in Settings first.');
+    return;
+  }
+
+  const currentStatus = await getStorage(STORAGE_KEYS.BOT_STATUS);
+  if (currentStatus === 'searching' || currentStatus === 'applying' || currentStatus === 'reviewing') {
+    log.warn('Bot is already running, ignoring duplicate start');
     return;
   }
 

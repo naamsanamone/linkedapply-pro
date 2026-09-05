@@ -45,14 +45,17 @@ export async function getJobMainDetails(
   let skip = false;
   let skipReason: string | undefined;
 
-  // Get job ID from data attribute
-  const jobId = jobElement.getAttribute('data-occludable-job-id') || 
-                jobElement.getAttribute('data-job-id') ||
-                jobElement.closest('[data-job-id]')?.getAttribute('data-job-id') || '';
-
   // Click into job details
   const jobLink = jobElement.querySelector('a') as HTMLElement;
   scrollToView(jobElement);
+
+  // Get job ID from data attribute or extract from link href as fallback
+  const linkHref = (jobLink as HTMLAnchorElement)?.href || '';
+  const hrefMatch = linkHref.match(/\/view\/(\d+)/) || linkHref.match(/currentJobId=(\d+)/);
+  const jobId = jobElement.getAttribute('data-occludable-job-id') || 
+                jobElement.getAttribute('data-job-id') ||
+                jobElement.closest('[data-job-id]')?.getAttribute('data-job-id') ||
+                (hrefMatch ? hrefMatch[1] : '');
 
   // Get title — text before first newline
   let title = jobLink?.textContent?.trim() || 'Unknown';
@@ -88,11 +91,11 @@ export async function getJobMainDetails(
     skip = true;
     skipReason = 'Blacklisted company';
     log.info(`Skipping "${title} | ${company}" (blacklisted company). Job ID: ${jobId}`);
-  } else if (rejectedJobs.has(jobId)) {
+  } else if (jobId && rejectedJobs.has(jobId)) {
     skip = true;
     skipReason = 'Previously rejected';
     log.info(`Skipping previously rejected "${title} | ${company}". Job ID: ${jobId}`);
-  } else if (appliedJobIds.has(jobId)) {
+  } else if (jobId && appliedJobIds.has(jobId)) {
     skip = true;
     skipReason = 'Already applied';
     log.info(`Already applied to "${title} | ${company}". Job ID: ${jobId}`);

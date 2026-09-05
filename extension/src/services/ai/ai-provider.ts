@@ -133,7 +133,11 @@ class OpenAICompatibleProvider implements AIProviderClient {
       // Try extracting JSON from markdown code block
       const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[1].trim()) as T;
+        try {
+          return JSON.parse(jsonMatch[1].trim());
+        } catch {
+          throw new Error('Failed to parse AI JSON response');
+        }
       }
       throw new Error(`Failed to parse JSON from ${this.provider} response: ${raw.substring(0, 200)}`);
     }
