@@ -243,12 +243,14 @@ const DEFAULT_API_URLS: Record<string, string> = {
   openai: 'https://api.openai.com/v1',
   gemini: '',
   deepseek: 'https://api.deepseek.com/v1',
+  custom: '',
 };
 
 const DEFAULT_MODELS: Record<string, string> = {
   openai: 'gpt-4o-mini',
   gemini: 'gemini-2.5-flash',
   deepseek: 'deepseek-chat',
+  custom: '',
 };
 
 async function loadAI(): Promise<void> {

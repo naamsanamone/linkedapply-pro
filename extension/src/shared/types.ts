@@ -156,7 +156,7 @@ export interface ExtractedSkills {
   niceToHave: string[];
 }
 
-export type AIProvider = 'openai' | 'gemini' | 'deepseek';
+export type AIProvider = 'openai' | 'gemini' | 'deepseek' | 'custom';
 
 export interface AIConfig {
   provider: AIProvider;

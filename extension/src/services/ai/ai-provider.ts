@@ -401,6 +401,8 @@ export function createAIProvider(config: AIConfig): AIProviderClient {
       return new OpenAICompatibleProvider(config);
     case 'deepseek':
       return new OpenAICompatibleProvider(config);
+    case 'custom':
+      return new OpenAICompatibleProvider(config);
     case 'gemini':
       return new GeminiProvider(config);
     default:
