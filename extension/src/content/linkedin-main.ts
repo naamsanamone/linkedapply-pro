@@ -36,6 +36,11 @@ log.info(`Page type: ${pageType}`);
 // ---- Message Listener ----
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
+    // Guard against extension context invalidated (after extension update)
+    if (!chrome.runtime?.id) {
+      log.warn('Extension context invalidated — page reload required');
+      return;
+    }
     log.info('Received:', message.type);
 
     switch (message.type) {

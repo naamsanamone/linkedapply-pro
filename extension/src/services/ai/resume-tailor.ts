@@ -168,7 +168,7 @@ export async function aiTailorResume(
         ...tailoredSections[summaryIdx],
         text: topSkills
           ? `${title} with ${years} years of experience specializing in ${topSkills}. ` +
-            `Skilled in ${jdKeywords.domain.slice(0, 3).join(', ') || 'building scalable applications'} with a track record of delivering production-grade solutions.`
+            `Skilled in ${(jdKeywords.domain || []).slice(0, 3).join(', ') || 'building scalable applications'} with a track record of delivering production-grade solutions.`
           : `${title} with ${years} years of experience in software development. ` +
             `Experienced in ${allSkills.slice(0, 5).join(', ') || 'full-stack development'}.`,
       };

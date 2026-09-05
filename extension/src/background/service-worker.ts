@@ -90,27 +90,27 @@ chrome.runtime.onMessage.addListener(
         break;
 
       case 'GET_STATUS':
-        getStatus().then(sendResponse);
+        getStatus().then(sendResponse).catch(err => sendResponse({ error: err?.message || 'Unknown error' }));
         return true; // async
 
       case 'AI_MATCH_JOB':
-        handleAIMatchJob(message.payload).then(sendResponse);
+        handleAIMatchJob(message.payload).then(sendResponse).catch(err => sendResponse({ error: err?.message || 'Unknown error' }));
         return true; // async
 
       case 'AI_TAILOR_RESUME':
-        handleAITailorResume(message.payload).then(sendResponse);
+        handleAITailorResume(message.payload).then(sendResponse).catch(err => sendResponse({ error: err?.message || 'Unknown error' }));
         return true; // async
 
       case 'AI_COVER_LETTER':
-        handleAICoverLetter(message.payload).then(sendResponse);
+        handleAICoverLetter(message.payload).then(sendResponse).catch(err => sendResponse({ error: err?.message || 'Unknown error' }));
         return true; // async
 
       case 'AI_STANDOUT_TIPS':
-        handleAIStandOutTips(message.payload).then(sendResponse);
+        handleAIStandOutTips(message.payload).then(sendResponse).catch(err => sendResponse({ error: err?.message || 'Unknown error' }));
         return true; // async
 
       case 'GET_USAGE':
-        getUsageState().then(sendResponse);
+        getUsageState().then(sendResponse).catch(err => sendResponse({ error: err?.message || 'Unknown error' }));
         return true; // async
 
       case 'PRE_APPLY_REVIEW':
@@ -129,6 +129,14 @@ chrome.runtime.onMessage.addListener(
 
 // ---- Bot Control ----
 async function handleStartBot(tabId?: number): Promise<void> {
+  const profile = await getStorage(STORAGE_KEYS.USER_PROFILE);
+  const searchPrefs = await getStorage(STORAGE_KEYS.SEARCH_PREFS);
+  if (!profile || !searchPrefs) {
+    log.warn('Cannot start bot — profile or search preferences not configured');
+    broadcastStatus('error', 'Please configure your Profile and Search Preferences in Settings first.');
+    return;
+  }
+
   log.info('Starting bot...');
   await setStorage(STORAGE_KEYS.BOT_STATUS, 'searching');
 
@@ -361,6 +369,23 @@ function broadcastUpdate(): void {
     } as ExtensionMessage).catch(() => {
       // No listeners — popup/sidepanel not open
     });
+  });
+}
+
+function broadcastStatus(status: BotStatus, reason?: string): void {
+  setStorage(STORAGE_KEYS.BOT_STATUS, status);
+  if (status === 'error') {
+    updateBadge(0, 'error');
+    if (reason) {
+      showNotification('error', '⚠️ Bot Error', reason);
+    }
+  }
+  chrome.runtime.sendMessage({
+    type: 'STATUS_UPDATE',
+    payload: { status, reason },
+    timestamp: Date.now(),
+  } as ExtensionMessage).catch(() => {
+    // No listeners — popup/sidepanel not open
   });
 }
 

@@ -115,6 +115,14 @@ export async function startAutomation(): Promise<void> {
 
       // Process each job
       for (const jobElement of jobListings) {
+        // CAPTCHA / security checkpoint detection
+        if (window.location.pathname.includes('/checkpoint/') ||
+            document.querySelector('iframe[src*="arkoselabs"], iframe[src*="captcha"], #captcha-internal')) {
+          log.warn('LinkedIn security checkpoint detected — pausing bot');
+          await chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', payload: { status: 'paused', reason: 'LinkedIn security checkpoint detected. Please solve the CAPTCHA and resume.' }, timestamp: Date.now() });
+          return; // Exit the automation loop
+        }
+
         if (shouldStop) break;
         while (isPaused && !shouldStop) {
           await humanDelay(1000, 2000);
@@ -381,6 +389,7 @@ async function processJob(
       }
     } else {
       log.debug('Skipping non-Easy Apply job (Easy Apply only mode)');
+      await incrementSession('skipped');
     }
   }
 

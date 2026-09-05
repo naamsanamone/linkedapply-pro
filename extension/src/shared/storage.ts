@@ -22,8 +22,14 @@ export async function getStorage<T>(key: StorageKey): Promise<T | null> {
  * Set a value in chrome.storage.local
  */
 export async function setStorage<T>(key: StorageKey, value: T): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ [key]: value }, resolve);
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ [key]: value }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(`Storage write failed for key "${key}": ${chrome.runtime.lastError.message}`));
+      } else {
+        resolve();
+      }
+    });
   });
 }
 

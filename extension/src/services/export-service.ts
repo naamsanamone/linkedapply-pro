@@ -223,13 +223,13 @@ export async function exportHTMLReport(): Promise<string> {
   <h2>Top Companies</h2>
   <table>
     <tr><th>Company</th><th>Applications</th></tr>
-    ${topCompanies.map(([name, count]) => `<tr><td>${name}</td><td>${count}</td></tr>`).join('')}
+    ${topCompanies.map(([name, count]) => `<tr><td>${escapeHtml(name)}</td><td>${count}</td></tr>`).join('')}
   </table>
 
   <h2>Top Locations</h2>
   <table>
     <tr><th>Location</th><th>Applications</th></tr>
-    ${topLocations.map(([name, count]) => `<tr><td>${name}</td><td>${count}</td></tr>`).join('')}
+    ${topLocations.map(([name, count]) => `<tr><td>${escapeHtml(name)}</td><td>${count}</td></tr>`).join('')}
   </table>
 
   <h2>Recent Applications</h2>

@@ -192,7 +192,7 @@ export async function handleReminderAlarm(alarmName: string): Promise<void> {
   // Fire Chrome notification
   await chrome.notifications.create(alarmName, {
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+    iconUrl: chrome.runtime.getURL('icons/icon-128.png'),
     title: '🔔 Follow-Up Reminder',
     message: `Time to follow up with ${reminder.company} about "${reminder.jobTitle}"`,
     priority: 2,

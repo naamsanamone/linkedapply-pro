@@ -253,7 +253,14 @@ const DEFAULT_MODELS: Record<string, string> = {
 
 async function loadAI(): Promise<void> {
   const config = await getStorage<AIConfig>(STORAGE_KEYS.AI_CONFIG);
-  if (!config) return;
+  if (!config) {
+    // First-time user: trigger provider sync to populate default model/URL
+    const providerSelect = document.getElementById('ai-provider') as HTMLSelectElement | null;
+    if (providerSelect) {
+      providerSelect.dispatchEvent(new Event('change'));
+    }
+    return;
+  }
 
   setVal('ai-provider', config.provider);
   setVal('ai-apiUrl', config.apiUrl);
@@ -612,6 +619,19 @@ function initAccountPage(): void {
   importBtn?.addEventListener('click', async () => {
     const statusEl = document.getElementById('import-status');
     if (!pendingImportData) return;
+
+    if (typeof pendingImportData !== 'object' || pendingImportData === null || Array.isArray(pendingImportData)) {
+      alert('Invalid import file: expected a JSON object.');
+      return;
+    }
+
+    if (Array.isArray(pendingImportData.jobs) && !('applied_jobs' in pendingImportData)) {
+      pendingImportData['applied_jobs'] = pendingImportData.jobs;
+      delete pendingImportData.jobs;
+      delete pendingImportData.exportedAt;
+      delete pendingImportData.totalJobs;
+    }
+
     try {
       await chrome.storage.local.set(pendingImportData);
       if (statusEl) { statusEl.textContent = '✓ Data imported — reload to apply'; statusEl.style.color = 'var(--color-success)'; }

@@ -45,6 +45,7 @@
                         "activeTab",
                         "sidePanel",
                         "storage",
+                        "unlimitedStorage",
                         "alarms",
                         "notifications",
                         "tabs"

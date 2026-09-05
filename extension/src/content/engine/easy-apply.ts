@@ -477,11 +477,16 @@ export async function dismissAnyOverlay(): Promise<void> {
  * Compares question labels + field content to know if the page changed.
  */
 function getPageSignature(modal: Element): string {
+  const heading = modal.querySelector('h2, h3')?.textContent?.trim() || '';
   const labels = Array.from(modal.querySelectorAll('label'))
     .map(l => l.textContent?.trim() || '')
     .join('|');
+  const fields = Array.from(modal.querySelectorAll('input, select, textarea'))
+    .map(f => (f as HTMLElement).id || (f as HTMLInputElement).name || '')
+    .filter(Boolean)
+    .join(',');
   const errorCount = modal.querySelectorAll('.artdeco-inline-feedback--error').length;
-  return `${labels}::${errorCount}`;
+  return `${heading}::${labels}::${fields}::${errorCount}`;
 }
 
 /**

@@ -51,8 +51,8 @@ export async function aiGenerateCoverLetter(
       maxTokens: 2000,
     });
 
-    // Ensure arrays/strings exist
-    result.body = result.body || [];
+    if (!result || typeof result !== 'object') return null;
+    result.body = Array.isArray(result.body) ? result.body : (typeof result.body === 'string' ? [result.body] : []);
     result.subject = result.subject || `Application for ${jobTitle}`;
     result.greeting = result.greeting || 'Dear Hiring Manager,';
     result.closing = result.closing || 'Sincerely,';

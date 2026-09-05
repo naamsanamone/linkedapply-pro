@@ -50,7 +50,7 @@ async function init(): Promise<void> {
   // Listen for status updates from service worker
   chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
     if (message.type === 'STATUS_UPDATE') {
-      updateStatusUI(message.payload.status);
+      if (message.payload?.status) updateStatusUI(message.payload.status);
       if (message.payload.session) {
         updateStatsUI(message.payload.session);
       }

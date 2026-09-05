@@ -768,6 +768,13 @@ function handleCheckboxQuestion(
   const prevChecked = checkbox.checked;
   let answeredBy: QuestionAnswer['answeredBy'] = 'pattern';
 
+  const negativeKeywords = ['sponsorship', 'felony', 'convicted', 'decline', 'do not consent', 'do not agree', 'criminal', 'drug test'];
+  const labelLower = label.toLowerCase();
+  if (negativeKeywords.some(kw => labelLower.includes(kw))) {
+    log.info(`Skipping potentially disqualifying checkbox: "${label}"`);
+    return { question: label, answer: 'skipped-dangerous', type: 'checkbox', answeredBy: 'pattern' as const };
+  }
+
   // Always check the checkbox (agree to terms, etc.)
   if (!prevChecked) {
     try {

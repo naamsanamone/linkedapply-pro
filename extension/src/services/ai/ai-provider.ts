@@ -208,10 +208,13 @@ class GeminiProvider implements AIProviderClient {
           body.generationConfig = { ...body.generationConfig, responseMimeType: 'application/json' };
         }
 
-        const url = `${this.baseUrl}:generateContent?key=${this.apiKey}`;
+        const url = `${this.baseUrl}:generateContent`;
         const response = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': this.apiKey,
+          },
           body: JSON.stringify(body),
         });
 

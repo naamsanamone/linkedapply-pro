@@ -58,10 +58,7 @@ export async function findAnswer(question: string): Promise<AnswerMemoryEntry | 
   // Exact match
   const exact = memory.find(e => e.questionKey === key);
   if (exact) {
-    // Update usage stats
     exact.usedCount += 1;
-    exact.lastUsed = new Date().toISOString();
-    await setStorage(STORAGE_KEYS.ANSWER_MEMORY, memory);
     return exact;
   }
 
@@ -78,8 +75,6 @@ export async function findAnswer(question: string): Promise<AnswerMemoryEntry | 
 
   if (bestMatch) {
     bestMatch.usedCount += 1;
-    bestMatch.lastUsed = new Date().toISOString();
-    await setStorage(STORAGE_KEYS.ANSWER_MEMORY, memory);
   }
 
   return bestMatch;
@@ -111,6 +106,11 @@ export async function saveAnswer(
       usedCount: 1,
       lastUsed: new Date().toISOString(),
     });
+
+    if (memory.length > 500) {
+      memory.sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime());
+      memory.length = 500;
+    }
   }
 
   await setStorage(STORAGE_KEYS.ANSWER_MEMORY, memory);

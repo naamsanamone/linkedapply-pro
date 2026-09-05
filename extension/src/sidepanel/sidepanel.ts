@@ -98,10 +98,8 @@ async function loadDashboardData(): Promise<void> {
   }
   if (status) updateBotStatus(status, session);
   renderAnalytics(allJobs, session);
-  if (allJobs.length > 0) {
-    renderRecentJobs(allJobs.slice(-8).reverse());
-    renderKanban(allJobs);
-  }
+  renderRecentJobs(allJobs.slice(-8).reverse());
+  renderKanban(allJobs);
   renderFailedJobs(failedJobs || []);
 }
 
@@ -1055,18 +1053,23 @@ function showPreApplyReview(data: PreApplyReviewData): void {
   const soContent = document.getElementById('review-so-content');
   if (soContent) soContent.innerHTML = '<button class="btn btn-outline btn-sm" id="review-gen-so">🔄 Generate Stand-Out Tips</button>';
 
-  // Wire up on-demand buttons
+  // Wire up on-demand buttons (recreated via innerHTML above, so addEventListener is fine)
   document.getElementById('review-gen-cl')?.addEventListener('click', generateCoverLetterOnDemand);
   document.getElementById('review-gen-so')?.addEventListener('click', generateStandOutOnDemand);
 
-  // Wire up action buttons
-  document.getElementById('review-apply-tailored')?.addEventListener('click', () => submitReviewDecision('apply_tailored'));
-  document.getElementById('review-apply-default')?.addEventListener('click', () => submitReviewDecision('apply_default'));
-  document.getElementById('review-skip')?.addEventListener('click', () => submitReviewDecision('skip'));
+  // Wire up action buttons — use onclick to prevent listener accumulation on repeated calls
+  const applyTailoredBtn = document.getElementById('review-apply-tailored');
+  if (applyTailoredBtn) applyTailoredBtn.onclick = () => submitReviewDecision('apply_tailored');
+  const applyDefaultBtn = document.getElementById('review-apply-default');
+  if (applyDefaultBtn) applyDefaultBtn.onclick = () => submitReviewDecision('apply_default');
+  const skipBtn = document.getElementById('review-skip');
+  if (skipBtn) skipBtn.onclick = () => submitReviewDecision('skip');
 
-  // Wire up download/copy buttons
-  document.getElementById('review-download-resume')?.addEventListener('click', downloadTailoredResume);
-  document.getElementById('review-copy-resume')?.addEventListener('click', copyTailoredResume);
+  // Wire up download/copy buttons — use onclick to prevent listener accumulation
+  const downloadBtn = document.getElementById('review-download-resume');
+  if (downloadBtn) downloadBtn.onclick = downloadTailoredResume;
+  const copyBtn = document.getElementById('review-copy-resume');
+  if (copyBtn) copyBtn.onclick = copyTailoredResume;
 
   // Start countdown timer
   log.info(`⏱ Pre-apply countdown started: ${30}s`);

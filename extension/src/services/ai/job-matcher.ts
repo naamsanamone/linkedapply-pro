@@ -46,11 +46,9 @@ export async function aiMatchJob(
       maxTokens: 4000,
     });
 
-    // Validate score range
-    result.score = Math.max(0, Math.min(100, result.score));
-
-    // Ensure arrays exist (in case AI omits them)
-    result.requiredQualifications = result.requiredQualifications || [];
+    if (!result || typeof result !== 'object') return null;
+    result.score = Number.isFinite(result.score) ? Math.max(0, Math.min(100, result.score)) : 50;
+    if (!Array.isArray(result.requiredQualifications)) result.requiredQualifications = [];
     result.preferredQualifications = result.preferredQualifications || [];
     result.strengths = result.strengths || [];
     result.gaps = result.gaps || [];

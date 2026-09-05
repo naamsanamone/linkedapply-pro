@@ -292,6 +292,7 @@ export function getJobDescription(
 
     // Check bad words in JD
     for (const word of prefs.badWords) {
+      if (!word.trim()) continue;
       if (descLower.includes(word.toLowerCase())) {
         skip = true;
         skipReason = 'Found bad word in job description';
