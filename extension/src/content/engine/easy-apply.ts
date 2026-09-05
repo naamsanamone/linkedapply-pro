@@ -113,8 +113,8 @@ export async function executeEasyApply(
         await tryUploadResume(modal, questionDefaults.defaultResumePath || '', tailoredResumeBlob || undefined);
       }
 
-      // Look for the "Review" or "Next" button
-      nextButton = findButtonInModal(modal, 'Review') || findButtonInModal(modal, 'Next');
+      // Look for the "Review" or "Next" button (multi-language)
+      nextButton = findNavButton(modal);
 
       if (nextButton) {
         try {
@@ -560,10 +560,39 @@ function findButtonInModal(modal: Element, text: string): HTMLElement | null {
   return null;
 }
 
+/**
+ * Find Next/Review navigation button with multi-language support.
+ */
+function findNavButton(modal: Element): HTMLElement | null {
+  const NAV_TEXTS = [
+    'Review', 'Next', 'Continue',
+    'Siguiente', 'Revisar', 'Continuar',       // Spanish
+    'Weiter', 'Überprüfen',                     // German
+    'Suivant', 'Vérifier',                      // French
+    'Avanti', 'Rivedi',                         // Italian
+    'Próximo', 'Revisar',                       // Portuguese
+  ];
+  for (const text of NAV_TEXTS) {
+    const btn = findButtonInModal(modal, text);
+    if (btn) return btn;
+  }
+  // Fallback: aria-label on footer buttons
+  const footerBtns = modal.querySelectorAll<HTMLElement>('footer button');
+  for (const btn of footerBtns) {
+    const aria = btn.getAttribute('aria-label')?.toLowerCase() || '';
+    if (['next', 'review', 'continue', 'siguiente', 'weiter', 'suivant'].some(t => aria.includes(t))) {
+      return btn;
+    }
+  }
+  // Last resort: primary button in footer (not dismiss/close)
+  const primaryBtn = modal.querySelector<HTMLElement>('footer button.artdeco-button--primary');
+  if (primaryBtn && !primaryBtn.textContent?.toLowerCase().includes('dismiss')) return primaryBtn;
+  return null;
+}
+
 function isReviewPage(modal: Element): boolean {
-  // Check if we can see "Submit application" — means we're at the end
-  const submitBtn = findSpanByText('Submit application', modal);
-  return submitBtn !== null;
+  // Use the multi-language submit button finder
+  return findSubmitButton(modal) !== null;
 }
 
 async function tryUploadResume(modal: Element, resumePath: string, tailoredBlob?: Blob): Promise<boolean> {

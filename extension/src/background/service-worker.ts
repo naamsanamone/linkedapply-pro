@@ -525,9 +525,23 @@ let _aiClientCreatedAt = 0;
 const AI_CLIENT_TTL = 5 * 60 * 1000; // re-read config every 5 min
 
 // Rate limit tracking — back off on 429
+// Persisted to chrome.storage.session to survive MV3 service worker suspension
 let _rateLimitUntil = 0;      // timestamp when we can retry
 let _rateLimitBackoff = 0;    // current backoff in ms
 const RATE_LIMIT_MAX_BACKOFF = 120_000; // 2 minutes max
+
+// Restore rate limit state on service worker wake-up
+chrome.storage.session?.get(['_rateLimitUntil', '_rateLimitBackoff'], (data) => {
+  if (data._rateLimitUntil && data._rateLimitUntil > Date.now()) {
+    _rateLimitUntil = data._rateLimitUntil;
+    _rateLimitBackoff = data._rateLimitBackoff || 0;
+    log.info(`Restored rate limit state — ${Math.ceil((_rateLimitUntil - Date.now()) / 1000)}s remaining`);
+  }
+});
+
+function _persistRateLimit(): void {
+  chrome.storage.session?.set({ _rateLimitUntil, _rateLimitBackoff }).catch(() => {});
+}
 
 // Clear rate limit + AI cache when user changes API key
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -535,6 +549,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     log.info('AI config changed — clearing rate limit and cached client');
     _rateLimitUntil = 0;
     _rateLimitBackoff = 0;
+    _persistRateLimit();
     _cachedAIClient = null;
     _aiClientCreatedAt = 0;
   }
@@ -566,6 +581,7 @@ function handleRateLimitError(error: any): void {
   const isDailyQuota = errorMsg.includes('daily quota') || errorMsg.includes('PerDay') || errorMsg.includes('FreeTier');
   if (isDailyQuota) {
     _rateLimitUntil = Date.now() + 3_600_000; // 1 hour
+    _persistRateLimit();
     log.warn('🚫 Daily AI quota exhausted — skipping all AI calls for ~1 hour');
     return;
   }
@@ -583,11 +599,13 @@ function handleRateLimitError(error: any): void {
   }
 
   _rateLimitUntil = Date.now() + waitMs;
+  _persistRateLimit();
   log.warn(`⏳ AI rate limited — backing off for ${Math.ceil(waitMs / 1000)}s`);
 }
 
 function clearRateLimit(): void {
   _rateLimitBackoff = 0;
+  _persistRateLimit();
   // Don't clear _rateLimitUntil — let it expire naturally
 }
 
