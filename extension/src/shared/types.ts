@@ -5,15 +5,6 @@
 // ---- Bot States ----
 export type BotStatus = 'idle' | 'searching' | 'filtering' | 'applying' | 'reviewing' | 'paused' | 'error' | 'stopped';
 
-// ---- Plan Types ----
-export type PlanType = 'free';
-export type PlanStatus = 'active' | 'expired' | 'canceled' | 'past_due';
-
-export interface Subscription {
-  plan: PlanType;
-  status: PlanStatus | string;
-}
-
 // ---- Job Models ----
 export interface Job {
   id: string;
@@ -279,8 +270,6 @@ export type MessageType =
   | 'UPDATE_SETTINGS'
   | 'OPEN_SIDEPANEL'
   | 'PAUSE_BEFORE_SUBMIT'
-  | 'CHECK_SUBSCRIPTION'
-  | 'SUBSCRIPTION_RESPONSE'
   | 'RETRY_JOB'
   | 'RETRY_APPLY'
   | 'AI_MATCH_JOB'

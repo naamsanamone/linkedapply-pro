@@ -47,8 +47,6 @@ export const STORAGE_KEYS = {
   APPLIED_JOBS: 'applied_jobs',
   FAILED_JOBS: 'failed_jobs',
   BOT_STATUS: 'bot_status',
-  SUBSCRIPTION: 'subscription',
-  AUTH_TOKEN: 'auth_token',
   THEME: 'theme',
   ONBOARDING_COMPLETE: 'onboarding_complete',
   FOLLOW_UP_REMINDERS: 'follow_up_reminders',
