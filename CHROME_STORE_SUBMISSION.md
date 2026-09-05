@@ -1,115 +1,140 @@
 # Chrome Web Store Submission Guide — LinkedApply Pro
 
-## Pre-Submission Checklist
+## Quick Start
 
-### 1. Build the Extension
-```bash
+```powershell
 cd linkedapply-pro/extension
-npm install
-npm run build
-```
-The `dist/` folder contains the production-ready extension.
-
-### 2. Create ZIP for Upload
-```bash
-cd dist
-# On Windows:
-Compress-Archive -Path * -DestinationPath ../linkedapply-pro-v1.0.0.zip
-# On Mac/Linux:
-zip -r ../linkedapply-pro-v1.0.0.zip .
+npm run package
+# Creates: linkedapply-pro.zip (ready to upload)
 ```
 
-### 3. Required Assets
+---
 
-| Asset | Size | Location |
-|---|---|---|
-| Icon 128×128 | 128x128 PNG | `public/icons/icon-128.png` |
-| Promo Small | 440x280 PNG | Create in design tool |
-| Promo Large | 920x680 PNG | Create in design tool (optional) |
-| Screenshot 1 | 1280x800 PNG | Popup + job applying |
-| Screenshot 2 | 1280x800 PNG | Dashboard overview |
-| Screenshot 3 | 1280x800 PNG | Analytics charts |
-| Screenshot 4 | 1280x800 PNG | Settings page |
-| Screenshot 5 | 1280x800 PNG | Kanban board |
-
-### 4. Store Listing Content
+## Store Listing Content
 
 **Name**: LinkedApply Pro — AI Job Auto-Applier
 
 **Summary** (132 chars max):
 ```
-AI-powered LinkedIn job auto-applier. Apply to 100+ jobs/hour with smart form filling, analytics & Kanban tracking.
+AI-powered LinkedIn job application assistant. Smart question answering, resume tailoring, and job tracking. Free & private (BYOK).
 ```
 
-**Description**:
+**Description** (copy-paste to CWS):
 ```
-LinkedApply Pro automates your LinkedIn job applications with AI-powered intelligence.
+LinkedApply Pro is your AI-powered job application assistant for LinkedIn. It automates Easy Apply applications with intelligent form filling, while keeping you in full control.
 
 🚀 KEY FEATURES:
-• Auto-apply to LinkedIn Easy Apply jobs at scale
-• AI-powered form filling (30+ question patterns)
-• Smart job filtering (blacklists, bad words, experience matching)
-• Kanban job tracker with drag-and-drop
-• Real-time analytics dashboard (5 chart types)
-• AI resume tailoring & cover letter generation
-• Job match scoring (0-100)
-• ATS keyword analysis
-• Follow-up reminders with notifications
-• Cloud sync across devices
-• Data export (CSV, JSON, PDF)
+• Auto-apply to LinkedIn Easy Apply jobs with smart automation
+• AI-powered form filling — handles 30+ question types automatically
+• Resume tailoring — AI rewrites your resume to match each job description
+• Job match scoring (0-100) with keyword analysis
+• Pre-apply review — inspect each job before applying
+• Kanban job tracker with drag-and-drop status management
+• Real-time analytics dashboard with charts and stats
+• AI cover letter generation
+• Follow-up reminders with Chrome notifications
+• Custom Q&A — define your own question-answer pairs
+• Data export (JSON backup & restore)
 
-🤖 AI PROVIDERS SUPPORTED:
-• OpenAI (GPT-4o, GPT-4)
-• Google Gemini
+🤖 AI PROVIDERS (Bring Your Own Key):
+• Google Gemini (recommended — free tier available)
+• OpenAI (GPT-4o, GPT-4o-mini)
 • DeepSeek
 
-💰 PRICING:
-• Free — Bring Your Own Key (BYOK)
-• Use your own OpenAI, Gemini, or DeepSeek API key
-• No subscriptions, no limits, no hidden fees
+💰 100% FREE — NO SUBSCRIPTIONS:
+• Bring Your Own API Key (BYOK) model
+• Use your own Gemini, OpenAI, or DeepSeek API key
+• No monthly fees, no limits, no hidden charges
+• Gemini offers a generous free tier
+
+🔒 PRIVACY-FIRST:
+• ALL data stored locally on your device — nothing leaves your browser
+• API keys stored locally, sent directly to AI providers only
+• No accounts, no sign-ups, no tracking, no analytics
+• No LinkedIn credentials or passwords collected
+• Full data export and reset anytime
 
 ⚡ HOW IT WORKS:
 1. Install the extension
-2. Fill in your profile in Settings
-3. Set search terms and filters
-4. Click Start — watch it apply!
-5. Track everything in your dashboard
+2. Add your AI API key in Settings → AI Settings
+3. Fill in your profile and upload your resume
+4. Set job search keywords and filters
+5. Click Start — the bot applies intelligently!
+6. Track everything in the dashboard sidepanel
 
-🔒 PRIVACY:
-• Your data stays local by default
-• No LinkedIn credentials or passwords collected
-• Cloud sync is optional and encrypted
-• Full data export anytime
+🎯 PERFECT FOR:
+• Job seekers tired of repetitive form filling
+• Career changers applying across multiple roles
+• Bootcamp graduates mass-applying to entry-level positions
+• Anyone who values their time and privacy
 
-Perfect for job seekers, bootcamp graduates, career changers, and anyone tired of manually filling out applications.
+Built with Manifest V3. Open source. No server required.
 ```
 
 **Category**: Productivity
 
 **Language**: English
 
-### 5. Permissions Justification
+---
+
+## Required Assets
+
+| Asset | Size | Status |
+|---|---|---|
+| Icon 128×128 | 128x128 PNG | ✅ `public/icons/icon-128.png` |
+| Screenshot 1 | 1280x800 | ✅ Popup + LinkedIn (generated) |
+| Screenshot 2 | 1280x800 | ✅ Dashboard sidepanel (generated) |
+| Screenshot 3 | 1280x800 | ✅ AI Settings page (generated) |
+| Promo Tile | 440x280 | Optional — create later |
+
+---
+
+## Permissions Justification
+
+Copy these into the CWS "Justify Permissions" fields:
 
 | Permission | Justification |
 |---|---|
-| `activeTab` | Required to interact with LinkedIn job application forms |
-| `sidePanel` | Powers the real-time dashboard alongside LinkedIn |
-| `storage` | Stores user profile, settings, and job application history locally |
-| `alarms` | Schedules follow-up reminders, subscription checks, and cloud sync |
-| `notifications` | Displays follow-up reminder notifications to the user |
-| `tabs` | Opens LinkedIn jobs page and manages external application tabs |
-| Host: `linkedin.com` | Core functionality — reads job listings and fills application forms |
-| Host: `api.openai.com` | Optional AI integration for smart question answering |
-| Host: `googleapis.com` | Optional Google Gemini AI integration |
-| Host: `api.deepseek.com` | Optional DeepSeek AI integration |
+| `activeTab` | Required to interact with LinkedIn job application forms on the current tab |
+| `sidePanel` | Powers the real-time dashboard panel alongside LinkedIn |
+| `storage` | Stores user profile, job history, and settings locally on the device |
+| `alarms` | Schedules follow-up reminder notifications and daily cleanup tasks |
+| `notifications` | Sends follow-up reminders and bot status alerts to the user |
+| `tabs` | Opens and manages LinkedIn job search tabs, detects active LinkedIn pages |
+| Host: `linkedin.com` | Core functionality — reads job listings and fills Easy Apply forms |
+| Host: `api.openai.com` | User-provided API key for optional AI question answering |
+| Host: `googleapis.com` | User-provided API key for optional Google Gemini AI integration |
+| Host: `api.deepseek.com` | User-provided API key for optional DeepSeek AI integration |
 
-### 6. Review Tips
-- Extension is **not minified** (`minify: false` in vite.config.ts) — makes Chrome review easier
-- Source maps included for debugging
-- All network requests are transparent (no obfuscated URLs)
-- Privacy policy URL must be set in the developer dashboard
+---
 
-### 7. Post-Submission
-- Review typically takes 1-3 business days
-- If rejected, check the email for specific violations
-- Common issues: overly broad permissions, unclear UI, missing privacy policy
+## Privacy Policy URL
+
+Set to: `https://github.com/naamsanamone/linkedapply-pro/blob/main/PRIVACY_POLICY.md`
+
+---
+
+## Step-by-Step CWS Submission
+
+1. **Build**: `npm run package` → creates `linkedapply-pro.zip`
+2. Go to [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+3. Click **"New Item"** → upload `linkedapply-pro.zip`
+4. Fill in:
+   - **Store listing**: Name, summary, description (from above)
+   - **Screenshots**: Upload the 3 generated screenshots
+   - **Category**: Productivity
+   - **Language**: English
+   - **Privacy Policy URL**: GitHub link above
+   - **Permissions justification**: Use table above
+5. Click **"Submit for Review"**
+6. Review takes **1-3 business days**
+
+---
+
+## If Rejected
+
+Common rejection reasons and fixes:
+- **"Overly broad permissions"** → Explain each permission in justification
+- **"Missing privacy policy"** → Set the GitHub URL
+- **"Extension must have a clear purpose"** → Description above covers this
+- **"Deceptive behavior"** → Extension is unminified, code is readable
