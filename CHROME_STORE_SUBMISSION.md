@@ -98,6 +98,7 @@ Copy these into the CWS "Justify Permissions" fields:
 | `activeTab` | Required to interact with LinkedIn job application forms on the current tab |
 | `sidePanel` | Powers the real-time dashboard panel alongside LinkedIn |
 | `storage` | Stores user profile, job history, and settings locally on the device |
+| `unlimitedStorage` | Job history with descriptions and AI analysis can exceed the default 10MB quota for power users |
 | `alarms` | Schedules follow-up reminder notifications and daily cleanup tasks |
 | `notifications` | Sends follow-up reminders and bot status alerts to the user |
 | `tabs` | Opens and manages LinkedIn job search tabs, detects active LinkedIn pages |
